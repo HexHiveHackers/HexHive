@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { SiDiscord, SiGithub, SiGoogle } from '@icons-pack/svelte-simple-icons';
+  import { SiDiscord, SiGithub } from '@icons-pack/svelte-simple-icons';
   import { authClient } from '$lib/auth-client';
+  import GoogleColorIcon from '$lib/components/icons/GoogleColorIcon.svelte';
   import { Button } from '$lib/components/ui/button';
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
   import { Separator } from '$lib/components/ui/separator';
@@ -36,7 +37,7 @@
       onclick={() => oauth('google')}
       class="justify-start gap-3"
     >
-      <SiGoogle size={18} color="#4285F4" />
+      <GoogleColorIcon size={18} />
       {loading === 'google' ? 'Redirecting…' : 'Continue with Google'}
     </Button>
     <Button
