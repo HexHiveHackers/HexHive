@@ -1,7 +1,7 @@
 <script lang="ts">
   import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
   import RomhackCard from '$lib/components/listings/RomhackCard.svelte';
-
+  import AssetHiveCard from '$lib/components/listings/AssetHiveCard.svelte';
   let { data } = $props();
 </script>
 
@@ -22,18 +22,72 @@
   </div>
 </section>
 
-<section class="mx-auto max-w-6xl px-4 py-12">
-  <div class="flex items-end justify-between mb-4">
-    <h2 class="font-display text-xl">Recent romhacks</h2>
-    <a href="/romhacks" class="text-sm underline">Browse all</a>
-  </div>
-  {#if data.recent.length === 0}
-    <p class="text-sm text-muted-foreground">No listings yet. Sign in and upload the first one.</p>
-  {:else}
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {#each data.recent as item}
-        <RomhackCard {item} />
-      {/each}
+<section class="mx-auto max-w-6xl px-4 py-12 grid gap-12">
+  <!-- Romhacks -->
+  <div>
+    <div class="flex items-end justify-between mb-4">
+      <h2 class="font-display text-xl">Romhacks</h2>
+      <a href="/romhacks" class="text-sm underline">Browse all</a>
     </div>
-  {/if}
+    {#if data.romhacks.length === 0}
+      <p class="text-sm text-muted-foreground">Nothing yet.</p>
+    {:else}
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {#each data.romhacks as item}
+          <RomhackCard {item} />
+        {/each}
+      </div>
+    {/if}
+  </div>
+
+  <!-- Sprites -->
+  <div>
+    <div class="flex items-end justify-between mb-4">
+      <h2 class="font-display text-xl">Sprites</h2>
+      <a href="/sprites" class="text-sm underline">Browse all</a>
+    </div>
+    {#if data.sprites.length === 0}
+      <p class="text-sm text-muted-foreground">Nothing yet.</p>
+    {:else}
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {#each data.sprites as item}
+          <AssetHiveCard {item} type="sprite" />
+        {/each}
+      </div>
+    {/if}
+  </div>
+
+  <!-- Sounds -->
+  <div>
+    <div class="flex items-end justify-between mb-4">
+      <h2 class="font-display text-xl">Sounds</h2>
+      <a href="/sounds" class="text-sm underline">Browse all</a>
+    </div>
+    {#if data.sounds.length === 0}
+      <p class="text-sm text-muted-foreground">Nothing yet.</p>
+    {:else}
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {#each data.sounds as item}
+          <AssetHiveCard {item} type="sound" />
+        {/each}
+      </div>
+    {/if}
+  </div>
+
+  <!-- Scripts -->
+  <div>
+    <div class="flex items-end justify-between mb-4">
+      <h2 class="font-display text-xl">Scripts</h2>
+      <a href="/scripts" class="text-sm underline">Browse all</a>
+    </div>
+    {#if data.scripts.length === 0}
+      <p class="text-sm text-muted-foreground">Nothing yet.</p>
+    {:else}
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {#each data.scripts as item}
+          <AssetHiveCard {item} type="script" />
+        {/each}
+      </div>
+    {/if}
+  </div>
 </section>

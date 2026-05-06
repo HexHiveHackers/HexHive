@@ -1,8 +1,13 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/db';
-import { listRomhacks } from '$lib/server/listings';
+import { listRomhacks, listAssetHives } from '$lib/server/listings';
 
 export const load: PageServerLoad = async () => {
-  const recent = await listRomhacks(db, { limit: 6 });
-  return { recent };
+  const [romhacks, sprites, sounds, scripts] = await Promise.all([
+    listRomhacks(db, { limit: 3 }),
+    listAssetHives(db, 'sprite', { limit: 3 }),
+    listAssetHives(db, 'sound', { limit: 3 }),
+    listAssetHives(db, 'script', { limit: 3 })
+  ]);
+  return { romhacks, sprites, sounds, scripts };
 };
