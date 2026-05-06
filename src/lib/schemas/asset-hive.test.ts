@@ -34,9 +34,30 @@ describe('ScriptInput', () => {
 });
 
 describe('SpriteInput', () => {
-  it('accepts a single category entry', () => {
+  it('accepts a valid Battle.Pokemon entry', () => {
     expect(
       SpriteInput.safeParse({ ...base, category: { type: 'Battle', subtype: 'Pokemon', variant: 'Front' } }).success
+    ).toBe(true);
+  });
+  it('rejects an off-list variant', () => {
+    expect(
+      SpriteInput.safeParse({ ...base, category: { type: 'Battle', subtype: 'Pokemon', variant: 'Sideways' } }).success
+    ).toBe(false);
+  });
+  it('rejects an unknown subtype', () => {
+    expect(
+      SpriteInput.safeParse({ ...base, category: { type: 'Battle', subtype: 'Nope' } }).success
+    ).toBe(false);
+  });
+  it('accepts a fileMap with category-tagged variants', () => {
+    expect(
+      SpriteInput.safeParse({
+        ...base,
+        category: { type: 'Battle', subtype: 'Pokemon', variant: 'Front' },
+        fileMap: {
+          'frontN.png': { type: 'Battle', subtype: 'Pokemon', variant: ['default', 'Front'] }
+        }
+      }).success
     ).toBe(true);
   });
 });
