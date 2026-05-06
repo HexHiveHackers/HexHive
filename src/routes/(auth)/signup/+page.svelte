@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { SiDiscord, SiGithub, SiGoogle } from '@icons-pack/svelte-simple-icons';
   import { authClient } from '$lib/auth-client';
   import { Button } from '$lib/components/ui/button';
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -17,10 +18,36 @@
     <CardTitle class="font-display text-xl tracking-wide">Create account</CardTitle>
   </CardHeader>
   <CardContent class="grid gap-3">
-    <p class="text-sm text-muted-foreground">Sign up with an OAuth provider. You can add a passkey afterward in your account settings.</p>
-    <Button variant="outline" disabled={!!loading} onclick={() => oauth('github')}>Continue with GitHub</Button>
-    <Button variant="outline" disabled={!!loading} onclick={() => oauth('google')}>Continue with Google</Button>
-    <Button variant="outline" disabled={!!loading} onclick={() => oauth('discord')}>Continue with Discord</Button>
+    <p class="text-sm text-muted-foreground">
+      Sign up with an OAuth provider. You can add a passkey afterward in your account settings.
+    </p>
+    <Button
+      variant="outline"
+      disabled={!!loading}
+      onclick={() => oauth('github')}
+      class="justify-start gap-3"
+    >
+      <SiGithub size={18} />
+      {loading === 'github' ? 'Redirecting…' : 'Continue with GitHub'}
+    </Button>
+    <Button
+      variant="outline"
+      disabled={!!loading}
+      onclick={() => oauth('google')}
+      class="justify-start gap-3"
+    >
+      <SiGoogle size={18} color="#4285F4" />
+      {loading === 'google' ? 'Redirecting…' : 'Continue with Google'}
+    </Button>
+    <Button
+      variant="outline"
+      disabled={!!loading}
+      onclick={() => oauth('discord')}
+      class="justify-start gap-3"
+    >
+      <SiDiscord size={18} color="#5865F2" />
+      {loading === 'discord' ? 'Redirecting…' : 'Continue with Discord'}
+    </Button>
     <Separator />
     <p class="text-sm text-muted-foreground text-center">
       Already have an account? <a class="underline" href="/login">Sign in</a>
