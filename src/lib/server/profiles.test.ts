@@ -1,15 +1,9 @@
-import { describe, it, expect, beforeAll } from 'vitest';
 import { createClient } from '@libsql/client';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
+import { beforeAll, describe, expect, it } from 'vitest';
 import * as schema from '$lib/db/schema';
-import {
-  getOrCreateProfile,
-  setUsername,
-  setBio,
-  getProfileByUsername,
-  listingsByUser
-} from './profiles';
+import { getOrCreateProfile, getProfileByUsername, listingsByUser, setBio, setUsername } from './profiles';
 
 let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -48,28 +42,38 @@ describe('profiles', () => {
   it('listingsByUser includes drafts only when self=true', async () => {
     const { createListingDraft, finalizeListing } = await import('./listings');
     const baseRomhack = {
-      description: '', permissions: ['Credit' as const],
-      baseRom: 'Emerald' as const, baseRomVersion: 'v1.0' as const,
-      baseRomRegion: 'English' as const, release: '1',
-      categories: [], states: [], tags: [], screenshots: [], boxart: [], trailer: []
+      description: '',
+      permissions: ['Credit' as const],
+      baseRom: 'Emerald' as const,
+      baseRomVersion: 'v1.0' as const,
+      baseRomRegion: 'English' as const,
+      release: '1',
+      categories: [],
+      states: [],
+      tags: [],
+      screenshots: [],
+      boxart: [],
+      trailer: [],
     };
     const a = await createListingDraft(db, {
       authorId: 'u1',
-      ti: { type: 'romhack', input: { title: 'Pub', ...baseRomhack } }
+      ti: { type: 'romhack', input: { title: 'Pub', ...baseRomhack } },
     });
     await finalizeListing(db, {
-      type: 'romhack', listingId: a.listingId, versionId: a.versionId,
-      files: [{ r2Key: 'x', filename: 'a.ips', originalFilename: 'a.ips', size: 1, hash: null }]
+      type: 'romhack',
+      listingId: a.listingId,
+      versionId: a.versionId,
+      files: [{ r2Key: 'x', filename: 'a.ips', originalFilename: 'a.ips', size: 1, hash: null }],
     });
     await createListingDraft(db, {
       authorId: 'u1',
-      ti: { type: 'romhack', input: { title: 'Draft', ...baseRomhack } }
+      ti: { type: 'romhack', input: { title: 'Draft', ...baseRomhack } },
     });
 
     const publicView = await listingsByUser(db, 'u1', { self: false });
-    expect(publicView.map(l => l.title).sort()).toEqual(['Pub']);
+    expect(publicView.map((l) => l.title).sort()).toEqual(['Pub']);
 
     const selfView = await listingsByUser(db, 'u1', { self: true });
-    expect(selfView.map(l => l.title).sort()).toEqual(['Draft', 'Pub']);
+    expect(selfView.map((l) => l.title).sort()).toEqual(['Draft', 'Pub']);
   });
 });

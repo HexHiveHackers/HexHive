@@ -1,10 +1,10 @@
 import { and, desc, eq, like, sql } from 'drizzle-orm';
 import type { drizzle } from 'drizzle-orm/libsql';
-import * as schema from '$lib/db/schema';
 import type { ListingType } from '$lib/db/schema';
-import { newId, slugify, uniqueSlug } from '$lib/utils/ids';
+import * as schema from '$lib/db/schema';
 import type { RomhackInput } from '$lib/schemas/romhack';
-import { writeMeta, type ListingTypedInput } from './meta-writers';
+import { newId, slugify, uniqueSlug } from '$lib/utils/ids';
+import { type ListingTypedInput, writeMeta } from './meta-writers';
 import { listVersionsForListing } from './versions';
 
 type DB = ReturnType<typeof drizzle<typeof schema>>;
@@ -33,7 +33,7 @@ async function nextSlug(db: DB, type: ListingType, candidate: string): Promise<s
 
 export async function createListingDraft(
   db: DB,
-  args: { authorId: string; ti: ListingTypedInput }
+  args: { authorId: string; ti: ListingTypedInput },
 ): Promise<ListingDraft> {
   const { ti } = args;
   const titleSlug = ti.input.slug ?? slugify(ti.input.title);
@@ -50,7 +50,7 @@ export async function createListingDraft(
     title: ti.input.title,
     description: ti.input.description ?? '',
     permissions: ti.input.permissions,
-    status: 'draft'
+    status: 'draft',
   });
   await writeMeta(db, listingId, ti);
 
@@ -60,7 +60,7 @@ export async function createListingDraft(
     listingId,
     version: versionLabel,
     isCurrent: true,
-    changelog: null
+    changelog: null,
   });
 
   return { listingId, versionId, slug };
@@ -68,7 +68,7 @@ export async function createListingDraft(
 
 export async function createRomhackDraft(
   db: DB,
-  args: { authorId: string; input: RomhackCreateInput }
+  args: { authorId: string; input: RomhackCreateInput },
 ): Promise<ListingDraft> {
   return createListingDraft(db, { authorId: args.authorId, ti: { type: 'romhack', input: args.input } });
 }
@@ -88,7 +88,7 @@ export async function finalizeListing(
     listingId: string;
     versionId: string;
     files: PersistedFile[];
-  }
+  },
 ): Promise<void> {
   for (const f of args.files) {
     await db.insert(schema.listingFile).values({
@@ -98,7 +98,7 @@ export async function finalizeListing(
       filename: f.filename,
       originalFilename: f.originalFilename,
       size: f.size,
-      hash: f.hash
+      hash: f.hash,
     });
   }
 
@@ -118,7 +118,7 @@ export async function finalizeListing(
 
 export async function finalizeRomhack(
   db: DB,
-  args: { listingId: string; versionId: string; files: PersistedFile[] }
+  args: { listingId: string; versionId: string; files: PersistedFile[] },
 ): Promise<void> {
   return finalizeListing(db, { type: 'romhack', ...args });
 }
@@ -140,7 +140,7 @@ export interface RomhackListItem {
 
 export async function listRomhacks(
   db: DB,
-  filters: { baseRom?: string; q?: string; includeMature?: boolean; limit?: number; offset?: number }
+  filters: { baseRom?: string; q?: string; includeMature?: boolean; limit?: number; offset?: number },
 ): Promise<RomhackListItem[]> {
   const where = [eq(schema.listing.type, 'romhack'), eq(schema.listing.status, 'published')];
   if (filters.baseRom) where.push(eq(schema.romhackMeta.baseRom, filters.baseRom));
@@ -160,7 +160,7 @@ export async function listRomhacks(
       downloads: schema.listing.downloads,
       authorName: schema.user.name,
       createdAt: schema.listing.createdAt,
-      mature: schema.listing.mature
+      mature: schema.listing.mature,
     })
     .from(schema.listing)
     .innerJoin(schema.romhackMeta, eq(schema.romhackMeta.listingId, schema.listing.id))
@@ -221,7 +221,7 @@ export async function getRomhackBySlug(db: DB, slug: string): Promise<RomhackDet
     version: versionRows[0],
     files: fileRows,
     versions,
-    authorName: authorRows[0]?.name ?? 'unknown'
+    authorName: authorRows[0]?.name ?? 'unknown',
   };
 }
 
@@ -243,7 +243,7 @@ export interface AssetHiveListItem {
 export async function listAssetHives(
   db: DB,
   type: 'sprite' | 'sound' | 'script',
-  filters: { q?: string; includeMature?: boolean; limit?: number; offset?: number }
+  filters: { q?: string; includeMature?: boolean; limit?: number; offset?: number },
 ): Promise<AssetHiveListItem[]> {
   const where = [eq(schema.listing.type, type), eq(schema.listing.status, 'published')];
   if (filters.q) where.push(like(schema.listing.title, `%${filters.q}%`));
@@ -261,7 +261,7 @@ export async function listAssetHives(
       downloads: schema.listing.downloads,
       authorName: schema.user.name,
       createdAt: schema.listing.createdAt,
-      mature: schema.listing.mature
+      mature: schema.listing.mature,
     })
     .from(schema.listing)
     .innerJoin(schema.assetHiveMeta, eq(schema.assetHiveMeta.listingId, schema.listing.id))
@@ -290,7 +290,7 @@ export interface AssetHiveDetail {
 export async function getAssetHiveBySlug(
   db: DB,
   type: 'sprite' | 'sound' | 'script',
-  slug: string
+  slug: string,
 ): Promise<AssetHiveDetail | null> {
   const lr = await db
     .select()
@@ -301,42 +301,24 @@ export async function getAssetHiveBySlug(
   if (!listing) return null;
 
   const base = (
-    await db
-      .select()
-      .from(schema.assetHiveMeta)
-      .where(eq(schema.assetHiveMeta.listingId, listing.id))
-      .limit(1)
+    await db.select().from(schema.assetHiveMeta).where(eq(schema.assetHiveMeta.listingId, listing.id)).limit(1)
   )[0];
   if (!base) return null;
 
   let meta: AssetHiveDetail['meta'];
   if (type === 'sprite') {
     const m = (
-      await db
-        .select()
-        .from(schema.spriteMeta)
-        .where(eq(schema.spriteMeta.listingId, listing.id))
-        .limit(1)
+      await db.select().from(schema.spriteMeta).where(eq(schema.spriteMeta.listingId, listing.id)).limit(1)
     )[0];
     if (!m) return null;
     meta = { kind: 'sprite', data: m };
   } else if (type === 'sound') {
-    const m = (
-      await db
-        .select()
-        .from(schema.soundMeta)
-        .where(eq(schema.soundMeta.listingId, listing.id))
-        .limit(1)
-    )[0];
+    const m = (await db.select().from(schema.soundMeta).where(eq(schema.soundMeta.listingId, listing.id)).limit(1))[0];
     if (!m) return null;
     meta = { kind: 'sound', data: m };
   } else {
     const m = (
-      await db
-        .select()
-        .from(schema.scriptMeta)
-        .where(eq(schema.scriptMeta.listingId, listing.id))
-        .limit(1)
+      await db.select().from(schema.scriptMeta).where(eq(schema.scriptMeta.listingId, listing.id)).limit(1)
     )[0];
     if (!m) return null;
     meta = { kind: 'script', data: m };
@@ -346,26 +328,14 @@ export async function getAssetHiveBySlug(
     await db
       .select()
       .from(schema.listingVersion)
-      .where(
-        and(
-          eq(schema.listingVersion.listingId, listing.id),
-          eq(schema.listingVersion.isCurrent, true)
-        )
-      )
+      .where(and(eq(schema.listingVersion.listingId, listing.id), eq(schema.listingVersion.isCurrent, true)))
       .limit(1)
   )[0];
   if (!version) return null;
 
-  const files = await db
-    .select()
-    .from(schema.listingFile)
-    .where(eq(schema.listingFile.versionId, version.id));
+  const files = await db.select().from(schema.listingFile).where(eq(schema.listingFile.versionId, version.id));
   const author = (
-    await db
-      .select({ name: schema.user.name })
-      .from(schema.user)
-      .where(eq(schema.user.id, listing.authorId))
-      .limit(1)
+    await db.select({ name: schema.user.name }).from(schema.user).where(eq(schema.user.id, listing.authorId)).limit(1)
   )[0];
 
   const versions = await listVersionsForListing(db, listing.id);

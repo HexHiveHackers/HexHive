@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { slug, username, baseRom } from './zod-helpers';
+import { describe, expect, it } from 'vitest';
+import { baseRom, slug, username } from './zod-helpers';
 
 describe('slug', () => {
   it('accepts kebab-case', () => expect(slug.safeParse('kaizo-emerald').success).toBe(true));

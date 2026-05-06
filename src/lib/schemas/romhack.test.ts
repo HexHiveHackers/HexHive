@@ -1,10 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { RomhackInput } from './romhack';
 
 const ok = {
-  title: 'Kaizo', permissions: ['Credit'] as const,
-  baseRom: 'Emerald' as const, baseRomVersion: 'v1.0' as const, baseRomRegion: 'English' as const,
-  release: '1.0.0'
+  title: 'Kaizo',
+  permissions: ['Credit'] as const,
+  baseRom: 'Emerald' as const,
+  baseRomVersion: 'v1.0' as const,
+  baseRomRegion: 'English' as const,
+  release: '1.0.0',
 };
 
 describe('RomhackInput', () => {

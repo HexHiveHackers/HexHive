@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/storage/r2', () => ({
   presignPut: vi.fn(async (key: string) => `https://put.example/${key}`),
   presignGet: vi.fn(async (key: string) => `https://get.example/${key}`),
-  headObject: vi.fn(async () => ({}))
+  headObject: vi.fn(async () => ({})),
 }));
 
 beforeEach(() => vi.clearAllMocks());
@@ -14,9 +14,7 @@ describe('presignFor', () => {
     const out = await presignFor({
       listingId: 'L1',
       versionId: 'V1',
-      files: [
-        { filename: 'patch.ips', contentType: 'application/octet-stream', size: 100 }
-      ]
+      files: [{ filename: 'patch.ips', contentType: 'application/octet-stream', size: 100 }],
     });
     expect(out).toHaveLength(1);
     expect(out[0].r2Key).toMatch(/^L1\/V1\/[a-z0-9]+-patch\.ips$/);
@@ -32,7 +30,9 @@ describe('verifyAllUploaded', () => {
 
   it('returns false when any HEAD throws', async () => {
     const { headObject } = await import('$lib/storage/r2');
-    (headObject as any).mockImplementationOnce(async () => { throw new Error('not found'); });
+    (headObject as any).mockImplementationOnce(async () => {
+      throw new Error('not found');
+    });
     const { verifyAllUploaded } = await import('./uploads');
     expect(await verifyAllUploaded(['a', 'b'])).toBe(false);
   });

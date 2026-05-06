@@ -2,10 +2,10 @@
   import { Input } from '$lib/components/ui/input';
   import { Label } from '$lib/components/ui/label';
   import {
+    ASSET_PERMISSION, 
     SUPPORTED_BASE_ROM,
-    SUPPORTED_BASE_ROM_VERSION,
     SUPPORTED_BASE_ROM_REGION,
-    ASSET_PERMISSION
+    SUPPORTED_BASE_ROM_VERSION
   } from '$lib/schemas/zod-helpers';
 
   type FormValue = {

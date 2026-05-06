@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { drizzle } from 'drizzle-orm/libsql';
-import * as schema from '$lib/db/schema';
+import type * as schema from '$lib/db/schema';
 
 type DB = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -24,11 +24,7 @@ function sanitizeSnippet(raw: string): string {
   // Protect the FTS-generated <b> / </b> pairs before escaping
   let s = raw.replaceAll('<b>', OPEN).replaceAll('</b>', CLOSE);
   // Escape everything (incl. any attacker-injected HTML in title/description)
-  s = s
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
+  s = s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
   // Restore bold markers as safe tags
   s = s.replaceAll(OPEN, '<b>').replaceAll(CLOSE, '</b>');
   return s;
@@ -46,7 +42,7 @@ function escapeFts(q: string): string {
 export async function searchListings(
   db: DB,
   query: string,
-  filters: { type?: 'romhack' | 'sprite' | 'sound' | 'script' } = {}
+  filters: { type?: 'romhack' | 'sprite' | 'sound' | 'script' } = {},
 ): Promise<SearchHit[]> {
   const q = escapeFts(query);
   if (!q) return [];

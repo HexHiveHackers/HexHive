@@ -1,10 +1,11 @@
 <script lang="ts">
-  import type { AssetHiveListItem } from '$lib/server/listings';
   import AssetHiveCard from '$lib/components/listings/AssetHiveCard.svelte';
   import ListingsGrid from '$lib/components/listings/ListingsGrid.svelte';
   import MatureFilterToggle from '$lib/components/listings/MatureFilterToggle.svelte';
-  import { Input } from '$lib/components/ui/input';
   import { Button } from '$lib/components/ui/button';
+  import { Input } from '$lib/components/ui/input';
+  import type { AssetHiveListItem } from '$lib/server/listings';
+
   let { data } = $props();
 </script>
 

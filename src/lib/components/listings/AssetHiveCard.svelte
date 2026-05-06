@@ -1,7 +1,7 @@
 <script lang="ts">
-  import TypeBadge from './TypeBadge.svelte';
-  import MatureWrap from './MatureWrap.svelte';
   import { Badge } from '$lib/components/ui/badge';
+  import MatureWrap from './MatureWrap.svelte';
+  import TypeBadge from './TypeBadge.svelte';
 
   type Type = 'sprite' | 'sound' | 'script';
 

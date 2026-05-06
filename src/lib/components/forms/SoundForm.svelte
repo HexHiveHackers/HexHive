@@ -1,7 +1,7 @@
 <script lang="ts">
-  import AssetHiveBaseFields from './AssetHiveBaseFields.svelte';
   import { Label } from '$lib/components/ui/label';
   import { SOUND_CATEGORY } from '$lib/schemas/sound';
+  import AssetHiveBaseFields from './AssetHiveBaseFields.svelte';
 
   type V = {
     title: string; description: string;

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Input } from '$lib/components/ui/input';
   import { goto } from '$app/navigation';
+  import { Input } from '$lib/components/ui/input';
 
   let q = $state('');
 

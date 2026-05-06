@@ -1,9 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import FileDropzone from '$lib/components/forms/FileDropzone.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
   import { Label } from '$lib/components/ui/label';
-  import { Button } from '$lib/components/ui/button';
-  import FileDropzone from '$lib/components/forms/FileDropzone.svelte';
 
   let { data } = $props();
   let version = $state('');

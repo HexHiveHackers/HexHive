@@ -1,9 +1,9 @@
-import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
-import * as schema from '$lib/db/schema';
 import { db } from '$lib/db';
+import * as schema from '$lib/db/schema';
 import { getProfileByUsername, listingsByUser } from '$lib/server/profiles';
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
   const profile = await getProfileByUsername(db, params.username);
@@ -16,7 +16,12 @@ export const load: PageServerLoad = async ({ params }) => {
     .limit(1);
   const listings = await listingsByUser(db, profile.userId, { self: false });
   return {
-    profile: { username: profile.username, bio: profile.bio, avatarKey: profile.avatarKey, name: userRows[0]?.name ?? '' },
-    listings
+    profile: {
+      username: profile.username,
+      bio: profile.bio,
+      avatarKey: profile.avatarKey,
+      name: userRows[0]?.name ?? '',
+    },
+    listings,
   };
 };

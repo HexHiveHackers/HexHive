@@ -17,10 +17,7 @@ export function slugify(input: string): string {
   return cleaned || newId(8);
 }
 
-export async function uniqueSlug(
-  candidate: string,
-  isTaken: (s: string) => Promise<boolean>
-): Promise<string> {
+export async function uniqueSlug(candidate: string, isTaken: (s: string) => Promise<boolean>): Promise<string> {
   if (!(await isTaken(candidate))) return candidate;
   for (let i = 2; i < 1000; i++) {
     const s = `${candidate}-${i}`;

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { RomhackListItem } from '$lib/server/listings';
-  import RomhackCard from '$lib/components/listings/RomhackCard.svelte';
   import ListingsGrid from '$lib/components/listings/ListingsGrid.svelte';
   import MatureFilterToggle from '$lib/components/listings/MatureFilterToggle.svelte';
-  import { Input } from '$lib/components/ui/input';
+  import RomhackCard from '$lib/components/listings/RomhackCard.svelte';
   import { Button } from '$lib/components/ui/button';
+  import { Input } from '$lib/components/ui/input';
   import { SUPPORTED_BASE_ROM } from '$lib/schemas/zod-helpers';
+  import type { RomhackListItem } from '$lib/server/listings';
 
   let { data } = $props();
   let q = $state(data.filters.q ?? '');

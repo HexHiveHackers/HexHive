@@ -16,9 +16,7 @@ export type AvatarPresignInput = {
   filename: string;
 };
 
-export async function presignAvatarUpload(
-  input: AvatarPresignInput
-): Promise<{ key: string; url: string }> {
+export async function presignAvatarUpload(input: AvatarPresignInput): Promise<{ key: string; url: string }> {
   if (input.size > MAX_SIZE) throw new Error('Avatar must be under 2 MB');
   const ext = (input.filename.split('.').pop() ?? '').toLowerCase();
   if (!ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number])) {

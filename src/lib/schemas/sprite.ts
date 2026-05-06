@@ -1,18 +1,14 @@
 import { z } from 'zod';
 import { AssetHiveInput } from './asset-hive';
-import { validateTriple, SPRITE_MAP_CATEGORY } from './sprite-variants';
+import { SPRITE_MAP_CATEGORY, validateTriple } from './sprite-variants';
 
 const SpriteEntry = z
   .object({
     type: z.string().min(1),
     subtype: z.string().min(1),
     variant: z
-      .union([
-        z.string(),
-        z.array(z.string()),
-        z.record(z.string(), z.union([z.string(), z.array(z.string())]))
-      ])
-      .optional()
+      .union([z.string(), z.array(z.string()), z.record(z.string(), z.union([z.string(), z.array(z.string())]))])
+      .optional(),
   })
   .superRefine((val, ctx) => {
     const r = validateTriple(val.type, val.subtype, val.variant);
@@ -23,12 +19,7 @@ const FileMapEntry = z
   .object({
     type: z.string().min(1),
     subtype: z.string().min(1),
-    variant: z
-      .union([
-        z.string(),
-        z.tuple([z.enum(SPRITE_MAP_CATEGORY), z.string()])
-      ])
-      .optional()
+    variant: z.union([z.string(), z.tuple([z.enum(SPRITE_MAP_CATEGORY), z.string()])]).optional(),
   })
   .superRefine((val, ctx) => {
     const variantValue = Array.isArray(val.variant) ? val.variant[1] : val.variant;
@@ -38,6 +29,6 @@ const FileMapEntry = z
 
 export const SpriteInput = AssetHiveInput.extend({
   category: z.union([SpriteEntry, z.array(SpriteEntry), z.record(z.string(), SpriteEntry)]),
-  fileMap: z.record(z.string(), FileMapEntry).optional()
+  fileMap: z.record(z.string(), FileMapEntry).optional(),
 });
 export type SpriteInput = z.infer<typeof SpriteInput>;

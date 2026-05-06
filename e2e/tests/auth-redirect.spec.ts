@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('upload page redirects to /login when unauthenticated', async ({ page }) => {
   const response = await page.goto('/upload/romhack');

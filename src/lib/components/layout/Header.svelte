@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { Button } from '$lib/components/ui/button';
   import { authClient } from '$lib/auth-client';
   import SearchBar from '$lib/components/search/SearchBar.svelte';
+  import { Button } from '$lib/components/ui/button';
 
   let { user }: { user: { name: string; image?: string | null } | null } = $props();
 

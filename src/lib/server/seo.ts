@@ -21,7 +21,7 @@ export function buildOgMeta(args: {
     description: (args.description || 'Pokemon ROM hack asset on HexHive').slice(0, 280),
     url: `${args.origin}/${route}/${args.slug}`,
     image: `${args.origin}/og-default.png`,
-    type: 'article'
+    type: 'article',
   };
 }
 

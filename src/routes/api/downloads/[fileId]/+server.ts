@@ -1,17 +1,13 @@
-import type { RequestHandler } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/db';
 import * as schema from '$lib/db/schema';
-import { presignGet } from '$lib/storage/r2';
 import { incrementDownloads } from '$lib/server/listings';
+import { presignGet } from '$lib/storage/r2';
+import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params }) => {
-  const fileRows = await db
-    .select()
-    .from(schema.listingFile)
-    .where(eq(schema.listingFile.id, params.fileId))
-    .limit(1);
+  const fileRows = await db.select().from(schema.listingFile).where(eq(schema.listingFile.id, params.fileId)).limit(1);
   const file = fileRows[0];
   if (!file) throw error(404, 'File not found');
 

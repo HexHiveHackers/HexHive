@@ -1,7 +1,7 @@
-import { and, eq, sql, desc } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { drizzle } from 'drizzle-orm/libsql';
-import * as schema from '$lib/db/schema';
 import type { ListingType } from '$lib/db/schema';
+import * as schema from '$lib/db/schema';
 
 type DB = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -27,10 +27,7 @@ export async function getProfileByUsername(db: DB, username: string): Promise<Pr
 export async function setUsername(db: DB, userId: string, username: string): Promise<void> {
   await getOrCreateProfile(db, userId);
   try {
-    await db
-      .update(schema.profile)
-      .set({ username, updatedAt: new Date() })
-      .where(eq(schema.profile.userId, userId));
+    await db.update(schema.profile).set({ username, updatedAt: new Date() }).where(eq(schema.profile.userId, userId));
   } catch (e: unknown) {
     const msg = String((e as Error)?.message ?? e);
     const causeMsg = String(((e as { cause?: unknown })?.cause as Error)?.message ?? '');
@@ -53,11 +50,7 @@ export interface UserListingItem {
   createdAt: Date;
 }
 
-export async function listingsByUser(
-  db: DB,
-  userId: string,
-  opts: { self: boolean }
-): Promise<UserListingItem[]> {
+export async function listingsByUser(db: DB, userId: string, opts: { self: boolean }): Promise<UserListingItem[]> {
   const conds = [eq(schema.listing.authorId, userId)];
   if (!opts.self) conds.push(eq(schema.listing.status, 'published'));
   const rows = await db
@@ -68,7 +61,7 @@ export async function listingsByUser(
       title: schema.listing.title,
       status: schema.listing.status,
       downloads: schema.listing.downloads,
-      createdAt: schema.listing.createdAt
+      createdAt: schema.listing.createdAt,
     })
     .from(schema.listing)
     .where(and(...conds))

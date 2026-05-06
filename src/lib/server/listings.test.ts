@@ -1,19 +1,19 @@
-import { describe, it, expect, beforeAll } from 'vitest';
 import { createClient } from '@libsql/client';
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
-import { eq } from 'drizzle-orm';
+import { beforeAll, describe, expect, it } from 'vitest';
 import * as schema from '$lib/db/schema';
 import {
-  createRomhackDraft,
   createListingDraft,
-  finalizeRomhack,
+  createRomhackDraft,
   finalizeListing,
-  getRomhackBySlug,
-  listRomhacks,
-  listAssetHives,
+  finalizeRomhack,
   getAssetHiveBySlug,
-  type RomhackCreateInput
+  getRomhackBySlug,
+  listAssetHives,
+  listRomhacks,
+  type RomhackCreateInput,
 } from './listings';
 
 let db: ReturnType<typeof drizzle<typeof schema>>;
@@ -38,7 +38,7 @@ const sampleInput = (): RomhackCreateInput => ({
   tags: [],
   screenshots: [],
   boxart: [],
-  trailer: []
+  trailer: [],
 });
 
 describe('Romhack listing CRUD', () => {
@@ -51,9 +51,7 @@ describe('Romhack listing CRUD', () => {
     await finalizeRomhack(db, {
       listingId: draft.listingId,
       versionId: draft.versionId,
-      files: [
-        { r2Key: 'k', filename: 'k.ips', originalFilename: 'patch.ips', size: 100, hash: null }
-      ]
+      files: [{ r2Key: 'k', filename: 'k.ips', originalFilename: 'patch.ips', size: 100, hash: null }],
     });
 
     const got = await getRomhackBySlug(db, 'kaizo-emerald');
@@ -66,8 +64,9 @@ describe('Romhack listing CRUD', () => {
   it('lists only published romhacks', async () => {
     const a = await createRomhackDraft(db, { authorId: 'u1', input: { ...sampleInput(), title: 'Pub' } });
     await finalizeRomhack(db, {
-      listingId: a.listingId, versionId: a.versionId,
-      files: [{ r2Key: 'k2', filename: 'k.ips', originalFilename: 'a.ips', size: 1, hash: null }]
+      listingId: a.listingId,
+      versionId: a.versionId,
+      files: [{ r2Key: 'k2', filename: 'k.ips', originalFilename: 'a.ips', size: 1, hash: null }],
     });
     await createRomhackDraft(db, { authorId: 'u1', input: { ...sampleInput(), title: 'Draft' } });
 
@@ -87,11 +86,12 @@ describe('Romhack listing CRUD', () => {
   it('filters by baseRom', async () => {
     const a = await createRomhackDraft(db, {
       authorId: 'u1',
-      input: { ...sampleInput(), title: 'FR Hack', baseRom: 'Fire Red' }
+      input: { ...sampleInput(), title: 'FR Hack', baseRom: 'Fire Red' },
     });
     await finalizeRomhack(db, {
-      listingId: a.listingId, versionId: a.versionId,
-      files: [{ r2Key: 'k3', filename: 'k.ips', originalFilename: 'a.ips', size: 1, hash: null }]
+      listingId: a.listingId,
+      versionId: a.versionId,
+      files: [{ r2Key: 'k3', filename: 'k.ips', originalFilename: 'a.ips', size: 1, hash: null }],
     });
 
     const fr = await listRomhacks(db, { baseRom: 'Fire Red' });
@@ -111,9 +111,9 @@ describe('createListingDraft for asset-hive types', () => {
           description: '',
           permissions: ['Free'],
           targetedRoms: ['Emerald'],
-          category: { type: 'Battle', subtype: 'Pokemon', variant: 'Front' }
-        }
-      }
+          category: { type: 'Battle', subtype: 'Pokemon', variant: 'Front' },
+        },
+      },
     });
     expect(draft.slug).toBe('sprite-pack');
   });
@@ -128,9 +128,9 @@ describe('createListingDraft for asset-hive types', () => {
           description: '',
           permissions: ['Free'],
           targetedRoms: ['Emerald'],
-          category: 'Cry'
-        }
-      }
+          category: 'Cry',
+        },
+      },
     });
     expect(draft.slug).toBe('cry-pack');
   });
@@ -149,9 +149,9 @@ describe('createListingDraft for asset-hive types', () => {
           features: ['Engine'],
           prerequisites: [],
           targetedVersions: ['v1.0'],
-          tools: ['HMA Script']
-        }
-      }
+          tools: ['HMA Script'],
+        },
+      },
     });
     expect(draft.slug).toBe('engine-mod');
   });
@@ -168,20 +168,18 @@ describe('asset-hive list/detail', () => {
           description: '',
           permissions: ['Free'],
           targetedRoms: ['Emerald'],
-          category: 'SFX'
-        }
-      }
+          category: 'SFX',
+        },
+      },
     });
     await finalizeListing(db, {
       type: 'sound',
       listingId: draft.listingId,
       versionId: draft.versionId,
-      files: [{ r2Key: 'sk', filename: 'a.wav', originalFilename: 'a.wav', size: 42, hash: null }]
+      files: [{ r2Key: 'sk', filename: 'a.wav', originalFilename: 'a.wav', size: 42, hash: null }],
     });
     const list = await listAssetHives(db, 'sound', {});
-    expect(list.some((r) => r.slug === draft.slug && r.fileCount === 1 && r.totalSize === 42)).toBe(
-      true
-    );
+    expect(list.some((r) => r.slug === draft.slug && r.fileCount === 1 && r.totalSize === 42)).toBe(true);
 
     const detail = await getAssetHiveBySlug(db, 'sound', draft.slug);
     expect(detail?.meta.kind).toBe('sound');

@@ -1,13 +1,13 @@
-import type { RequestHandler } from './$types';
 import { db } from '$lib/db';
-import { listRomhacks, listAssetHives } from '$lib/server/listings';
+import { listAssetHives, listRomhacks } from '$lib/server/listings';
+import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url }) => {
   const [romhacks, sprites, sounds, scripts] = await Promise.all([
     listRomhacks(db, { limit: 5000 }),
     listAssetHives(db, 'sprite', { limit: 5000 }),
     listAssetHives(db, 'sound', { limit: 5000 }),
-    listAssetHives(db, 'script', { limit: 5000 })
+    listAssetHives(db, 'script', { limit: 5000 }),
   ]);
 
   const u = (path: string) => `${url.origin}${path}`;
@@ -17,7 +17,7 @@ export const GET: RequestHandler = async ({ url }) => {
     ...romhacks.map((r) => `  <url><loc>${u(`/romhacks/${r.slug}`)}</loc></url>`),
     ...sprites.map((r) => `  <url><loc>${u(`/sprites/${r.slug}`)}</loc></url>`),
     ...sounds.map((r) => `  <url><loc>${u(`/sounds/${r.slug}`)}</loc></url>`),
-    ...scripts.map((r) => `  <url><loc>${u(`/scripts/${r.slug}`)}</loc></url>`)
+    ...scripts.map((r) => `  <url><loc>${u(`/scripts/${r.slug}`)}</loc></url>`),
   ];
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>

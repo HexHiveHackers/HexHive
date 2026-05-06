@@ -1,23 +1,27 @@
-import type { RequestHandler } from './$types';
-import { json, error } from '@sveltejs/kit';
-import { z } from 'zod';
+import { error, json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
-import { requireUser } from '$lib/server/auth-utils';
+import { z } from 'zod';
 import { db } from '$lib/db';
 import * as schema from '$lib/db/schema';
+import { requireUser } from '$lib/server/auth-utils';
 import { verifyAllUploaded } from '$lib/server/uploads';
-import { newId } from '$lib/utils/ids';
 import { getListingForAuthor } from '$lib/server/versions';
+import { newId } from '$lib/utils/ids';
+import type { RequestHandler } from './$types';
 
 const Body = z.object({
   versionId: z.string().min(1),
-  files: z.array(z.object({
-    r2Key: z.string().min(1),
-    filename: z.string().min(1),
-    originalFilename: z.string().min(1),
-    size: z.number().int().positive(),
-    hash: z.string().nullable().optional()
-  })).min(1)
+  files: z
+    .array(
+      z.object({
+        r2Key: z.string().min(1),
+        filename: z.string().min(1),
+        originalFilename: z.string().min(1),
+        size: z.number().int().positive(),
+        hash: z.string().nullable().optional(),
+      }),
+    )
+    .min(1),
 });
 
 export const POST: RequestHandler = async (event) => {
@@ -25,9 +29,12 @@ export const POST: RequestHandler = async (event) => {
   const listing = await getListingForAuthor(db, event.params.id, user.id);
   if (!listing) throw error(404, 'Not found');
 
-  let body;
-  try { body = Body.parse(await event.request.json()); }
-  catch { throw error(400, 'Invalid request body'); }
+  let body: z.infer<typeof Body>;
+  try {
+    body = Body.parse(await event.request.json());
+  } catch {
+    throw error(400, 'Invalid request body');
+  }
 
   const ok = await verifyAllUploaded(body.files.map((f) => f.r2Key));
   if (!ok) throw error(502, 'One or more files were not received by storage');
@@ -40,7 +47,7 @@ export const POST: RequestHandler = async (event) => {
       filename: f.filename,
       originalFilename: f.originalFilename,
       size: f.size,
-      hash: f.hash ?? null
+      hash: f.hash ?? null,
     });
   }
   if (listing.type !== 'romhack') {

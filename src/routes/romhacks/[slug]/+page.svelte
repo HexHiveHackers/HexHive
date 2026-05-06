@@ -1,10 +1,10 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
   import VersionTimeline from '$lib/components/listings/VersionTimeline.svelte';
   import ReportButton from '$lib/components/moderation/ReportButton.svelte';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
-  import { page } from '$app/state';
 
   let { data } = $props();
   const { listing, meta, files, versions, authorName } = data.detail;

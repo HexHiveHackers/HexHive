@@ -1,6 +1,6 @@
+import { passkey } from '@better-auth/passkey';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { passkey } from '@better-auth/passkey';
 import { env } from '$env/dynamic/private';
 import { db } from './db';
 
@@ -20,16 +20,16 @@ export const auth = betterAuth({
       : {}),
     ...(env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET
       ? { discord: { clientId: env.DISCORD_CLIENT_ID, clientSecret: env.DISCORD_CLIENT_SECRET } }
-      : {})
+      : {}),
   },
 
   plugins: [
     passkey({
       rpName: 'HexHive',
       rpID: new URL(env.BETTER_AUTH_URL).hostname,
-      origin: env.BETTER_AUTH_URL
-    })
-  ]
+      origin: env.BETTER_AUTH_URL,
+    }),
+  ],
 });
 
 export type Session = typeof auth.$Infer.Session;

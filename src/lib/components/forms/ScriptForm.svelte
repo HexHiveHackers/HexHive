@@ -1,8 +1,8 @@
 <script lang="ts">
-  import AssetHiveBaseFields from './AssetHiveBaseFields.svelte';
   import { Input } from '$lib/components/ui/input';
   import { Label } from '$lib/components/ui/label';
   import { SUPPORTED_BASE_ROM_VERSION } from '$lib/schemas/zod-helpers';
+  import AssetHiveBaseFields from './AssetHiveBaseFields.svelte';
 
   type V = {
     title: string; description: string;

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { Input } from '$lib/components/ui/input';
-  import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge';
+  import { Button } from '$lib/components/ui/button';
+  import { Input } from '$lib/components/ui/input';
 
   let { data } = $props();
   const route = (t: string) => t === 'romhack' ? 'romhacks' : `${t}s`;

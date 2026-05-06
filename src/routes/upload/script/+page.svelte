@@ -1,8 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { Button } from '$lib/components/ui/button';
-  import ScriptForm from '$lib/components/forms/ScriptForm.svelte';
   import FileDropzone from '$lib/components/forms/FileDropzone.svelte';
+  import ScriptForm from '$lib/components/forms/ScriptForm.svelte';
+  import { Button } from '$lib/components/ui/button';
 
   let form = $state({
     title: '', description: '',

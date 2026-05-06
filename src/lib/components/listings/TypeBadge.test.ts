@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/svelte';
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import TypeBadge from './TypeBadge.svelte';
 
 describe('TypeBadge', () => {

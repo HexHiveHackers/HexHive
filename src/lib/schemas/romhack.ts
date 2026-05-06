@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ListingBase } from './listing';
-import { baseRom, baseRomVersion, baseRomRegion } from './zod-helpers';
+import { baseRom, baseRomRegion, baseRomVersion } from './zod-helpers';
 
 export const RomhackInput = ListingBase.extend({
   baseRom,
@@ -12,7 +12,7 @@ export const RomhackInput = ListingBase.extend({
   tags: z.array(z.string().min(1).max(40)).default([]),
   screenshots: z.array(z.string().url()).default([]),
   boxart: z.array(z.string().url()).default([]),
-  trailer: z.array(z.string().url()).default([])
+  trailer: z.array(z.string().url()).default([]),
 });
 
 export type RomhackInput = z.infer<typeof RomhackInput>;

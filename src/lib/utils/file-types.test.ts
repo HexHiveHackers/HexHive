@@ -1,17 +1,17 @@
-import { describe, it, expect } from 'vitest';
-import { validateUploads, ROMHACK_LIMITS } from './file-types';
+import { describe, expect, it } from 'vitest';
+import { ROMHACK_LIMITS, validateUploads } from './file-types';
 
 describe('validateUploads (romhack)', () => {
   it('accepts a single .ips under cap', () => {
     const r = validateUploads('romhack', [
-      { filename: 'patch.ips', contentType: 'application/octet-stream', size: 2_000_000 }
+      { filename: 'patch.ips', contentType: 'application/octet-stream', size: 2_000_000 },
     ]);
     expect(r.ok).toBe(true);
   });
 
   it('rejects a disallowed extension', () => {
     const r = validateUploads('romhack', [
-      { filename: 'evil.exe', contentType: 'application/octet-stream', size: 100 }
+      { filename: 'evil.exe', contentType: 'application/octet-stream', size: 100 },
     ]);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/extension/i);
@@ -19,7 +19,7 @@ describe('validateUploads (romhack)', () => {
 
   it('rejects when file exceeds per-file size cap', () => {
     const r = validateUploads('romhack', [
-      { filename: 'huge.ips', contentType: 'application/octet-stream', size: ROMHACK_LIMITS.perFileBytes + 1 }
+      { filename: 'huge.ips', contentType: 'application/octet-stream', size: ROMHACK_LIMITS.perFileBytes + 1 },
     ]);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/too large/i);
@@ -30,7 +30,7 @@ describe('validateUploads (romhack)', () => {
     const files = Array.from({ length: 5 }, (_, i) => ({
       filename: `p${i}.ips`,
       contentType: 'application/octet-stream',
-      size: big
+      size: big,
     }));
     const r = validateUploads('romhack', files);
     expect(r.ok).toBe(false);
@@ -44,29 +44,21 @@ describe('validateUploads (romhack)', () => {
 
 describe('validateUploads (sprite)', () => {
   it('accepts a .png', () => {
-    expect(validateUploads('sprite', [
-      { filename: 'a.png', contentType: 'image/png', size: 1000 }
-    ]).ok).toBe(true);
+    expect(validateUploads('sprite', [{ filename: 'a.png', contentType: 'image/png', size: 1000 }]).ok).toBe(true);
   });
   it('rejects .exe', () => {
-    expect(validateUploads('sprite', [
-      { filename: 'a.exe', contentType: 'x', size: 100 }
-    ]).ok).toBe(false);
+    expect(validateUploads('sprite', [{ filename: 'a.exe', contentType: 'x', size: 100 }]).ok).toBe(false);
   });
 });
 
 describe('validateUploads (sound)', () => {
   it('accepts a .wav', () => {
-    expect(validateUploads('sound', [
-      { filename: 'a.wav', contentType: 'audio/wav', size: 1000 }
-    ]).ok).toBe(true);
+    expect(validateUploads('sound', [{ filename: 'a.wav', contentType: 'audio/wav', size: 1000 }]).ok).toBe(true);
   });
 });
 
 describe('validateUploads (script)', () => {
   it('accepts a .s', () => {
-    expect(validateUploads('script', [
-      { filename: 'a.s', contentType: 'text/plain', size: 1000 }
-    ]).ok).toBe(true);
+    expect(validateUploads('script', [{ filename: 'a.s', contentType: 'text/plain', size: 1000 }]).ok).toBe(true);
   });
 });

@@ -1,14 +1,16 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$env/dynamic/private', () => ({
   env: {
-    R2_ACCOUNT_ID: 'acc', R2_ACCESS_KEY_ID: 'k', R2_SECRET_ACCESS_KEY: 's',
-    R2_BUCKET: 'b'
-  }
+    R2_ACCOUNT_ID: 'acc',
+    R2_ACCESS_KEY_ID: 'k',
+    R2_SECRET_ACCESS_KEY: 's',
+    R2_BUCKET: 'b',
+  },
 }));
 
 vi.mock('@aws-sdk/s3-request-presigner', () => ({
-  getSignedUrl: vi.fn(async () => 'https://signed.example/url')
+  getSignedUrl: vi.fn(async () => 'https://signed.example/url'),
 }));
 
 beforeEach(() => vi.clearAllMocks());

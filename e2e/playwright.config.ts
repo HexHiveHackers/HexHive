@@ -8,10 +8,10 @@ export default defineConfig({
     command: 'bun run build && bun run preview --port 4173',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000
+    timeout: 120_000,
   },
   use: {
     baseURL: 'http://localhost:4173',
-    trace: 'retain-on-failure'
-  }
+    trace: 'retain-on-failure',
+  },
 });

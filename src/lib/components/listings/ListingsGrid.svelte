@@ -1,5 +1,6 @@
 <script lang="ts" generics="T">
   import { type Snippet } from 'svelte';
+
   let { items, item, empty }: {
     items: T[];
     item: Snippet<[T]>;

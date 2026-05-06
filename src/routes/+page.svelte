@@ -1,7 +1,8 @@
 <script lang="ts">
-  import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
-  import RomhackCard from '$lib/components/listings/RomhackCard.svelte';
   import AssetHiveCard from '$lib/components/listings/AssetHiveCard.svelte';
+  import RomhackCard from '$lib/components/listings/RomhackCard.svelte';
+  import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
+
   let { data } = $props();
 </script>
 

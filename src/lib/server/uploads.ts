@@ -1,4 +1,4 @@
-import { presignPut, headObject } from '$lib/storage/r2';
+import { headObject, presignPut } from '$lib/storage/r2';
 import { newId } from '$lib/utils/ids';
 
 export interface PresignRequestFile {
@@ -30,9 +30,9 @@ export async function presignFor(input: {
         url,
         filename: r2Key.split('/').pop()!,
         originalFilename: f.filename,
-        size: f.size
+        size: f.size,
       };
-    })
+    }),
   );
 }
 

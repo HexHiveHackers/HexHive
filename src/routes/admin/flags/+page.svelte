@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
+
 	let { data } = $props();
 	const route = (t: string) => (t === 'romhack' ? 'romhacks' : `${t}s`);
 </script>

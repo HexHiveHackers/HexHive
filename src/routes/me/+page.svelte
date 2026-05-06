@@ -1,6 +1,6 @@
 <script lang="ts">
-  import ProfileForm from '$lib/components/profile/ProfileForm.svelte';
   import AvatarUpload from '$lib/components/profile/AvatarUpload.svelte';
+  import ProfileForm from '$lib/components/profile/ProfileForm.svelte';
   import { Badge } from '$lib/components/ui/badge';
 
   let { data } = $props();

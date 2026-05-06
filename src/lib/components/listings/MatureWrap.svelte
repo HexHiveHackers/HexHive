@@ -1,5 +1,6 @@
 <script lang="ts">
   import { type Snippet } from 'svelte';
+
   let { mature, children }: { mature: boolean; children: Snippet } = $props();
   let revealed = $state(false);
 </script>

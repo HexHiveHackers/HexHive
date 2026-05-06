@@ -1,10 +1,10 @@
-import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { db } from '$lib/db';
+import { username as usernameSchema } from '$lib/schemas/zod-helpers';
 import { requireUser } from '$lib/server/auth-utils';
 import { getOrCreateProfile, setUsername } from '$lib/server/profiles';
-import { username as usernameSchema } from '$lib/schemas/zod-helpers';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
   const user = requireUser(event);
@@ -27,5 +27,5 @@ export const actions: Actions = {
       return fail(400, { error: (e as Error).message });
     }
     throw redirect(303, '/me');
-  }
+  },
 };

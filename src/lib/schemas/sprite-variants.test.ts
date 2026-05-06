@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { validateTriple } from './sprite-variants';
 
 describe('validateTriple', () => {
@@ -45,8 +45,6 @@ describe('validateTriple', () => {
   });
 
   it('accepts a record of arrays for SpriteFileMap-style entries', () => {
-    expect(
-      validateTriple('Battle', 'Pokemon', { default: ['Front'], shiny: ['Back'] }).ok
-    ).toBe(true);
+    expect(validateTriple('Battle', 'Pokemon', { default: ['Front'], shiny: ['Back'] }).ok).toBe(true);
   });
 });

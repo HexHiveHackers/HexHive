@@ -5,7 +5,7 @@ export const ListingBase = z.object({
   title: z.string().min(1).max(120),
   description: z.string().max(10_000).default(''),
   permissions: z.array(z.enum(ASSET_PERMISSION)),
-  slug: slug.optional()
+  slug: slug.optional(),
 });
 
 export type ListingBaseInput = z.infer<typeof ListingBase>;

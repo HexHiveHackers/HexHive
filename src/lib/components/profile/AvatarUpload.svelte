@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Button } from '$lib/components/ui/button';
   import { invalidateAll } from '$app/navigation';
+  import { Button } from '$lib/components/ui/button';
   import Avatar from './Avatar.svelte';
 
   let { avatarKey, name }: { avatarKey: string | null; name: string } = $props();

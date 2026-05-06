@@ -1,7 +1,7 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'vite';
 import type { Plugin } from 'vite';
+import { defineConfig } from 'vite';
 
 /**
  * Workaround for bits-ui v2 + Tailwind v4 vite plugin incompatibility.
@@ -21,10 +21,10 @@ function excludeNodeModulesSvelteStyles(): Plugin {
       if (id.includes('node_modules') && id.includes('?svelte') && id.includes('type=style')) {
         return '';
       }
-    }
+    },
   };
 }
 
 export default defineConfig({
-  plugins: [excludeNodeModulesSvelteStyles(), sveltekit(), tailwindcss()]
+  plugins: [excludeNodeModulesSvelteStyles(), sveltekit(), tailwindcss()],
 });

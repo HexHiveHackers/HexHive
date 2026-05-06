@@ -1,6 +1,6 @@
-import type { RequestHandler } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { presignGet } from '$lib/storage/r2';
+import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params }) => {
   const key = `avatars/${params.rest}`;

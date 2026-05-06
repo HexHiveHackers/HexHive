@@ -1,8 +1,8 @@
-import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { db } from '$lib/db';
 import { requireUser } from '$lib/server/auth-utils';
 import { getListingForAuthor } from '$lib/server/versions';
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
   const user = requireUser(event);

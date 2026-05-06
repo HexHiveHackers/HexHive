@@ -1,18 +1,28 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { buildOgMeta, escapeAttr } from './seo';
 
 describe('buildOgMeta', () => {
   it('points romhack at /romhacks/', () => {
     const m = buildOgMeta({
-      origin: 'https://hexhive.example', listingType: 'romhack', slug: 'kaizo', title: 'Kaizo', description: 'hard'
+      origin: 'https://hexhive.example',
+      listingType: 'romhack',
+      slug: 'kaizo',
+      title: 'Kaizo',
+      description: 'hard',
     });
     expect(m.url).toBe('https://hexhive.example/romhacks/kaizo');
     expect(m.title).toBe('Kaizo — HexHive');
   });
   it('plurals asset-hives correctly', () => {
-    expect(buildOgMeta({ origin: 'h', listingType: 'sprite', slug: 's', title: 't', description: '' }).url).toBe('h/sprites/s');
-    expect(buildOgMeta({ origin: 'h', listingType: 'sound', slug: 's', title: 't', description: '' }).url).toBe('h/sounds/s');
-    expect(buildOgMeta({ origin: 'h', listingType: 'script', slug: 's', title: 't', description: '' }).url).toBe('h/scripts/s');
+    expect(buildOgMeta({ origin: 'h', listingType: 'sprite', slug: 's', title: 't', description: '' }).url).toBe(
+      'h/sprites/s',
+    );
+    expect(buildOgMeta({ origin: 'h', listingType: 'sound', slug: 's', title: 't', description: '' }).url).toBe(
+      'h/sounds/s',
+    );
+    expect(buildOgMeta({ origin: 'h', listingType: 'script', slug: 's', title: 't', description: '' }).url).toBe(
+      'h/scripts/s',
+    );
   });
   it('truncates long descriptions', () => {
     const long = 'x'.repeat(500);

@@ -23,7 +23,7 @@ export async function createNextVersion(db: DB, input: NewVersionInput) {
     listingId: input.listingId,
     version: input.version,
     changelog: input.changelog ?? null,
-    isCurrent: true
+    isCurrent: true,
   });
   return { id };
 }
