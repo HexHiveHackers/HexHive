@@ -38,6 +38,22 @@ yarn-error.log*
 Thumbs.db
 .idea/
 
+# Emacs (backups, autosaves, lock files)
+*~
+.#*
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Vim
+*.swp
+*.swo
+*.swn
+
 # TypeScript incremental build info
 *.tsbuildinfo
 
@@ -53,6 +69,3 @@ Thumbs.db
 .vercel/
 .netlify/
 
-# Editor backup files of .env
-.env~
-*.env~
