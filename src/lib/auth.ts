@@ -33,3 +33,11 @@ export const auth = betterAuth({
 });
 
 export type Session = typeof auth.$Infer.Session;
+
+export type SocialProvider = 'google' | 'github' | 'discord';
+
+export const enabledSocialProviders: SocialProvider[] = [
+  env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? 'google' : null,
+  env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET ? 'github' : null,
+  env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET ? 'discord' : null,
+].filter((p): p is SocialProvider => p !== null);
