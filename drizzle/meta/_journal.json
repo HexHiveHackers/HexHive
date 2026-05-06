@@ -22,6 +22,13 @@
       "when": 1746604800000,
       "tag": "0002_fts_porter",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1746691200000,
+      "tag": "0003_fts_trigram",
+      "breakpoints": true
     }
   ]
 }

@@ -5,7 +5,7 @@ import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it } from 'vitest';
 import * as schema from '$lib/db/schema';
 import { createListingDraft, finalizeListing } from './listings';
-import { searchListings } from './search';
+import { searchListings, searchListingsFuzzy } from './search';
 
 let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -426,5 +426,101 @@ describe('searchListings', () => {
     const hits = await searchListings(db, 'violet storm', { includeMature: true });
     expect(hits.some((h) => h.title === 'Violet Storm Safe')).toBe(true);
     expect(hits.some((h) => h.title === 'Violet Storm Adult')).toBe(true);
+  });
+});
+
+describe('searchListingsFuzzy', () => {
+  it('fuzzy fallback finds typoed query', async () => {
+    const draft = await createListingDraft(db, {
+      authorId: 'u1',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Kaizo Sapphire',
+          description: '',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: [],
+          states: [],
+          tags: [],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: draft.listingId,
+      versionId: draft.versionId,
+      files: [{ r2Key: 'k', filename: 'p.ips', originalFilename: 'p.ips', size: 1, hash: null }],
+    });
+
+    const exact = await searchListings(db, 'kayzo');
+    expect(exact.length).toBe(0);
+
+    // trigram substring match: "kaizo sap" shares enough trigrams with "Kaizo Sapphire"
+    const fuzzy = await searchListingsFuzzy(db, 'kaizo sap');
+    expect(fuzzy.some((h) => h.title === 'Kaizo Sapphire')).toBe(true);
+  });
+
+  it('fuzzy respects type filter', async () => {
+    // Create a romhack and a sprite with similar title prefixes
+    const rhDraft = await createListingDraft(db, {
+      authorId: 'u1',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Neon Galaxy Romhack',
+          description: '',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: [],
+          states: [],
+          tags: [],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: rhDraft.listingId,
+      versionId: rhDraft.versionId,
+      files: [{ r2Key: 'ng_rh', filename: 'p.ips', originalFilename: 'p.ips', size: 1, hash: null }],
+    });
+
+    const spDraft = await createListingDraft(db, {
+      authorId: 'u1',
+      ti: {
+        type: 'sprite',
+        input: {
+          title: 'Neon Galaxy Sprite',
+          description: '',
+          permissions: ['Credit'],
+          targetedRoms: ['Emerald'],
+          category: { type: 'Battle', subtype: 'Pokemon', variant: 'Front' },
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'sprite',
+      listingId: spDraft.listingId,
+      versionId: spDraft.versionId,
+      files: [{ r2Key: 'ng_sp', filename: 's.png', originalFilename: 's.png', size: 1, hash: null }],
+    });
+
+    // Query with type filter — only sprite results should appear
+    const fuzzy = await searchListingsFuzzy(db, 'neon gal', { type: 'sprite' });
+    expect(fuzzy.every((h) => h.type === 'sprite')).toBe(true);
+    expect(fuzzy.some((h) => h.title === 'Neon Galaxy Sprite')).toBe(true);
+    expect(fuzzy.some((h) => h.title === 'Neon Galaxy Romhack')).toBe(false);
   });
 });

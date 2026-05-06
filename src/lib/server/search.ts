@@ -87,3 +87,53 @@ export async function searchListings(db: DB, query: string, opts: SearchOpts = {
     return { ...hit, snippet: sanitizeSnippet(String(hit.snippet ?? '')), rank: Number(hit.rank) };
   });
 }
+
+/**
+ * Fuzzy/typo-tolerant search using the trigram FTS5 table.
+ * Use as a fallback when `searchListings` returns zero hits.
+ */
+export async function searchListingsFuzzy(db: DB, query: string, opts: SearchOpts = {}): Promise<SearchHit[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const limit = opts.limit ?? 20;
+  const result = await db.run(sql`
+    SELECT
+      l.id    AS id,
+      l.type  AS type,
+      l.slug  AS slug,
+      l.title AS title,
+      snippet(listings_fts_trgm, 3, '<b>', '</b>', '…', 16) AS snippet,
+      0 AS rank
+    FROM listings_fts_trgm
+    JOIN listing l ON l.id = listings_fts_trgm.listing_id
+    WHERE listings_fts_trgm MATCH ${q}
+      AND l.status = 'published'
+      ${opts.includeMature ? sql`` : sql`AND l.mature = 0`}
+      ${opts.type ? sql`AND l.type = ${opts.type}` : sql``}
+    LIMIT ${limit}
+  `);
+
+  // Mirror the array-vs-object branch the existing searchListings uses.
+  const rows = (Array.isArray(result.rows) ? result.rows : []) as unknown[];
+  return rows.map((r): SearchHit => {
+    const row = r as Record<string, unknown> | unknown[];
+    if (Array.isArray(row)) {
+      return {
+        id: String(row[0]),
+        type: row[1] as SearchHit['type'],
+        slug: String(row[2]),
+        title: String(row[3]),
+        snippet: sanitizeSnippet(String(row[4] ?? '')),
+        rank: 0,
+      };
+    }
+    return {
+      id: String(row.id),
+      type: row.type as SearchHit['type'],
+      slug: String(row.slug),
+      title: String(row.title),
+      snippet: sanitizeSnippet(String(row.snippet ?? '')),
+      rank: 0,
+    };
+  });
+}
