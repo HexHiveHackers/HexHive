@@ -5,6 +5,7 @@ import type { ListingType } from '$lib/db/schema';
 import { newId, slugify, uniqueSlug } from '$lib/utils/ids';
 import type { RomhackInput } from '$lib/schemas/romhack';
 import { writeMeta, type ListingTypedInput } from './meta-writers';
+import { listVersionsForListing } from './versions';
 
 type DB = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -174,6 +175,7 @@ export interface RomhackDetail {
   meta: typeof schema.romhackMeta.$inferSelect;
   version: typeof schema.listingVersion.$inferSelect;
   files: (typeof schema.listingFile.$inferSelect)[];
+  versions: (typeof schema.listingVersion.$inferSelect)[];
   authorName: string;
 }
 
@@ -208,11 +210,14 @@ export async function getRomhackBySlug(db: DB, slug: string): Promise<RomhackDet
     .where(eq(schema.user.id, listing.authorId))
     .limit(1);
 
+  const versions = await listVersionsForListing(db, listing.id);
+
   return {
     listing,
     meta: metaRows[0],
     version: versionRows[0],
     files: fileRows,
+    versions,
     authorName: authorRows[0]?.name ?? 'unknown'
   };
 }
@@ -272,6 +277,7 @@ export interface AssetHiveDetail {
     | { kind: 'script'; data: typeof schema.scriptMeta.$inferSelect };
   version: typeof schema.listingVersion.$inferSelect;
   files: (typeof schema.listingFile.$inferSelect)[];
+  versions: (typeof schema.listingVersion.$inferSelect)[];
   authorName: string;
 }
 
@@ -356,7 +362,9 @@ export async function getAssetHiveBySlug(
       .limit(1)
   )[0];
 
-  return { listing, base, meta, version, files, authorName: author?.name ?? 'unknown' };
+  const versions = await listVersionsForListing(db, listing.id);
+
+  return { listing, base, meta, version, files, versions, authorName: author?.name ?? 'unknown' };
 }
 
 export async function incrementDownloads(db: DB, listingId: string): Promise<void> {

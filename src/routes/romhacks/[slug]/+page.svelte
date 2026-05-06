@@ -1,10 +1,13 @@
 <script lang="ts">
   import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
+  import VersionTimeline from '$lib/components/listings/VersionTimeline.svelte';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
+  import { page } from '$app/state';
 
   let { data } = $props();
-  const { listing, meta, files, authorName } = data.detail;
+  const { listing, meta, files, versions, authorName } = data.detail;
+  const isAuthor = page.data.user?.id === listing.authorId;
 </script>
 
 <article class="mx-auto max-w-4xl px-4 py-10">
@@ -54,5 +57,17 @@
         </li>
       {/each}
     </ul>
+  </section>
+
+  <section class="border rounded-lg p-4 mt-6">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-medium">Versions</h2>
+      {#if isAuthor}
+        <a href={`/upload/${listing.type}/version?id=${listing.id}`}>
+          <Button size="sm" variant="outline">Upload new version</Button>
+        </a>
+      {/if}
+    </div>
+    <VersionTimeline {versions} />
   </section>
 </article>
