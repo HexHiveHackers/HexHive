@@ -18,24 +18,26 @@ vi.mock('$lib/server/listings', async () => ({
 
 beforeEach(() => vi.clearAllMocks());
 
-describe('handlePresign (POST /api/uploads/presign)', () => {
+describe('_handlePresign (POST /api/uploads/presign)', () => {
   it('401s without a user', async () => {
-    const { handlePresign } = await import('./+server');
-    await expect(handlePresign(buildEvent({ body: { type: 'romhack' }, user: null }))).rejects.toMatchObject({
+    const { _handlePresign } = await import('./+server');
+    await expect(_handlePresign(buildEvent({ body: { type: 'romhack' }, user: null }))).rejects.toMatchObject({
       status: 303,
     });
   });
 
   it('400s when validation fails', async () => {
-    const { handlePresign } = await import('./+server');
-    await expect(handlePresign(buildEvent({ body: { type: 'romhack', input: {}, files: [] } }))).rejects.toMatchObject({
-      status: 400,
-    });
+    const { _handlePresign } = await import('./+server');
+    await expect(_handlePresign(buildEvent({ body: { type: 'romhack', input: {}, files: [] } }))).rejects.toMatchObject(
+      {
+        status: 400,
+      },
+    );
   });
 
   it('returns presigned URLs for a valid romhack', async () => {
-    const { handlePresign } = await import('./+server');
-    const res = await handlePresign(
+    const { _handlePresign } = await import('./+server');
+    const res = await _handlePresign(
       buildEvent({
         body: {
           type: 'romhack',
@@ -60,10 +62,10 @@ describe('handlePresign (POST /api/uploads/presign)', () => {
   });
 });
 
-describe('handlePresign — asset-hive types', () => {
+describe('_handlePresign — asset-hive types', () => {
   it('presigns a sound', async () => {
-    const { handlePresign } = await import('./+server');
-    const res = await handlePresign(
+    const { _handlePresign } = await import('./+server');
+    const res = await _handlePresign(
       buildEvent({
         body: {
           type: 'sound',
@@ -82,8 +84,8 @@ describe('handlePresign — asset-hive types', () => {
   });
 
   it('presigns a sprite with valid category', async () => {
-    const { handlePresign } = await import('./+server');
-    const res = await handlePresign(
+    const { _handlePresign } = await import('./+server');
+    const res = await _handlePresign(
       buildEvent({
         body: {
           type: 'sprite',

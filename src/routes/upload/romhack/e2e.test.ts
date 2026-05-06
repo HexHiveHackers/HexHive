@@ -27,11 +27,11 @@ beforeAll(async () => {
 
 describe('romhack upload happy path', () => {
   it('drafts, finalizes, lists, fetches detail', async () => {
-    const { handlePresign } = await import('../../api/uploads/presign/+server');
-    const { handleFinalize } = await import('../../api/uploads/finalize/+server');
+    const { _handlePresign } = await import('../../api/uploads/presign/+server');
+    const { _handleFinalize } = await import('../../api/uploads/finalize/+server');
     const { listRomhacks, getRomhackBySlug } = await import('$lib/server/listings');
 
-    const presignRes = await handlePresign(
+    const presignRes = await _handlePresign(
       buildEvent({
         body: {
           type: 'romhack',
@@ -49,7 +49,7 @@ describe('romhack upload happy path', () => {
     );
     const presignJson = await presignRes.json();
 
-    const finalizeRes = await handleFinalize(
+    const finalizeRes = await _handleFinalize(
       buildEvent({
         body: {
           listingId: presignJson.listingId,

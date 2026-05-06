@@ -29,7 +29,7 @@ export type FinalizeCtx = {
   url: URL;
 };
 
-export async function handleFinalize(event: FinalizeCtx) {
+export async function _handleFinalize(event: FinalizeCtx) {
   requireUser(event);
 
   let body: z.infer<typeof FinalizeBody>;
@@ -52,4 +52,4 @@ export async function handleFinalize(event: FinalizeCtx) {
   return json({ ok: true });
 }
 
-export const POST: RequestHandler = handleFinalize;
+export const POST: RequestHandler = _handleFinalize;

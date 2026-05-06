@@ -26,6 +26,7 @@ const isPublic = (pathname: string) =>
   pathname.startsWith('/privacy') ||
   pathname.startsWith('/terms') ||
   pathname.startsWith('/api/downloads/') ||
+  pathname.startsWith('/api/preview/') ||
   PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
 export const handle: Handle = async ({ event, resolve }) => {

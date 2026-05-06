@@ -35,7 +35,7 @@ export type PresignCtx = {
   url: URL;
 };
 
-export async function handlePresign(event: PresignCtx) {
+export async function _handlePresign(event: PresignCtx) {
   const user = requireUser(event);
 
   let parsed: z.infer<typeof PresignBody>;
@@ -65,4 +65,4 @@ export async function handlePresign(event: PresignCtx) {
   });
 }
 
-export const POST: RequestHandler = handlePresign;
+export const POST: RequestHandler = _handlePresign;

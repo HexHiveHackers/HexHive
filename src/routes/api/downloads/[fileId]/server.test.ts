@@ -46,17 +46,17 @@ beforeAll(async () => {
   });
 });
 
-describe('handleDownload (GET /api/downloads/[fileId])', () => {
+describe('_handleDownload (GET /api/downloads/[fileId])', () => {
   it('404s when file not found', async () => {
-    const { handleDownload } = await import('./+server');
-    await expect(handleDownload({ params: { fileId: 'nope' } })).rejects.toMatchObject({
+    const { _handleDownload } = await import('./+server');
+    await expect(_handleDownload({ params: { fileId: 'nope' } })).rejects.toMatchObject({
       status: 404,
     });
   });
 
   it('redirects to signed R2 URL and increments counter', async () => {
-    const { handleDownload } = await import('./+server');
-    await expect(handleDownload({ params: { fileId: 'F1' } })).rejects.toMatchObject({
+    const { _handleDownload } = await import('./+server');
+    await expect(_handleDownload({ params: { fileId: 'F1' } })).rejects.toMatchObject({
       status: 303,
       location: 'https://get.example/k1',
     });

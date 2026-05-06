@@ -14,10 +14,10 @@ vi.mock('$lib/server/listings', () => ({
 
 beforeEach(() => vi.clearAllMocks());
 
-describe('handleFinalize (POST /api/uploads/finalize)', () => {
+describe('_handleFinalize (POST /api/uploads/finalize)', () => {
   it('401s without a user', async () => {
-    const { handleFinalize } = await import('./+server');
-    await expect(handleFinalize(buildEvent({ user: null, body: {} }))).rejects.toMatchObject({
+    const { _handleFinalize } = await import('./+server');
+    await expect(_handleFinalize(buildEvent({ user: null, body: {} }))).rejects.toMatchObject({
       status: 303,
     });
   });
@@ -27,9 +27,9 @@ describe('handleFinalize (POST /api/uploads/finalize)', () => {
     vi.mocked(r2.headObject).mockImplementationOnce(async () => {
       throw new Error('no');
     });
-    const { handleFinalize } = await import('./+server');
+    const { _handleFinalize } = await import('./+server');
     await expect(
-      handleFinalize(
+      _handleFinalize(
         buildEvent({
           body: {
             listingId: 'L',
@@ -43,8 +43,8 @@ describe('handleFinalize (POST /api/uploads/finalize)', () => {
   });
 
   it('finalizes when all keys exist', async () => {
-    const { handleFinalize } = await import('./+server');
-    const res = await handleFinalize(
+    const { _handleFinalize } = await import('./+server');
+    const res = await _handleFinalize(
       buildEvent({
         body: {
           listingId: 'L',

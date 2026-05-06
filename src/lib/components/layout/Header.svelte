@@ -48,10 +48,10 @@
 
   type NavLink = { href: string; label: string; type: 'romhack' | 'sprite' | 'sound' | 'script' };
   const navLinks: NavLink[] = [
-    { href: '/romhacks', label: 'Romhacks', type: 'romhack' },
     { href: '/sprites', label: 'Sprites', type: 'sprite' },
     { href: '/sounds', label: 'Sounds', type: 'sound' },
     { href: '/scripts', label: 'Scripts', type: 'script' },
+    { href: '/romhacks', label: 'Romhacks', type: 'romhack' },
   ];
 </script>
 
