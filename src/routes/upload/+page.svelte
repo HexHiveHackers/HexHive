@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ChevronLeft, ChevronRight, FileCode, Gamepad2, Music, Sparkles, Upload } from '@lucide/svelte';
+  import { untrack } from 'svelte';
   import { fly } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import FileDropzone from '$lib/components/forms/FileDropzone.svelte';
@@ -78,8 +79,11 @@
 
   // -------- state --------
 
-  let type = $state<AssetType | null>(data.initialType);
-  let step = $state<StepId>(data.initialType ? 1 : 0);
+  // One-time seed from the server-provided ?type query; the user can then
+  // change asset type freely without resetting back to URL state.
+  const initialType = untrack(() => data.initialType);
+  let type = $state<AssetType | null>(initialType);
+  let step = $state<StepId>(initialType ? 1 : 0);
   let direction = $state<'forward' | 'back'>('forward');
   let busy = $state(false);
   let err = $state<string | null>(null);
