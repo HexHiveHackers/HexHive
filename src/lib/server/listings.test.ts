@@ -1,5 +1,4 @@
 import { createClient } from '@libsql/client';
-import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -56,9 +55,9 @@ describe('Romhack listing CRUD', () => {
 
     const got = await getRomhackBySlug(db, 'kaizo-emerald');
     expect(got).not.toBeNull();
-    expect(got!.listing.status).toBe('published');
-    expect(got!.files).toHaveLength(1);
-    expect(got!.meta.baseRom).toBe('Emerald');
+    expect(got?.listing.status).toBe('published');
+    expect(got?.files).toHaveLength(1);
+    expect(got?.meta.baseRom).toBe('Emerald');
   });
 
   it('lists only published romhacks', async () => {

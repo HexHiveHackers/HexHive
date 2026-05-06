@@ -1,5 +1,4 @@
 import { createClient } from '@libsql/client';
-import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -55,7 +54,7 @@ describe('versions', () => {
 
     const versions = await listVersionsForListing(db, a.listingId);
     expect(versions).toHaveLength(2);
-    expect(versions.find((v) => v.version === '1.1.0')!.isCurrent).toBe(true);
-    expect(versions.find((v) => v.version === '1.0.0')!.isCurrent).toBe(false);
+    expect(versions.find((v) => v.version === '1.1.0')?.isCurrent).toBe(true);
+    expect(versions.find((v) => v.version === '1.0.0')?.isCurrent).toBe(false);
   });
 });

@@ -52,7 +52,7 @@ export function validateUploads(type: ListingType, files: FileMeta[]): Result {
 
   let total = 0;
   for (const f of files) {
-    const ext = '.' + (f.filename.split('.').pop() ?? '').toLowerCase();
+    const ext = `.${(f.filename.split('.').pop() ?? '').toLowerCase()}`;
     if (!(limits.allowedExtensions as readonly string[]).includes(ext)) {
       return { ok: false, error: `Extension ${ext} not allowed for ${type}` };
     }
