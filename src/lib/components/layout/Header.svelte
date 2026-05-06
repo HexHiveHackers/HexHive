@@ -1,9 +1,21 @@
 <script lang="ts">
   import { authClient } from '$lib/auth-client';
+  import Avatar from '$lib/components/profile/Avatar.svelte';
   import SearchBar from '$lib/components/search/SearchBar.svelte';
   import { Button } from '$lib/components/ui/button';
 
-  let { user }: { user: { name: string; image?: string | null } | null } = $props();
+  type HeaderUser = {
+    id: string;
+    name: string;
+    username: string;
+    avatarKey: string | null;
+  };
+  let { user }: { user: HeaderUser | null } = $props();
+
+  // Display the HexHive username if set; otherwise fall back to whatever
+  // the OAuth provider gave us (Better Auth's user.name) so the link still
+  // reads sensibly during the brief window before /me/setup.
+  const displayName = $derived(user ? user.username || user.name : '');
 
   let mobileMenuOpen = $state(false);
 
@@ -53,7 +65,10 @@
     <div class="hidden lg:flex items-center gap-1 text-sm shrink-0">
       <span class="mr-1 h-5 w-px bg-border"></span>
       {#if user}
-        <a class="px-3 py-1 hover:underline" href="/me">{user.name}</a>
+        <a class="flex items-center gap-2 px-3 py-1 hover:underline" href="/me">
+          <Avatar avatarKey={user.avatarKey} name={displayName} size={24} />
+          <span>{displayName}</span>
+        </a>
         <Button variant="ghost" size="sm" onclick={signOut}>Sign out</Button>
       {:else}
         <a class="px-3 py-1" href="/login">
@@ -101,10 +116,11 @@
         {#if user}
           <a
             href="/me"
-            class="flex min-h-12 items-center justify-center text-sm hover:underline"
+            class="flex min-h-12 items-center justify-center gap-2 text-sm hover:underline"
             onclick={() => (mobileMenuOpen = false)}
           >
-            {user.name}
+            <Avatar avatarKey={user.avatarKey} name={displayName} size={24} />
+            <span>{displayName}</span>
           </a>
           <Button variant="ghost" onclick={signOut}>Sign out</Button>
         {:else}
