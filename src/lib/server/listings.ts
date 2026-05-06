@@ -1,68 +1,75 @@
 import { and, desc, eq, like, sql } from 'drizzle-orm';
 import type { drizzle } from 'drizzle-orm/libsql';
 import * as schema from '$lib/db/schema';
+import type { ListingType } from '$lib/db/schema';
 import { newId, slugify, uniqueSlug } from '$lib/utils/ids';
 import type { RomhackInput } from '$lib/schemas/romhack';
+import { writeMeta, type ListingTypedInput } from './meta-writers';
 
 type DB = ReturnType<typeof drizzle<typeof schema>>;
 
 export type RomhackCreateInput = RomhackInput;
 
-export interface RomhackDraft {
+export interface ListingDraft {
   listingId: string;
   versionId: string;
   slug: string;
 }
 
-export async function createRomhackDraft(
-  db: DB,
-  args: { authorId: string; input: RomhackCreateInput }
-): Promise<RomhackDraft> {
-  const candidate = args.input.slug ?? slugify(args.input.title);
-  const slug = await uniqueSlug(candidate, async (s) => {
+/** @deprecated Use ListingDraft */
+export type RomhackDraft = ListingDraft;
+
+async function nextSlug(db: DB, type: ListingType, candidate: string): Promise<string> {
+  return uniqueSlug(candidate, async (s) => {
     const rows = await db
       .select({ id: schema.listing.id })
       .from(schema.listing)
-      .where(and(eq(schema.listing.type, 'romhack'), eq(schema.listing.slug, s)))
+      .where(and(eq(schema.listing.type, type), eq(schema.listing.slug, s)))
       .limit(1);
     return rows.length > 0;
   });
+}
+
+export async function createListingDraft(
+  db: DB,
+  args: { authorId: string; ti: ListingTypedInput }
+): Promise<ListingDraft> {
+  const { ti } = args;
+  const titleSlug = ti.input.slug ?? slugify(ti.input.title);
+  const slug = await nextSlug(db, ti.type, titleSlug);
 
   const listingId = newId();
   const versionId = newId();
 
   await db.insert(schema.listing).values({
     id: listingId,
-    type: 'romhack',
+    type: ti.type,
     slug,
     authorId: args.authorId,
-    title: args.input.title,
-    description: args.input.description ?? '',
-    permissions: args.input.permissions,
+    title: ti.input.title,
+    description: ti.input.description ?? '',
+    permissions: ti.input.permissions,
     status: 'draft'
   });
-  await db.insert(schema.romhackMeta).values({
-    listingId,
-    baseRom: args.input.baseRom,
-    baseRomVersion: args.input.baseRomVersion,
-    baseRomRegion: args.input.baseRomRegion,
-    release: args.input.release,
-    categories: args.input.categories ?? [],
-    states: args.input.states ?? [],
-    tags: args.input.tags ?? [],
-    screenshots: args.input.screenshots ?? [],
-    boxart: args.input.boxart ?? [],
-    trailer: args.input.trailer ?? []
-  });
+  await writeMeta(db, listingId, ti);
+
+  const versionLabel = ti.type === 'romhack' ? ti.input.release : '1.0';
   await db.insert(schema.listingVersion).values({
     id: versionId,
     listingId,
-    version: args.input.release,
+    version: versionLabel,
     isCurrent: true,
     changelog: null
   });
 
   return { listingId, versionId, slug };
+}
+
+export async function createRomhackDraft(
+  db: DB,
+  args: { authorId: string; input: RomhackCreateInput }
+): Promise<ListingDraft> {
+  return createListingDraft(db, { authorId: args.authorId, ti: { type: 'romhack', input: args.input } });
 }
 
 export interface PersistedFile {

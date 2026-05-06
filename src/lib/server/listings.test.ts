@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import * as schema from '$lib/db/schema';
 import {
   createRomhackDraft,
+  createListingDraft,
   finalizeRomhack,
   getRomhackBySlug,
   listRomhacks,
@@ -93,5 +94,62 @@ describe('Romhack listing CRUD', () => {
     const fr = await listRomhacks(db, { baseRom: 'Fire Red' });
     expect(fr.every((r) => r.baseRom === 'Fire Red')).toBe(true);
     expect(fr.some((r) => r.title === 'FR Hack')).toBe(true);
+  });
+});
+
+describe('createListingDraft for asset-hive types', () => {
+  it('drafts a sprite with category', async () => {
+    const draft = await createListingDraft(db, {
+      authorId: 'u1',
+      ti: {
+        type: 'sprite',
+        input: {
+          title: 'Sprite Pack',
+          description: '',
+          permissions: ['Free'],
+          targetedRoms: ['Emerald'],
+          category: { type: 'Battle', subtype: 'Pokemon', variant: 'Front' }
+        }
+      }
+    });
+    expect(draft.slug).toBe('sprite-pack');
+  });
+
+  it('drafts a sound', async () => {
+    const draft = await createListingDraft(db, {
+      authorId: 'u1',
+      ti: {
+        type: 'sound',
+        input: {
+          title: 'Cry Pack',
+          description: '',
+          permissions: ['Free'],
+          targetedRoms: ['Emerald'],
+          category: 'Cry'
+        }
+      }
+    });
+    expect(draft.slug).toBe('cry-pack');
+  });
+
+  it('drafts a script', async () => {
+    const draft = await createListingDraft(db, {
+      authorId: 'u1',
+      ti: {
+        type: 'script',
+        input: {
+          title: 'Engine Mod',
+          description: '',
+          permissions: ['Credit'],
+          targetedRoms: ['Fire Red'],
+          categories: ['Feature'],
+          features: ['Engine'],
+          prerequisites: [],
+          targetedVersions: ['v1.0'],
+          tools: ['HMA Script']
+        }
+      }
+    });
+    expect(draft.slug).toBe('engine-mod');
   });
 });
