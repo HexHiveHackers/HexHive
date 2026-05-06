@@ -66,7 +66,7 @@ Run a single test file: `bun run test src/lib/server/listings.test.ts`.
 
 ## Known issues
 
-- **bits-ui v2 + Tailwind v4 vite plugin** — `vite.config.ts` carries a small `excludeNodeModulesSvelteStyles` plugin to avoid Tailwind trying to parse Svelte virtual style modules from `node_modules`. Remove it once the upstream fix lands.
+- **bits-ui v2 + Tailwind v4 vite plugin** — `vite.config.ts` carries a small `excludeNodeModulesSvelteStyles` plugin to avoid Tailwind trying to parse Svelte virtual style modules from `node_modules`. Audited 2026-05-06 with `@tailwindcss/vite@4.2.4`, `tailwindcss@4.2.4`, `bits-ui@2.18.1` — all at latest; no upstream fix yet. Remove it once the upstream fix lands.
 - **shadcn-svelte v1.2.7** does not include `slate` as a base color. We initialised with `zinc` (palette is identical in hue).
 
 ## Git & commits
