@@ -7,7 +7,8 @@ import { getOrCreateProfile } from '$lib/server/profiles';
 const PUBLIC_PREFIXES = [
   '/login', '/signup', '/auth/', '/api/auth/',
   '/me/setup',
-  '/api/profile'
+  '/api/profile',
+  '/api/avatars/'
 ];
 
 const isPublic = (pathname: string) =>
