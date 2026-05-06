@@ -4,7 +4,16 @@ import { auth } from '$lib/auth';
 import { db } from '$lib/db';
 import { getOrCreateProfile } from '$lib/server/profiles';
 
-const PUBLIC_PREFIXES = ['/login', '/signup', '/auth/', '/api/auth/', '/me/setup', '/api/profile', '/api/avatars/'];
+const PUBLIC_PREFIXES = [
+  '/login',
+  '/signup',
+  '/auth/',
+  '/api/auth/',
+  '/me/setup',
+  '/api/profile',
+  '/api/avatars/',
+  '/api/_dev_storage/',
+];
 
 const isPublic = (pathname: string) =>
   pathname === '/' ||

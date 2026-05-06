@@ -1,12 +1,15 @@
 <script lang="ts">
+
+  import { untrack } from 'svelte';
   import { invalidateAll } from '$app/navigation';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
   import { Label } from '$lib/components/ui/label';
 
   let { initial }: { initial: { username: string; bio: string | null } } = $props();
-  let username = $state(initial.username);
-  let bio = $state(initial.bio ?? '');
+  // One-time seed from the prop; the form is then locally editable.
+  let username = $state(untrack(() => initial.username));
+  let bio = $state(untrack(() => initial.bio ?? ''));
   let busy = $state(false);
   let err = $state<string | null>(null);
   let ok = $state(false);

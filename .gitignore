@@ -17,6 +17,9 @@ dist/
 /local.db-journal
 /local.db-shm
 /local.db-wal
+
+# Dev-only filesystem storage fallback (when R2 isn't configured)
+/.dev-storage/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal

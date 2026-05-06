@@ -5,7 +5,7 @@
     size?: number;
   } = $props();
 
-  const initial = (name || '?').trim().charAt(0).toUpperCase();
+  const initial = $derived((name || '?').trim().charAt(0).toUpperCase());
 </script>
 
 {#if avatarKey}
