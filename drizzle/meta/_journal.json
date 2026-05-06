@@ -15,6 +15,13 @@
       "when": 1746518400000,
       "tag": "0001_fts_listings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1746604800000,
+      "tag": "0002_fts_porter",
+      "breakpoints": true
     }
   ]
 }

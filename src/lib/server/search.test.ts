@@ -235,6 +235,136 @@ describe('searchListings', () => {
     expect(hits.some((h) => h.title === 'Crimson Tide Adult')).toBe(false);
   });
 
+  it('matches stems via porter (hacks → hack)', async () => {
+    const draft = await createListingDraft(db, {
+      authorId: 'u1',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Awesome Hack',
+          description: '',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: [],
+          states: [],
+          tags: [],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: draft.listingId,
+      versionId: draft.versionId,
+      files: [{ r2Key: 'k', filename: 'p.ips', originalFilename: 'p.ips', size: 1, hash: null }],
+    });
+    const hits = await searchListings(db, 'hacks');
+    expect(hits.some((h) => h.title === 'Awesome Hack')).toBe(true);
+  });
+
+  it('finds by tag', async () => {
+    const draft = await createListingDraft(db, {
+      authorId: 'u1',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Tagged Hack',
+          description: '',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: [],
+          states: [],
+          tags: ['nuzlocke'],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: draft.listingId,
+      versionId: draft.versionId,
+      files: [{ r2Key: 'k', filename: 'p.ips', originalFilename: 'p.ips', size: 1, hash: null }],
+    });
+    const hits = await searchListings(db, 'nuzlocke');
+    expect(hits.some((h) => h.title === 'Tagged Hack')).toBe(true);
+  });
+
+  it('finds by romhack category', async () => {
+    const draft = await createListingDraft(db, {
+      authorId: 'u1',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Difficulty Hack',
+          description: '',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: ['Difficulty'],
+          states: [],
+          tags: [],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: draft.listingId,
+      versionId: draft.versionId,
+      files: [{ r2Key: 'k', filename: 'p.ips', originalFilename: 'p.ips', size: 1, hash: null }],
+    });
+    const hits = await searchListings(db, 'difficulty');
+    expect(hits.some((h) => h.title === 'Difficulty Hack')).toBe(true);
+  });
+
+  it('finds by author username', async () => {
+    await db.insert(schema.user).values({ id: 'u_kaizo', name: 'K', email: 'k@x.com' });
+    await db.insert(schema.profile).values({ userId: 'u_kaizo', username: 'kaizo_dev', bio: null, avatarKey: null });
+    const draft = await createListingDraft(db, {
+      authorId: 'u_kaizo',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Findable Hack',
+          description: '',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: [],
+          states: [],
+          tags: [],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: draft.listingId,
+      versionId: draft.versionId,
+      files: [{ r2Key: 'k', filename: 'p.ips', originalFilename: 'p.ips', size: 1, hash: null }],
+    });
+    const hits = await searchListings(db, 'kaizo_dev');
+    expect(hits.some((h) => h.title === 'Findable Hack')).toBe(true);
+  });
+
   it('includes mature listings when includeMature is true', async () => {
     const draftC = await createListingDraft(db, {
       authorId: 'u1',
