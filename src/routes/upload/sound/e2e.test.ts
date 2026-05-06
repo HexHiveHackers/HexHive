@@ -30,8 +30,11 @@ describe('sound upload happy path', () => {
     const finalize = (await import('../../api/uploads/finalize/+server')).POST;
     const { listAssetHives, getAssetHiveBySlug } = await import('$lib/server/listings');
 
-    const evt = (body: any) =>
-      ({
+    type PresignEvent = Parameters<typeof presign>[0];
+    type FinalizeEvent = Parameters<typeof finalize>[0];
+
+    function evt(body: unknown) {
+      return {
         request: new Request('http://x', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -39,7 +42,8 @@ describe('sound upload happy path', () => {
         }),
         locals: { user: { id: 'u1', name: 'Author' }, session: null },
         url: new URL('http://x'),
-      }) as any;
+      };
+    }
 
     const presignRes = await presign(
       evt({
@@ -52,7 +56,7 @@ describe('sound upload happy path', () => {
           category: 'SFX',
         },
         files: [{ filename: 'a.wav', contentType: 'audio/wav', size: 1234 }],
-      }),
+      }) as unknown as PresignEvent,
     );
     const presignJson = await presignRes.json();
 
@@ -69,7 +73,7 @@ describe('sound upload happy path', () => {
             size: presignJson.uploads[0].size,
           },
         ],
-      }),
+      }) as unknown as FinalizeEvent,
     );
     expect(finalizeRes.status).toBe(200);
 
@@ -77,7 +81,7 @@ describe('sound upload happy path', () => {
     expect(list.some((r) => r.title === 'E2E Sound' && r.fileCount === 1 && r.totalSize === 1234)).toBe(true);
 
     const detail = await getAssetHiveBySlug(db, 'sound', presignJson.slug);
-    expect(detail).not.toBeNull();
-    expect(detail!.meta.kind).toBe('sound');
+    if (!detail) throw new Error('detail missing');
+    expect(detail.meta.kind).toBe('sound');
   });
 });

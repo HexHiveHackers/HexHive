@@ -6,7 +6,7 @@ vi.mock('$lib/storage/r2', () => ({
   headObject: vi.fn(),
 }));
 
-const fakeDb = {} as any;
+const fakeDb = {} as unknown;
 const draft = { listingId: 'L', versionId: 'V', slug: 'k' };
 
 vi.mock('$lib/db', () => ({ db: fakeDb }));
@@ -18,8 +18,11 @@ vi.mock('$lib/server/listings', async () => ({
 
 beforeEach(() => vi.clearAllMocks());
 
-const buildEvent = (body: unknown, user: any = { id: 'u1' }) =>
-  ({
+type MockUser = App.Locals['user'];
+const fakeUser = (id: string): MockUser => ({ id, name: 'Test', email: 't@x', image: null }) as unknown as MockUser;
+
+function buildEvent(body: unknown, user: MockUser = fakeUser('u1')) {
+  return {
     request: new Request('http://x/api/uploads/presign', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -27,21 +30,29 @@ const buildEvent = (body: unknown, user: any = { id: 'u1' }) =>
     }),
     locals: { user, session: null },
     url: new URL('http://x/api/uploads/presign'),
-  }) as any;
+  };
+}
 
 describe('POST /api/uploads/presign', () => {
   it('401s without a user', async () => {
     const { POST } = await import('./+server');
-    await expect(POST(buildEvent({ type: 'romhack' }, null))).rejects.toMatchObject({ status: 303 });
+    type Event = Parameters<typeof POST>[0];
+    await expect(POST(buildEvent({ type: 'romhack' }, null) as unknown as Event)).rejects.toMatchObject({
+      status: 303,
+    });
   });
 
   it('400s when validation fails', async () => {
     const { POST } = await import('./+server');
-    await expect(POST(buildEvent({ type: 'romhack', input: {}, files: [] }))).rejects.toMatchObject({ status: 400 });
+    type Event = Parameters<typeof POST>[0];
+    await expect(POST(buildEvent({ type: 'romhack', input: {}, files: [] }) as unknown as Event)).rejects.toMatchObject(
+      { status: 400 },
+    );
   });
 
   it('returns presigned URLs for a valid romhack', async () => {
     const { POST } = await import('./+server');
+    type Event = Parameters<typeof POST>[0];
     const res = await POST(
       buildEvent({
         type: 'romhack',
@@ -54,7 +65,7 @@ describe('POST /api/uploads/presign', () => {
           release: '1.0.0',
         },
         files: [{ filename: 'patch.ips', contentType: 'application/octet-stream', size: 100 }],
-      }),
+      }) as unknown as Event,
     );
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -68,6 +79,7 @@ describe('POST /api/uploads/presign', () => {
 describe('POST /api/uploads/presign — asset-hive types', () => {
   it('presigns a sound', async () => {
     const { POST } = await import('./+server');
+    type Event = Parameters<typeof POST>[0];
     const res = await POST(
       buildEvent({
         type: 'sound',
@@ -79,13 +91,14 @@ describe('POST /api/uploads/presign — asset-hive types', () => {
           category: 'Cry',
         },
         files: [{ filename: 'a.wav', contentType: 'audio/wav', size: 100 }],
-      }),
+      }) as unknown as Event,
     );
     expect(res.status).toBe(200);
   });
 
   it('presigns a sprite with valid category', async () => {
     const { POST } = await import('./+server');
+    type Event = Parameters<typeof POST>[0];
     const res = await POST(
       buildEvent({
         type: 'sprite',
@@ -97,7 +110,7 @@ describe('POST /api/uploads/presign — asset-hive types', () => {
           category: { type: 'Battle', subtype: 'Pokemon', variant: 'Front' },
         },
         files: [{ filename: 'a.png', contentType: 'image/png', size: 100 }],
-      }),
+      }) as unknown as Event,
     );
     expect(res.status).toBe(200);
   });

@@ -30,8 +30,11 @@ describe('romhack upload happy path', () => {
     const finalize = (await import('../../api/uploads/finalize/+server')).POST;
     const { listRomhacks, getRomhackBySlug } = await import('$lib/server/listings');
 
-    const evt = (body: any) =>
-      ({
+    type PresignEvent = Parameters<typeof presign>[0];
+    type FinalizeEvent = Parameters<typeof finalize>[0];
+
+    function evt(body: unknown) {
+      return {
         request: new Request('http://x', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -39,7 +42,8 @@ describe('romhack upload happy path', () => {
         }),
         locals: { user: { id: 'u1', name: 'Author' }, session: null },
         url: new URL('http://x'),
-      }) as any;
+      };
+    }
 
     const presignRes = await presign(
       evt({
@@ -53,7 +57,7 @@ describe('romhack upload happy path', () => {
           release: '1.0.0',
         },
         files: [{ filename: 'p.ips', contentType: 'application/octet-stream', size: 100 }],
-      }),
+      }) as unknown as PresignEvent,
     );
     const presignJson = await presignRes.json();
 
@@ -69,7 +73,7 @@ describe('romhack upload happy path', () => {
             size: presignJson.uploads[0].size,
           },
         ],
-      }),
+      }) as unknown as FinalizeEvent,
     );
     expect(finalizeRes.status).toBe(200);
 
@@ -77,8 +81,8 @@ describe('romhack upload happy path', () => {
     expect(list.some((r) => r.title === 'E2E')).toBe(true);
 
     const detail = await getRomhackBySlug(db, presignJson.slug);
-    expect(detail).not.toBeNull();
-    expect(detail!.files).toHaveLength(1);
-    expect(detail!.listing.status).toBe('published');
+    if (!detail) throw new Error('detail missing');
+    expect(detail.files).toHaveLength(1);
+    expect(detail.listing.status).toBe('published');
   });
 });

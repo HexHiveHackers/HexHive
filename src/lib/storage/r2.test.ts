@@ -18,10 +18,12 @@ beforeEach(() => vi.clearAllMocks());
 describe('r2', () => {
   it('signs a PUT URL with the right bucket and key', async () => {
     const { presignPut } = await import('./r2');
-    const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+    const presigner = await import('@aws-sdk/s3-request-presigner');
     const url = await presignPut('uploads/abc.bin', 'application/octet-stream', 1024);
     expect(url).toBe('https://signed.example/url');
-    const cmd = (getSignedUrl as any).mock.calls[0][1];
+    const cmd = vi.mocked(presigner.getSignedUrl).mock.calls[0][1] as {
+      input: { Bucket: string; Key: string; ContentType: string; ContentLength: number };
+    };
     expect(cmd.input.Bucket).toBe('b');
     expect(cmd.input.Key).toBe('uploads/abc.bin');
     expect(cmd.input.ContentType).toBe('application/octet-stream');

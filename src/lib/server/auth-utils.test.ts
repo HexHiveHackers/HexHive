@@ -1,12 +1,19 @@
+import type { RequestEvent } from '@sveltejs/kit';
 import { describe, expect, it } from 'vitest';
 import { requireUser } from './auth-utils';
 
-const fakeEvent = (user: any) => ({ locals: { user } }) as any;
+type EventLike = Pick<RequestEvent, 'locals' | 'url'>;
+
+const fakeEvent = (user: App.Locals['user']): EventLike =>
+  ({
+    locals: { user, session: null },
+    url: new URL('http://example/test'),
+  }) as unknown as EventLike;
 
 describe('requireUser', () => {
   it('returns the user when present', () => {
-    const u = { id: 'u1', email: 'a@b.com' };
-    expect(requireUser(fakeEvent(u))).toBe(u);
+    const u = { id: 'u1', email: 'a@b.com', name: 'A' };
+    expect(requireUser(fakeEvent(u as App.Locals['user']))).toBe(u);
   });
 
   it('throws a 401 redirect equivalent when missing', () => {

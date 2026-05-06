@@ -1,5 +1,6 @@
 <script lang="ts">
   import { LogOut, Settings, User as UserIcon } from '@lucide/svelte';
+  import { goto } from '$app/navigation';
   import { authClient } from '$lib/auth-client';
   import TypeIcon from '$lib/components/listings/TypeIcon.svelte';
   import Avatar from '$lib/components/profile/Avatar.svelte';
@@ -83,39 +84,25 @@
       <span class="mr-1 h-5 w-px bg-border"></span>
       {#if user}
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            {#snippet child({ props }: { props: Record<string, unknown> })}
-              <button
-                type="button"
-                {...props}
-                class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-accent transition-colors"
-                aria-label="Account menu"
-              >
-                <Avatar avatarKey={user.avatarKey} name={displayName} size={24} />
-                <span>{displayName}</span>
-              </button>
-            {/snippet}
+          <DropdownMenuTrigger
+            class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-accent transition-colors"
+            aria-label="Account menu"
+          >
+            <Avatar avatarKey={user.avatarKey} name={displayName} size={24} />
+            <span>{displayName}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" class="w-56">
             <DropdownMenuLabel class="text-xs text-muted-foreground font-normal">
               Signed in as <span class="font-medium text-foreground">@{user.username}</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              {#snippet child({ props }: { props: Record<string, unknown> })}
-                <a {...props} href={profileHref} class="flex items-center gap-2 cursor-pointer">
-                  <UserIcon size={16} />
-                  Public profile
-                </a>
-              {/snippet}
+            <DropdownMenuItem onSelect={() => goto(profileHref)} class="cursor-pointer">
+              <UserIcon size={16} />
+              Public profile
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              {#snippet child({ props }: { props: Record<string, unknown> })}
-                <a {...props} href="/me" class="flex items-center gap-2 cursor-pointer">
-                  <Settings size={16} />
-                  Account settings
-                </a>
-              {/snippet}
+            <DropdownMenuItem onSelect={() => goto('/me')} class="cursor-pointer">
+              <Settings size={16} />
+              Account settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={signOut} class="cursor-pointer">

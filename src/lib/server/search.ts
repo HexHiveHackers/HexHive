@@ -172,7 +172,8 @@ export async function searchListingsFacets(
 ): Promise<Record<'romhack' | 'sprite' | 'sound' | 'script', number>> {
   const out = { romhack: 0, sprite: 0, sound: 0, script: 0 };
   const q = escapeFts(query);
-  if (!q && !opts.fromUsername) return out;
+  const fromUsername = opts.fromUsername;
+  if (!q && !fromUsername) return out;
 
   const result = await (q
     ? db.run(sql`
@@ -183,8 +184,8 @@ export async function searchListingsFacets(
           AND l.status = 'published'
           ${opts.includeMature ? sql`` : sql`AND l.mature = 0`}
           ${
-            opts.fromUsername
-              ? sql`AND EXISTS (SELECT 1 FROM profile p WHERE p.user_id = l.author_id AND lower(p.username) = lower(${opts.fromUsername}))`
+            fromUsername
+              ? sql`AND EXISTS (SELECT 1 FROM profile p WHERE p.user_id = l.author_id AND lower(p.username) = lower(${fromUsername}))`
               : sql``
           }
         GROUP BY l.type
@@ -195,7 +196,7 @@ export async function searchListingsFacets(
         JOIN profile p ON p.user_id = l.author_id
         WHERE l.status = 'published'
           ${opts.includeMature ? sql`` : sql`AND l.mature = 0`}
-          AND lower(p.username) = lower(${opts.fromUsername!})
+          AND lower(p.username) = lower(${fromUsername})
         GROUP BY l.type
       `));
 

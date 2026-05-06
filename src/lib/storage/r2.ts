@@ -22,7 +22,7 @@ export const isLocalStorage = !env.R2_ACCOUNT_ID || !env.R2_ACCESS_KEY_ID || !en
 
 export const LOCAL_STORAGE_DIR = '.dev-storage';
 
-const client = isLocalStorage
+const s3 = isLocalStorage
   ? null
   : new S3Client({
       region: 'auto',
@@ -35,6 +35,13 @@ const client = isLocalStorage
 
 const bucket = env.R2_BUCKET;
 
+// Narrows `s3` to non-null. Each S3 entry point goes through this so the
+// type checker — and biome — never see a non-null assertion.
+function requireS3(): S3Client {
+  if (!s3) throw new Error('R2 client is not configured; local storage is active');
+  return s3;
+}
+
 export async function presignPut(key: string, contentType: string, contentLength: number, expiresIn = 600) {
   if (isLocalStorage) return `/api/_dev_storage/${key}`;
   const cmd = new PutObjectCommand({
@@ -43,15 +50,13 @@ export async function presignPut(key: string, contentType: string, contentLength
     ContentType: contentType,
     ContentLength: contentLength,
   });
-  // biome-ignore lint/style/noNonNullAssertion: client is non-null when isLocalStorage is false
-  return getSignedUrl(client!, cmd, { expiresIn });
+  return getSignedUrl(requireS3(), cmd, { expiresIn });
 }
 
 export async function presignGet(key: string, expiresIn = 600) {
   if (isLocalStorage) return `/api/_dev_storage/${key}`;
   const cmd = new GetObjectCommand({ Bucket: bucket, Key: key });
-  // biome-ignore lint/style/noNonNullAssertion: client is non-null when isLocalStorage is false
-  return getSignedUrl(client!, cmd, { expiresIn });
+  return getSignedUrl(requireS3(), cmd, { expiresIn });
 }
 
 export async function headObject(key: string) {
@@ -60,8 +65,7 @@ export async function headObject(key: string) {
     if (!existsSync(path)) throw new Error(`Not found: ${key}`);
     return { ContentLength: statSync(path).size };
   }
-  // biome-ignore lint/style/noNonNullAssertion: client is non-null when isLocalStorage is false
-  return client!.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+  return requireS3().send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
 }
 
 // Best-effort delete; missing keys are silently ignored.
@@ -71,8 +75,7 @@ export async function deleteObject(key: string): Promise<void> {
       await rm(join(LOCAL_STORAGE_DIR, key), { force: true });
       return;
     }
-    // biome-ignore lint/style/noNonNullAssertion: client is non-null when isLocalStorage is false
-    await client!.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+    await requireS3().send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
   } catch {
     // swallow — orphaned files are acceptable, failed user-facing cascade is not
   }

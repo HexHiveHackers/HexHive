@@ -29,8 +29,8 @@ describe('verifyAllUploaded', () => {
   });
 
   it('returns false when any HEAD throws', async () => {
-    const { headObject } = await import('$lib/storage/r2');
-    (headObject as any).mockImplementationOnce(async () => {
+    const r2 = await import('$lib/storage/r2');
+    vi.mocked(r2.headObject).mockImplementationOnce(async () => {
       throw new Error('not found');
     });
     const { verifyAllUploaded } = await import('./uploads');

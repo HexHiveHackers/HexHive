@@ -1,8 +1,12 @@
 import { createClient } from '@libsql/client';
+import type { RequestEvent } from '@sveltejs/kit';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import * as schema from '$lib/db/schema';
+
+type DownloadEvent = RequestEvent<{ fileId: string }, '/api/downloads/[fileId]'>;
+const fakeEvent = (fileId: string): DownloadEvent => ({ params: { fileId } }) as unknown as DownloadEvent;
 
 vi.mock('$lib/storage/r2', () => ({
   presignPut: vi.fn(),
@@ -49,12 +53,12 @@ beforeAll(async () => {
 describe('GET /api/downloads/[fileId]', () => {
   it('404s when file not found', async () => {
     const { GET } = await import('./+server');
-    await expect(GET({ params: { fileId: 'nope' } } as any)).rejects.toMatchObject({ status: 404 });
+    await expect(GET(fakeEvent('nope'))).rejects.toMatchObject({ status: 404 });
   });
 
   it('redirects to signed R2 URL and increments counter', async () => {
     const { GET } = await import('./+server');
-    await expect(GET({ params: { fileId: 'F1' } } as any)).rejects.toMatchObject({
+    await expect(GET(fakeEvent('F1'))).rejects.toMatchObject({
       status: 303,
       location: 'https://get.example/k1',
     });

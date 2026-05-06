@@ -32,22 +32,47 @@
       if (!presignRes.ok) throw new Error(await presignRes.text());
       const { versionId, uploads } = await presignRes.json();
 
-      await Promise.all(uploads.map((u: any, i: number) =>
-        fetch(u.url, { method: 'PUT', headers: { 'content-type': files[i].type || 'application/octet-stream' }, body: files[i] })
-          .then((r) => { if (!r.ok) throw new Error(`R2 PUT failed for ${u.originalFilename}`); })
-      ));
+      type PresignedUpload = {
+        url: string;
+        r2Key: string;
+        filename: string;
+        originalFilename: string;
+        size: number;
+      };
+      const typedUploads = uploads as PresignedUpload[];
+
+      await Promise.all(
+        typedUploads.map((u, i) =>
+          fetch(u.url, {
+            method: 'PUT',
+            headers: { 'content-type': files[i].type || 'application/octet-stream' },
+            body: files[i],
+          }).then((r) => {
+            if (!r.ok) throw new Error(`R2 PUT failed for ${u.originalFilename}`);
+          })
+        )
+      );
 
       const finalizeRes = await fetch(`/api/listings/${data.listing.id}/versions/finalize`, {
-        method: 'POST', headers: { 'content-type': 'application/json' },
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           versionId,
-          files: uploads.map((u: any) => ({ r2Key: u.r2Key, filename: u.filename, originalFilename: u.originalFilename, size: u.size }))
-        })
+          files: typedUploads.map((u) => ({
+            r2Key: u.r2Key,
+            filename: u.filename,
+            originalFilename: u.originalFilename,
+            size: u.size,
+          })),
+        }),
       });
       if (!finalizeRes.ok) throw new Error(await finalizeRes.text());
       await goto(`/${route(data.listing.type)}/${data.listing.slug}`);
-    } catch (e: any) { err = e?.message ?? 'Upload failed'; }
-    finally { busy = false; }
+    } catch (e: unknown) {
+      err = (e as Error)?.message ?? 'Upload failed';
+    } finally {
+      busy = false;
+    }
   }
 </script>
 

@@ -1,10 +1,8 @@
 <script lang="ts">
   import AssetHiveCard from '$lib/components/listings/AssetHiveCard.svelte';
-  import ListingsGrid from '$lib/components/listings/ListingsGrid.svelte';
   import MatureFilterToggle from '$lib/components/listings/MatureFilterToggle.svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
-  import type { AssetHiveListItem } from '$lib/server/listings';
 
   let { data } = $props();
 </script>
@@ -19,10 +17,13 @@
     <MatureFilterToggle showing={data.filters.mature} />
     <Button type="submit" variant="outline">Filter</Button>
   </form>
-  {#snippet card(it: AssetHiveListItem)}
-    <AssetHiveCard item={it} type="sprite" />
-  {/snippet}
-  <ListingsGrid items={data.items} item={card}>
-    {#snippet empty()}<p class="text-sm text-muted-foreground">No sprites yet.</p>{/snippet}
-  </ListingsGrid>
+  {#if data.items.length === 0}
+    <p class="text-sm text-muted-foreground">No sprites yet.</p>
+  {:else}
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {#each data.items as item (item.id)}
+        <AssetHiveCard {item} type="sprite" />
+      {/each}
+    </div>
+  {/if}
 </section>

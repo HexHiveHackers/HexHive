@@ -23,12 +23,13 @@ export async function presignFor(input: {
   return Promise.all(
     input.files.map(async (f) => {
       const safe = f.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const r2Key = `${input.listingId}/${input.versionId}/${newId(8)}-${safe}`;
+      const stored = `${newId(8)}-${safe}`;
+      const r2Key = `${input.listingId}/${input.versionId}/${stored}`;
       const url = await presignPut(r2Key, f.contentType, f.size);
       return {
         r2Key,
         url,
-        filename: r2Key.split('/').pop()!,
+        filename: stored,
         originalFilename: f.filename,
         size: f.size,
       };

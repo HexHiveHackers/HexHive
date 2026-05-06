@@ -12,7 +12,8 @@ export async function getOrCreateProfile(db: DB, userId: string): Promise<Profil
   if (rows[0]) return rows[0];
   await db.insert(schema.profile).values({ userId, username: '', bio: null, avatarKey: null });
   const created = await db.select().from(schema.profile).where(eq(schema.profile.userId, userId)).limit(1);
-  return created[0]!;
+  if (!created[0]) throw new Error(`Profile insert for user ${userId} did not round-trip`);
+  return created[0];
 }
 
 export async function getProfileByUsername(db: DB, username: string): Promise<Profile | null> {
