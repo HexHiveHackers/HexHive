@@ -18,7 +18,7 @@ export const SOUND_LIMITS = {
   perFileBytes: 20 * 1024 * 1024,
   totalBytes: 50 * 1024 * 1024,
   maxFiles: 50,
-  allowedExtensions: ['.wav', '.ogg', '.mp3', '.s', '.zip'],
+  allowedExtensions: ['.wav', '.ogg', '.mp3', '.flac', '.m4a', '.opus', '.mid', '.midi', '.s', '.zip'],
 } as const;
 
 export const SCRIPT_LIMITS = {

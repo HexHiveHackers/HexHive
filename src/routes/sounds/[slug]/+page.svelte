@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Upload } from '@lucide/svelte';
   import { page } from '$app/state';
+  import SoundPlayer from '$lib/components/listings/sound/SoundPlayer.svelte';
   import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
   import VersionTimeline from '$lib/components/listings/VersionTimeline.svelte';
   import ReportButton from '$lib/components/moderation/ReportButton.svelte';
@@ -28,7 +29,7 @@
   <meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
 
-<article class="mx-auto max-w-4xl px-4 py-10">
+<article class="mx-auto max-w-4xl px-4 py-8">
   <header class="mb-6">
     <div class="flex items-center gap-2 text-xs text-muted-foreground">
       <TypeBadge type="sound" />
@@ -36,47 +37,23 @@
       <span>{listing.downloads} downloads</span>
     </div>
     <h1 class="font-display text-3xl mt-2">{listing.title}</h1>
-    <p class="mt-3 text-muted-foreground whitespace-pre-line">{listing.description}</p>
+    {#if listing.description}
+      <p class="mt-3 text-muted-foreground whitespace-pre-line max-w-3xl">{listing.description}</p>
+    {/if}
+
+    <div class="mt-4 flex flex-wrap gap-1.5">
+      {#each base.targetedRoms as r}<Badge variant="outline">{r}</Badge>{/each}
+      <Badge variant="outline">{base.fileCount} files</Badge>
+      <Badge variant="outline">{Math.round(base.totalSize / 1024)} KB</Badge>
+      {#if meta.kind === 'sound'}
+        <Badge>{meta.data.category}</Badge>
+      {/if}
+    </div>
   </header>
 
-  <section class="grid sm:grid-cols-2 gap-4 mb-8">
-    <div class="border rounded-lg p-4">
-      <h2 class="text-sm font-medium mb-2">Targets</h2>
-      <div class="flex flex-wrap gap-1">
-        {#each base.targetedRoms as r}<Badge>{r}</Badge>{/each}
-      </div>
-    </div>
-    <div class="border rounded-lg p-4">
-      <h2 class="text-sm font-medium mb-2">Pack</h2>
-      <div class="flex flex-wrap gap-1">
-        <Badge variant="outline">{base.fileCount} files</Badge>
-        <Badge variant="outline">{Math.round(base.totalSize / 1024)} KB</Badge>
-      </div>
-    </div>
-    {#if meta.kind === 'sound'}
-      <div class="border rounded-lg p-4 sm:col-span-2">
-        <h2 class="text-sm font-medium mb-2">Category</h2>
-        <Badge>{meta.data.category}</Badge>
-      </div>
-    {/if}
-  </section>
+  <SoundPlayer {files} />
 
-  <section class="border rounded-lg p-4">
-    <h2 class="text-sm font-medium mb-3">Files</h2>
-    <ul class="grid gap-2">
-      {#each files as f}
-        <li class="flex items-center justify-between gap-3 text-sm">
-          <span class="truncate">{f.originalFilename}</span>
-          <a href={`/api/downloads/${f.id}`}><Button size="sm">Download</Button></a>
-        </li>
-      {/each}
-    </ul>
-    <div class="mt-4 flex justify-end">
-      <ReportButton listingId={listing.id} />
-    </div>
-  </section>
-
-  <section class="border rounded-lg p-4 mt-6">
+  <section class="border rounded-lg p-4 mb-6">
     <div class="flex items-center justify-between mb-3">
       <h2 class="text-sm font-medium">Versions</h2>
       {#if isAuthor}
@@ -87,4 +64,8 @@
     </div>
     <VersionTimeline {versions} />
   </section>
+
+  <div class="flex justify-end">
+    <ReportButton listingId={listing.id} />
+  </div>
 </article>
