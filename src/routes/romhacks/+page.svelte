@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import ListingsGrid from '$lib/components/listings/ListingsGrid.svelte';
   import MatureFilterToggle from '$lib/components/listings/MatureFilterToggle.svelte';
   import RomhackCard from '$lib/components/listings/RomhackCard.svelte';
@@ -8,8 +9,9 @@
   import type { RomhackListItem } from '$lib/server/listings';
 
   let { data } = $props();
-  let q = $state(data.filters.q ?? '');
-  let baseRom = $state(data.filters.baseRom ?? '');
+  // One-time seed of the filter form from URL-derived data.
+  let q = $state(untrack(() => data.filters.q ?? ''));
+  let baseRom = $state(untrack(() => data.filters.baseRom ?? ''));
 </script>
 
 <section class="mx-auto max-w-6xl px-4 py-10">
