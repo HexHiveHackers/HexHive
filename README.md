@@ -53,6 +53,19 @@ drizzle/               # Migration files
 docs/superpowers/      # Plans and implementation history
 ```
 
+## Search
+
+The header search bar accepts free text plus optional `type:` and `from:` modifiers:
+
+```
+kaizo                    # full-text across title, description, tags, categories, author
+type:romhack difficulty   # restrict by listing type
+from:kaizo_dev            # restrict by author
+from:kaizo_dev type:script  # combine
+```
+
+Search uses SQLite FTS5 with porter stemming for the canonical index, and a trigram-tokenized table as a typo-tolerant "did you mean" fallback when there are no exact matches.
+
 ## Conventions
 
 See [CLAUDE.md](./CLAUDE.md) for development conventions.

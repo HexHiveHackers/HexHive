@@ -64,9 +64,19 @@ bun run format        # format all files in-place
 - `src/lib/server/auth-utils.ts` — `requireUser(event)` returns the user or throws a 303 to `/login?next=...`.
 - `src/lib/schemas/*` — Zod schemas per asset type. The Sprite schema is currently simplified; Plan 3 replaces it with the full `SpriteVariant` discriminated union.
 - `src/lib/server/listings.ts` — Romhack CRUD: `createRomhackDraft`, `finalizeRomhack`, `listRomhacks`, `getRomhackBySlug`, `incrementDownloads`. The `db` arg is injectable so unit tests use an in-memory libSQL.
+- `src/lib/server/search.ts` — FTS5 search with BM25 ranking, porter stemming, `type:`/`from:` query modifiers, faceted counts, and pagination. A second virtual table `listings_fts_trgm` provides typo-tolerant fallback queries when the canonical FTS table returns zero hits.
 - `src/lib/server/uploads.ts` — `presignFor` (returns presigned URLs scoped to `{listingId}/{versionId}/{nonce}-{name}`) and `verifyAllUploaded` (HEADs each key).
 - `src/routes/api/uploads/{presign,finalize}/+server.ts` — the two POST endpoints that drive the upload flow.
 - `src/routes/api/downloads/[fileId]/+server.ts` — increments the listing's `downloads` counter and 303-redirects to a signed R2 GET.
+
+## Search syntax
+
+- Free text matches title, description, tags, categories, and author username (porter-stemmed via FTS5).
+- `type:romhack` (or `sprite|sound|script`) restricts to one type. Unknown values pass through as text.
+- `from:username` restricts to a single author (case-insensitive). Works alone or combined with free text.
+- Mature listings are excluded by default; `?mature=show` on list pages opts in. The search page does not surface mature.
+- Zero-hit canonical queries fall back to a trigram-based "did you mean" using `listings_fts_trgm` (good for typos and substrings).
+- Pagination via `?offset=` (default 20 results per page).
 
 ## Upload flow (do not change without good reason)
 
@@ -87,6 +97,7 @@ bun run format        # format all files in-place
 
 - **bits-ui v2 + Tailwind v4 vite plugin** — `vite.config.ts` carries a small `excludeNodeModulesSvelteStyles` plugin to avoid Tailwind trying to parse Svelte virtual style modules from `node_modules`. Audited 2026-05-06 with `@tailwindcss/vite@4.2.4`, `tailwindcss@4.2.4`, `bits-ui@2.18.1` — all at latest; no upstream fix yet. Remove it once the upstream fix lands.
 - **shadcn-svelte v1.2.7** does not include `slate` as a base color. We initialised with `zinc` (palette is identical in hue).
+- **Sprite SpriteVariant flattening for FTS** — sprite categories are deeply nested (`{ type, subtype, variant }`) and aren't yet flattened into the FTS index. Future task.
 
 ## Git & commits
 
