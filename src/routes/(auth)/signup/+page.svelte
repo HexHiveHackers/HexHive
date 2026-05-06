@@ -26,7 +26,7 @@
       variant="outline"
       disabled={!!loading}
       onclick={() => oauth('github')}
-      class="justify-start gap-3"
+      class="justify-center gap-3"
     >
       <SiGithub size={18} />
       {loading === 'github' ? 'Redirecting…' : 'Continue with GitHub'}
@@ -35,7 +35,7 @@
       variant="outline"
       disabled={!!loading}
       onclick={() => oauth('google')}
-      class="justify-start gap-3"
+      class="justify-center gap-3"
     >
       <GoogleColorIcon size={18} />
       {loading === 'google' ? 'Redirecting…' : 'Continue with Google'}
@@ -44,7 +44,7 @@
       variant="outline"
       disabled={!!loading}
       onclick={() => oauth('discord')}
-      class="justify-start gap-3"
+      class="justify-center gap-3"
     >
       <SiDiscord size={18} color="#5865F2" />
       {loading === 'discord' ? 'Redirecting…' : 'Continue with Discord'}
