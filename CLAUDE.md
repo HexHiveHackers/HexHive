@@ -95,7 +95,7 @@ bun run format        # format all files in-place
 
 ## Known issues
 
-- **bits-ui v2 + Tailwind v4 vite plugin** — `vite.config.ts` carries a small `excludeNodeModulesSvelteStyles` plugin to avoid Tailwind trying to parse Svelte virtual style modules from `node_modules`. Audited 2026-05-06 with `@tailwindcss/vite@4.2.4`, `tailwindcss@4.2.4`, `bits-ui@2.18.1` — all at latest; no upstream fix yet. Remove it once the upstream fix lands.
+- **bits-ui v2 + Tailwind v4 vite plugin** — `vite.config.ts` carries a small `excludeNodeModulesSvelteStyles` plugin to avoid Tailwind trying to parse Svelte virtual style modules from `node_modules` as CSS (it chokes on the JS `import { boxWith, mergeProps }` line). Affected components include bits-ui's `select-viewport` and `scroll-area-viewport`. Audited 2026-05-06 with `@tailwindcss/vite@4.2.4`, `tailwindcss@4.2.4`, `bits-ui@2.18.1` — all at latest; no upstream fix yet. The matcher is a regex on `.svelte?…type=style` so it handles both the original URL shape and the newer `?inline&svelte&type=style` variant. Remove it once the upstream fix lands.
 - **shadcn-svelte v1.2.7** does not include `slate` as a base color. We initialised with `zinc` (palette is identical in hue).
 - **Sprite SpriteVariant flattening for FTS** — sprite categories are deeply nested (`{ type, subtype, variant }`) and aren't yet flattened into the FTS index. Future task.
 
@@ -123,4 +123,8 @@ Modern shadcn shell with a few retro touches:
 
 ## Environment
 
-`.env.example` lists every variable. Local dev runs against a SQLite file (`DATABASE_URL=file:./local.db`); production uses Turso (`libsql://...` + auth token). R2 keys, Better Auth secret, and OAuth client IDs are required for full functionality but most pages render without them — login buttons silently no-op for providers whose env is empty.
+`.env.example` lists every variable. Local dev runs against a SQLite file (`DATABASE_URL=file:./local.db`); production uses Turso (`libsql://...` + auth token).
+
+OAuth client IDs are optional in dev — login buttons render only for providers whose env vars are set (see `enabledSocialProviders` in `src/lib/auth.ts`).
+
+R2 credentials are also optional in dev. When `R2_ACCOUNT_ID`/`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY` are unset, `src/lib/storage/r2.ts` switches to a filesystem-backed fallback rooted at `.dev-storage/` (gitignored), and presigned PUT/GET URLs become same-origin paths under `/api/_dev_storage/<key>`. Set the R2 env vars to switch back to real Cloudflare R2; restart the dev server (the env is read once at startup).
