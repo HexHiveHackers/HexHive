@@ -21,12 +21,14 @@
     return `/search?${params.toString()}`;
   }
 
-  const totalFromFacets = data.facets
-    ? data.facets.romhack + data.facets.sprite + data.facets.sound + data.facets.script
-    : 0;
+  const totalFromFacets = $derived(
+    data.facets
+      ? data.facets.romhack + data.facets.sprite + data.facets.sound + data.facets.script
+      : 0
+  );
 
-  const showPrev = data.offset > 0;
-  const showNext = data.hits.length === data.limit;
+  const showPrev = $derived(data.offset > 0);
+  const showNext = $derived(data.hits.length === data.limit);
 </script>
 
 <section class="mx-auto max-w-3xl px-4 py-10">

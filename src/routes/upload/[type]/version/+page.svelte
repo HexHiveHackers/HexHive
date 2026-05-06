@@ -65,7 +65,7 @@
                 class="border rounded-md px-3 py-2 bg-background text-sm"></textarea>
     </div>
     <div>
-      <label class="text-sm font-medium block mb-2">Files</label>
+      <span class="text-sm font-medium block mb-2">Files</span>
       <FileDropzone bind:files />
     </div>
     {#if err}<p class="text-sm text-destructive">{err}</p>{/if}

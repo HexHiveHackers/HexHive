@@ -7,8 +7,13 @@
   import { Button } from '$lib/components/ui/button';
 
   let { data } = $props();
-  const { listing, base, meta, files, versions, authorName } = data.detail;
-  const isAuthor = page.data.user?.id === listing.authorId;
+  const listing = $derived(data.detail.listing);
+  const base = $derived(data.detail.base);
+  const meta = $derived(data.detail.meta);
+  const files = $derived(data.detail.files);
+  const versions = $derived(data.detail.versions);
+  const authorName = $derived(data.detail.authorName);
+  const isAuthor = $derived(page.data.user?.id === listing.authorId);
 </script>
 
 <svelte:head>
