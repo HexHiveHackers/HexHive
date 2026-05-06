@@ -165,6 +165,51 @@ export async function searchListings(db: DB, query: string, opts: SearchOpts = {
   });
 }
 
+export async function searchListingsFacets(
+  db: DB,
+  query: string,
+  opts: Omit<SearchOpts, 'type' | 'limit' | 'offset'> = {},
+): Promise<Record<'romhack' | 'sprite' | 'sound' | 'script', number>> {
+  const out = { romhack: 0, sprite: 0, sound: 0, script: 0 };
+  const q = escapeFts(query);
+  if (!q && !opts.fromUsername) return out;
+
+  const result = await (q
+    ? db.run(sql`
+        SELECT l.type AS type, COUNT(*) AS n
+        FROM listings_fts
+        JOIN listing l ON l.id = listings_fts.listing_id
+        WHERE listings_fts MATCH ${q}
+          AND l.status = 'published'
+          ${opts.includeMature ? sql`` : sql`AND l.mature = 0`}
+          ${
+            opts.fromUsername
+              ? sql`AND EXISTS (SELECT 1 FROM profile p WHERE p.user_id = l.author_id AND lower(p.username) = lower(${opts.fromUsername}))`
+              : sql``
+          }
+        GROUP BY l.type
+      `)
+    : db.run(sql`
+        SELECT l.type AS type, COUNT(*) AS n
+        FROM listing l
+        JOIN profile p ON p.user_id = l.author_id
+        WHERE l.status = 'published'
+          ${opts.includeMature ? sql`` : sql`AND l.mature = 0`}
+          AND lower(p.username) = lower(${opts.fromUsername!})
+        GROUP BY l.type
+      `));
+
+  for (const r of Array.isArray(result.rows) ? result.rows : []) {
+    const row = r as unknown as Record<string, unknown> | unknown[];
+    const t = Array.isArray(row) ? row[0] : row.type;
+    const n = Array.isArray(row) ? row[1] : row.n;
+    if (typeof t === 'string' && t in out) {
+      (out as Record<string, number>)[t] = Number(n ?? 0);
+    }
+  }
+  return out;
+}
+
 /**
  * Fuzzy/typo-tolerant search using the trigram FTS5 table.
  * Use as a fallback when `searchListings` returns zero hits.

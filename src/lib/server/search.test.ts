@@ -5,7 +5,7 @@ import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it } from 'vitest';
 import * as schema from '$lib/db/schema';
 import { createListingDraft, finalizeListing } from './listings';
-import { parseQuery, searchListings, searchListingsFuzzy } from './search';
+import { parseQuery, searchListings, searchListingsFacets, searchListingsFuzzy } from './search';
 
 let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -750,5 +750,72 @@ describe('searchListings with fromUsername', () => {
     const hits = await searchListings(db, 'unique', { fromUsername: 'diana' });
     expect(hits.some((h) => h.title === 'Zephyrstone Unique Hack')).toBe(true);
     expect(hits.some((h) => h.title === 'Zephyrstone Other Hack')).toBe(false);
+  });
+});
+
+describe('searchListingsFacets', () => {
+  it('returns count per type', async () => {
+    // Arrange: 2 romhacks and 1 sprite all containing a unique token
+    const makeRomhackFacet = async (n: number) => {
+      const draft = await createListingDraft(db, {
+        authorId: 'u1',
+        ti: {
+          type: 'romhack',
+          input: {
+            title: `Facetword Romhack ${n}`,
+            description: 'facetword unique token for facets test',
+            permissions: ['Credit'],
+            baseRom: 'Emerald',
+            baseRomVersion: 'v1.0',
+            baseRomRegion: 'English',
+            release: '1',
+            categories: [],
+            states: [],
+            tags: [],
+            screenshots: [],
+            boxart: [],
+            trailer: [],
+          },
+        },
+      });
+      await finalizeListing(db, {
+        type: 'romhack',
+        listingId: draft.listingId,
+        versionId: draft.versionId,
+        files: [{ r2Key: `facet_rh_${n}`, filename: 'f.ips', originalFilename: 'f.ips', size: 1, hash: null }],
+      });
+    };
+
+    const spriteDraft = await createListingDraft(db, {
+      authorId: 'u1',
+      ti: {
+        type: 'sprite',
+        input: {
+          title: 'Facetword Sprite',
+          description: 'facetword unique token for facets test',
+          permissions: ['Credit'],
+          targetedRoms: ['Emerald'],
+          category: { type: 'Battle', subtype: 'Pokemon', variant: 'Front' },
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'sprite',
+      listingId: spriteDraft.listingId,
+      versionId: spriteDraft.versionId,
+      files: [{ r2Key: 'facet_sp', filename: 's.png', originalFilename: 's.png', size: 1, hash: null }],
+    });
+
+    await makeRomhackFacet(1);
+    await makeRomhackFacet(2);
+
+    // Act
+    const facets = await searchListingsFacets(db, 'facetword');
+
+    // Assert
+    expect(facets.romhack).toBe(2);
+    expect(facets.sprite).toBe(1);
+    expect(facets.sound).toBe(0);
+    expect(facets.script).toBe(0);
   });
 });
