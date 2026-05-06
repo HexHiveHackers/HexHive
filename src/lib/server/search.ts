@@ -10,6 +10,14 @@ export interface SearchHit {
   slug: string;
   title: string;
   snippet: string;
+  rank: number;
+}
+
+export interface SearchOpts {
+  type?: 'romhack' | 'sprite' | 'sound' | 'script';
+  limit?: number;
+  offset?: number;
+  includeMature?: boolean;
 }
 
 /**
@@ -39,13 +47,13 @@ function escapeFts(q: string): string {
     .join(' ');
 }
 
-export async function searchListings(
-  db: DB,
-  query: string,
-  filters: { type?: 'romhack' | 'sprite' | 'sound' | 'script' } = {},
-): Promise<SearchHit[]> {
+export async function searchListings(db: DB, query: string, opts: SearchOpts = {}): Promise<SearchHit[]> {
   const q = escapeFts(query);
   if (!q) return [];
+
+  const limit = opts.limit ?? 20;
+  const offset = opts.offset ?? 0;
+  const includeMature = opts.includeMature ?? false;
 
   const result = await db.run(sql`
     SELECT
@@ -53,13 +61,17 @@ export async function searchListings(
       l.type  AS type,
       l.slug  AS slug,
       l.title AS title,
-      snippet(listings_fts, 4, '<b>', '</b>', '…', 16) AS snippet
+      snippet(listings_fts, 4, '<b>', '</b>', '…', 16) AS snippet,
+      bm25(listings_fts) AS rank
     FROM listings_fts
     JOIN listing l ON l.id = listings_fts.listing_id
     WHERE listings_fts MATCH ${q}
       AND l.status = 'published'
-      ${filters.type ? sql`AND l.type = ${filters.type}` : sql``}
-    LIMIT 60
+      ${includeMature ? sql`` : sql`AND l.mature = 0`}
+      ${opts.type ? sql`AND l.type = ${opts.type}` : sql``}
+    ORDER BY rank
+    LIMIT ${limit}
+    OFFSET ${offset}
   `);
 
   return (result.rows as unknown[]).map((r) => {
@@ -68,10 +80,10 @@ export async function searchListings(
     // libSQL may return positional arrays or named objects depending on driver/version
     if (Array.isArray(r)) {
       const arr = r as unknown[];
-      hit = { id: arr[0], type: arr[1], slug: arr[2], title: arr[3], snippet: arr[4] } as SearchHit;
+      hit = { id: arr[0], type: arr[1], slug: arr[2], title: arr[3], snippet: arr[4], rank: arr[5] } as SearchHit;
     } else {
       hit = row as unknown as SearchHit;
     }
-    return { ...hit, snippet: sanitizeSnippet(String(hit.snippet ?? '')) };
+    return { ...hit, snippet: sanitizeSnippet(String(hit.snippet ?? '')), rank: Number(hit.rank) };
   });
 }
