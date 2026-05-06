@@ -15,9 +15,40 @@ export interface SearchHit {
 
 export interface SearchOpts {
   type?: 'romhack' | 'sprite' | 'sound' | 'script';
+  fromUsername?: string;
   limit?: number;
   offset?: number;
   includeMature?: boolean;
+}
+
+export interface ParsedQuery {
+  text: string;
+  type?: 'romhack' | 'sprite' | 'sound' | 'script';
+  fromUsername?: string;
+}
+
+const TYPES = ['romhack', 'sprite', 'sound', 'script'] as const;
+
+export function parseQuery(raw: string): ParsedQuery {
+  const out: ParsedQuery = { text: '' };
+  const remaining: string[] = [];
+  for (const tok of raw.trim().split(/\s+/).filter(Boolean)) {
+    const m = tok.match(/^(\w+):(.+)$/);
+    if (!m) {
+      remaining.push(tok);
+      continue;
+    }
+    const [, key, val] = m;
+    if (key === 'type' && (TYPES as readonly string[]).includes(val.toLowerCase())) {
+      out.type = val.toLowerCase() as ParsedQuery['type'];
+    } else if (key === 'from') {
+      out.fromUsername = val;
+    } else {
+      remaining.push(tok);
+    }
+  }
+  out.text = remaining.join(' ');
+  return out;
 }
 
 /**
@@ -49,11 +80,49 @@ function escapeFts(q: string): string {
 
 export async function searchListings(db: DB, query: string, opts: SearchOpts = {}): Promise<SearchHit[]> {
   const q = escapeFts(query);
-  if (!q) return [];
+  if (!q && !opts.fromUsername) return [];
 
   const limit = opts.limit ?? 20;
   const offset = opts.offset ?? 0;
   const includeMature = opts.includeMature ?? false;
+
+  // fromUsername-only path: no FTS match, just a relational filter
+  if (!q) {
+    const fromUsername = opts.fromUsername ?? '';
+    const result = await db.run(sql`
+      SELECT l.id AS id, l.type AS type, l.slug AS slug, l.title AS title, '' AS snippet, 0 AS rank
+      FROM listing l
+      JOIN profile p ON p.user_id = l.author_id
+      WHERE l.status = 'published'
+        ${includeMature ? sql`` : sql`AND l.mature = 0`}
+        ${opts.type ? sql`AND l.type = ${opts.type}` : sql``}
+        AND lower(p.username) = lower(${fromUsername})
+      ORDER BY l.created_at DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `);
+    return (Array.isArray(result.rows) ? result.rows : []).map((r): SearchHit => {
+      if (Array.isArray(r)) {
+        return {
+          id: String(r[0]),
+          type: r[1] as SearchHit['type'],
+          slug: String(r[2]),
+          title: String(r[3]),
+          snippet: '',
+          rank: 0,
+        };
+      }
+      const row = r as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        type: row.type as SearchHit['type'],
+        slug: String(row.slug),
+        title: String(row.title),
+        snippet: '',
+        rank: 0,
+      };
+    });
+  }
 
   const result = await db.run(sql`
     SELECT
@@ -69,6 +138,14 @@ export async function searchListings(db: DB, query: string, opts: SearchOpts = {
       AND l.status = 'published'
       ${includeMature ? sql`` : sql`AND l.mature = 0`}
       ${opts.type ? sql`AND l.type = ${opts.type}` : sql``}
+      ${
+        opts.fromUsername
+          ? sql`AND EXISTS (
+            SELECT 1 FROM profile p
+            WHERE p.user_id = l.author_id AND lower(p.username) = lower(${opts.fromUsername})
+          )`
+          : sql``
+      }
     ORDER BY rank
     LIMIT ${limit}
     OFFSET ${offset}
@@ -110,6 +187,14 @@ export async function searchListingsFuzzy(db: DB, query: string, opts: SearchOpt
       AND l.status = 'published'
       ${opts.includeMature ? sql`` : sql`AND l.mature = 0`}
       ${opts.type ? sql`AND l.type = ${opts.type}` : sql``}
+      ${
+        opts.fromUsername
+          ? sql`AND EXISTS (
+            SELECT 1 FROM profile p
+            WHERE p.user_id = l.author_id AND lower(p.username) = lower(${opts.fromUsername})
+          )`
+          : sql``
+      }
     LIMIT ${limit}
   `);
 

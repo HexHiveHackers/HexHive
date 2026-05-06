@@ -5,7 +5,7 @@ import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it } from 'vitest';
 import * as schema from '$lib/db/schema';
 import { createListingDraft, finalizeListing } from './listings';
-import { searchListings, searchListingsFuzzy } from './search';
+import { parseQuery, searchListings, searchListingsFuzzy } from './search';
 
 let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -467,6 +467,77 @@ describe('searchListingsFuzzy', () => {
     expect(fuzzy.some((h) => h.title === 'Kaizo Sapphire')).toBe(true);
   });
 
+  it('fuzzy filters by fromUsername', async () => {
+    await db.insert(schema.user).values({ id: 'u_fuzzy_alice', name: 'FA', email: 'falice@x.com' });
+    await db
+      .insert(schema.profile)
+      .values({ userId: 'u_fuzzy_alice', username: 'fuzzy_alice', bio: null, avatarKey: null });
+    await db.insert(schema.user).values({ id: 'u_fuzzy_bob', name: 'FB', email: 'fbob@x.com' });
+    await db
+      .insert(schema.profile)
+      .values({ userId: 'u_fuzzy_bob', username: 'fuzzy_bob', bio: null, avatarKey: null });
+
+    const aliceDraft = await createListingDraft(db, {
+      authorId: 'u_fuzzy_alice',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Starfall Alice Edition',
+          description: '',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: [],
+          states: [],
+          tags: [],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: aliceDraft.listingId,
+      versionId: aliceDraft.versionId,
+      files: [{ r2Key: 'fa_k', filename: 'f.ips', originalFilename: 'f.ips', size: 1, hash: null }],
+    });
+
+    const bobDraft = await createListingDraft(db, {
+      authorId: 'u_fuzzy_bob',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Starfall Bob Edition',
+          description: '',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: [],
+          states: [],
+          tags: [],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: bobDraft.listingId,
+      versionId: bobDraft.versionId,
+      files: [{ r2Key: 'fb_k', filename: 'f.ips', originalFilename: 'f.ips', size: 1, hash: null }],
+    });
+
+    const fuzzy = await searchListingsFuzzy(db, 'starfall', { fromUsername: 'fuzzy_alice' });
+    expect(fuzzy.some((h) => h.title === 'Starfall Alice Edition')).toBe(true);
+    expect(fuzzy.some((h) => h.title === 'Starfall Bob Edition')).toBe(false);
+  });
+
   it('fuzzy respects type filter', async () => {
     // Create a romhack and a sprite with similar title prefixes
     const rhDraft = await createListingDraft(db, {
@@ -522,5 +593,162 @@ describe('searchListingsFuzzy', () => {
     expect(fuzzy.every((h) => h.type === 'sprite')).toBe(true);
     expect(fuzzy.some((h) => h.title === 'Neon Galaxy Sprite')).toBe(true);
     expect(fuzzy.some((h) => h.title === 'Neon Galaxy Romhack')).toBe(false);
+  });
+});
+
+describe('parseQuery', () => {
+  it('splits free text from from: and type:', () => {
+    expect(parseQuery('kaizo from:alice type:romhack')).toEqual({
+      text: 'kaizo',
+      type: 'romhack',
+      fromUsername: 'alice',
+    });
+  });
+
+  it('passes unknown keys through as text', () => {
+    expect(parseQuery('kaizo foo:bar')).toEqual({ text: 'kaizo foo:bar' });
+  });
+
+  it('handles only modifiers, no text', () => {
+    expect(parseQuery('from:bob')).toEqual({ text: '', fromUsername: 'bob' });
+  });
+
+  it('rejects unknown type values (passes through as text)', () => {
+    expect(parseQuery('type:movie kaizo')).toEqual({ text: 'type:movie kaizo' });
+  });
+});
+
+describe('searchListings with fromUsername', () => {
+  it("returns only that author's listings when no query text", async () => {
+    await db.insert(schema.user).values({ id: 'u_alice', name: 'Alice', email: 'alice@x.com' });
+    await db.insert(schema.profile).values({ userId: 'u_alice', username: 'alice', bio: null, avatarKey: null });
+    await db.insert(schema.user).values({ id: 'u_charlie', name: 'Charlie', email: 'charlie@x.com' });
+    await db.insert(schema.profile).values({ userId: 'u_charlie', username: 'charlie', bio: null, avatarKey: null });
+
+    const aliceDraft = await createListingDraft(db, {
+      authorId: 'u_alice',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Alice Exclusive Hack',
+          description: 'authored by alice',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: [],
+          states: [],
+          tags: [],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: aliceDraft.listingId,
+      versionId: aliceDraft.versionId,
+      files: [{ r2Key: 'ae_k', filename: 'f.ips', originalFilename: 'f.ips', size: 1, hash: null }],
+    });
+
+    const charlieDraft = await createListingDraft(db, {
+      authorId: 'u_charlie',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Charlie Hack',
+          description: 'authored by charlie',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: [],
+          states: [],
+          tags: [],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: charlieDraft.listingId,
+      versionId: charlieDraft.versionId,
+      files: [{ r2Key: 'ch_k', filename: 'f.ips', originalFilename: 'f.ips', size: 1, hash: null }],
+    });
+
+    const hits = await searchListings(db, '', { fromUsername: 'alice' });
+    expect(hits.length).toBeGreaterThanOrEqual(1);
+    expect(hits.some((h) => h.title === 'Alice Exclusive Hack')).toBe(true);
+    expect(hits.some((h) => h.title === 'Charlie Hack')).toBe(false);
+  });
+
+  it('combines with full-text query', async () => {
+    await db.insert(schema.user).values({ id: 'u_diana', name: 'Diana', email: 'diana@x.com' });
+    await db.insert(schema.profile).values({ userId: 'u_diana', username: 'diana', bio: null, avatarKey: null });
+
+    const matchDraft = await createListingDraft(db, {
+      authorId: 'u_diana',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Zephyrstone Unique Hack',
+          description: 'zephyrstone unique keyword',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: [],
+          states: [],
+          tags: [],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: matchDraft.listingId,
+      versionId: matchDraft.versionId,
+      files: [{ r2Key: 'zu_k', filename: 'f.ips', originalFilename: 'f.ips', size: 1, hash: null }],
+    });
+
+    const otherDraft = await createListingDraft(db, {
+      authorId: 'u_diana',
+      ti: {
+        type: 'romhack',
+        input: {
+          title: 'Zephyrstone Other Hack',
+          description: 'zephyrstone other keyword',
+          permissions: ['Credit'],
+          baseRom: 'Emerald',
+          baseRomVersion: 'v1.0',
+          baseRomRegion: 'English',
+          release: '1',
+          categories: [],
+          states: [],
+          tags: [],
+          screenshots: [],
+          boxart: [],
+          trailer: [],
+        },
+      },
+    });
+    await finalizeListing(db, {
+      type: 'romhack',
+      listingId: otherDraft.listingId,
+      versionId: otherDraft.versionId,
+      files: [{ r2Key: 'zo_k', filename: 'f.ips', originalFilename: 'f.ips', size: 1, hash: null }],
+    });
+
+    const hits = await searchListings(db, 'unique', { fromUsername: 'diana' });
+    expect(hits.some((h) => h.title === 'Zephyrstone Unique Hack')).toBe(true);
+    expect(hits.some((h) => h.title === 'Zephyrstone Other Hack')).toBe(false);
   });
 });
