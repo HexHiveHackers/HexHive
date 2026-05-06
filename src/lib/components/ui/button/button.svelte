@@ -56,14 +56,12 @@
 </script>
 
 {#if href}
-	<!-- biome-ignore lint/a11y/useValidAriaRole: shadcn-svelte pattern — role="link" preserves link semantics on <a> when href is removed for disabled state -->
 	<a
 		bind:this={ref}
 		data-slot="button"
 		class={cn(buttonVariants({ variant, size }), className)}
 		href={disabled ? undefined : href}
 		aria-disabled={disabled}
-		role={disabled ? "link" : undefined}
 		tabindex={disabled ? -1 : undefined}
 		{...restProps}
 	>
