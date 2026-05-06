@@ -1,42 +1,62 @@
-# sv
+# HexHive
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+HexHive is a Pokémon ROM-hack asset hub: browse and upload romhacks, sprites, sounds, and scripts.
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **OAuth + passkeys** — sign in with Google, GitHub, or Discord; no passwords stored. Passkey registration available after first login.
+- **Direct browser-to-R2 uploads** — the server signs a presigned PUT URL; file bytes never pass through the app server.
+- **Four asset types** — romhacks, sprites, sounds, and scripts each have their own list, detail, and upload pages.
+- **Versioning with changelog timeline** — re-upload a new version and prior versions are kept; a timeline shows the history.
+- **SQLite FTS5 full-text search** — searches across titles and descriptions.
+- **User profiles** — `/me` and `/u/[username]` pages with avatars.
+- **Moderation** — anonymous-allowed reports, admin review queue, mature-content blur on flagged assets.
 
-```sh
-# create a new project
-npx sv create my-app
+## Stack
+
+- SvelteKit + Bun, Tailwind v4 + shadcn-svelte
+- Drizzle ORM + Turso (libSQL / SQLite)
+- Cloudflare R2 (file storage)
+- Better Auth (OAuth + passkeys)
+
+## Quickstart
+
+```bash
+bun install
+cp .env.example .env
+bun run db:migrate
+bun run dev
 ```
 
-To recreate this project with the same configuration:
+OAuth provider env vars (Google, GitHub, Discord) can stay empty in development — the login buttons silently no-op for any unconfigured provider.
 
-```sh
-# recreate this project
-bun x sv@0.15.2 create --template minimal --types ts --install bun .
+## Tests
+
+```bash
+bun run check      # svelte-check: type errors + a11y (0 errors required)
+bun run test       # vitest run (unit + server tests)
+bun run test:e2e   # Playwright end-to-end tests
 ```
 
-## Developing
+## Project structure
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+```
+src/
+├── lib/
+│   ├── db/            # Drizzle schema + client singleton
+│   ├── server/        # Server-only logic (listings, uploads, auth-utils)
+│   ├── components/    # Shared Svelte components + shadcn-svelte UI
+│   └── schemas/       # Zod schemas per asset type
+├── routes/            # SvelteKit pages and API endpoints
+e2e/                   # Playwright tests
+drizzle/               # Migration files
+docs/superpowers/      # Plans and implementation history
 ```
 
-## Building
+## Conventions
 
-To create a production version of your app:
+See [CLAUDE.md](./CLAUDE.md) for development conventions.
 
-```sh
-npm run build
-```
+## Plans
 
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+Implementation history is under `docs/superpowers/plans/`.
