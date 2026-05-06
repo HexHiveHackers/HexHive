@@ -12,6 +12,28 @@ export interface SearchHit {
   snippet: string;
 }
 
+/**
+ * Sanitize a SQLite FTS5 snippet that may contain <b>…</b> highlight tags.
+ * We escape all HTML, then restore the bold markers so the browser only ever
+ * renders literal text content wrapped in safe <b> elements.
+ */
+function sanitizeSnippet(raw: string): string {
+  // Placeholder tokens unlikely to survive in user content
+  const OPEN = '\x00BOLD_OPEN\x00';
+  const CLOSE = '\x00BOLD_CLOSE\x00';
+  // Protect the FTS-generated <b> / </b> pairs before escaping
+  let s = raw.replaceAll('<b>', OPEN).replaceAll('</b>', CLOSE);
+  // Escape everything (incl. any attacker-injected HTML in title/description)
+  s = s
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+  // Restore bold markers as safe tags
+  s = s.replaceAll(OPEN, '<b>').replaceAll(CLOSE, '</b>');
+  return s;
+}
+
 function escapeFts(q: string): string {
   return q
     .trim()
@@ -46,11 +68,14 @@ export async function searchListings(
 
   return (result.rows as unknown[]).map((r) => {
     const row = r as Record<string, unknown>;
+    let hit: SearchHit;
     // libSQL may return positional arrays or named objects depending on driver/version
     if (Array.isArray(r)) {
       const arr = r as unknown[];
-      return { id: arr[0], type: arr[1], slug: arr[2], title: arr[3], snippet: arr[4] } as SearchHit;
+      hit = { id: arr[0], type: arr[1], slug: arr[2], title: arr[3], snippet: arr[4] } as SearchHit;
+    } else {
+      hit = row as unknown as SearchHit;
     }
-    return row as unknown as SearchHit;
+    return { ...hit, snippet: sanitizeSnippet(String(hit.snippet ?? '')) };
   });
 }
