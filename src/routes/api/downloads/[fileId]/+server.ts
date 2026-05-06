@@ -6,8 +6,11 @@ import { incrementDownloads } from '$lib/server/listings';
 import { presignGet } from '$lib/storage/r2';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ params }) => {
-  const fileRows = await db.select().from(schema.listingFile).where(eq(schema.listingFile.id, params.fileId)).limit(1);
+export type DownloadCtx = { params: Record<string, string> };
+
+export async function handleDownload({ params }: DownloadCtx): Promise<Response> {
+  const fileId = params.fileId ?? '';
+  const fileRows = await db.select().from(schema.listingFile).where(eq(schema.listingFile.id, fileId)).limit(1);
   const file = fileRows[0];
   if (!file) throw error(404, 'File not found');
 
@@ -22,4 +25,6 @@ export const GET: RequestHandler = async ({ params }) => {
   await incrementDownloads(db, ver.listingId);
   const url = await presignGet(file.r2Key);
   throw redirect(303, url);
-};
+}
+
+export const GET: RequestHandler = handleDownload;

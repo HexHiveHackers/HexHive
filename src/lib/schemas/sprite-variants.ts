@@ -8,7 +8,11 @@ import { HUMAN_MOVEMENT } from './asset-vocab';
 
 export type VariantSpec = { variant?: undefined } | { variant: 'string' } | { variant: readonly string[] };
 
-export const SPRITE_VARIANTS = {
+// Internal narrow form (kept `as const` for literal-type accuracy at the few
+// call sites that introspect specific subtypes statically) and a wide
+// `Record<string, …>` re-export for any code that indexes the tree with
+// arbitrary string keys at runtime. Two views of the same value, no casts.
+const SPRITE_VARIANTS_NARROW = {
   Battle: {
     Attack: { variant: undefined },
     Background: { variant: 'string' },
@@ -55,23 +59,25 @@ export const SPRITE_VARIANTS = {
   },
 } as const satisfies Record<string, Record<string, VariantSpec>>;
 
+export const SPRITE_VARIANTS: Record<string, Record<string, VariantSpec>> = SPRITE_VARIANTS_NARROW;
+
 export const SPRITE_MAP_CATEGORY = ['animated', 'animatedShiny', 'default', 'shiny'] as const;
 export type SpriteMapCategory = (typeof SPRITE_MAP_CATEGORY)[number];
 
-export type SpriteType = keyof typeof SPRITE_VARIANTS;
-export type SpriteSubtype<T extends SpriteType> = keyof (typeof SPRITE_VARIANTS)[T];
+export type SpriteType = keyof typeof SPRITE_VARIANTS_NARROW;
+export type SpriteSubtype<T extends SpriteType> = keyof (typeof SPRITE_VARIANTS_NARROW)[T];
 
 export function validateTriple(
   type: string,
   subtype: string,
   variant: unknown,
 ): { ok: true } | { ok: false; error: string; path: 'type' | 'subtype' | 'variant' } {
-  const types = SPRITE_VARIANTS as unknown as Record<string, Record<string, VariantSpec>>;
-  if (!(type in types)) return { ok: false, error: `Invalid sprite type: "${type}"`, path: 'type' };
-  if (!(subtype in types[type])) {
+  const typeMap = SPRITE_VARIANTS[type];
+  if (!typeMap) return { ok: false, error: `Invalid sprite type: "${type}"`, path: 'type' };
+  const spec = typeMap[subtype];
+  if (!spec) {
     return { ok: false, error: `Invalid subtype "${subtype}" for type "${type}"`, path: 'subtype' };
   }
-  const spec = types[type][subtype];
 
   if (spec.variant === undefined) {
     if (variant !== undefined && variant !== null && variant !== '' && !(Array.isArray(variant) && !variant.length)) {
@@ -89,7 +95,9 @@ export function validateTriple(
 
   if (spec.variant === 'string') return { ok: true };
 
-  const allowed = spec.variant as readonly string[];
+  // After the `=== undefined` and `=== 'string'` branches, only the array
+  // form of VariantSpec is left.
+  const allowed: readonly string[] = spec.variant;
   const check = (v: unknown): boolean => typeof v === 'string' && allowed.includes(v);
 
   if (typeof variant === 'string')

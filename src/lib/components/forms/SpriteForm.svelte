@@ -16,8 +16,7 @@
   };
   let { value = $bindable<V>() }: { value: V } = $props();
 
-  type Tree = Record<string, Record<string, VariantSpec>>;
-  const tree = SPRITE_VARIANTS as unknown as Tree;
+  const tree = SPRITE_VARIANTS;
 
   const types = Object.keys(tree);
   const subtypes = $derived(tree[value.type] ? Object.keys(tree[value.type]) : []);

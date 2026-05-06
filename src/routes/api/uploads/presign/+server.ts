@@ -25,7 +25,17 @@ const PresignBody = z.discriminatedUnion('type', [
   z.object({ type: z.literal('script'), input: ScriptInput, files: z.array(FileMetaSchema).min(1) }),
 ]);
 
-export const POST: RequestHandler = async (event) => {
+// The handler reads only `request`, `locals`, and `url`. Typing the inner
+// function with this structural shape lets tests synthesize plain objects;
+// SvelteKit's RequestEvent is a subtype of this, so the wrapper assignment
+// is contravariantly valid.
+export type PresignCtx = {
+  request: Request;
+  locals: App.Locals;
+  url: URL;
+};
+
+export async function handlePresign(event: PresignCtx) {
   const user = requireUser(event);
 
   let parsed: z.infer<typeof PresignBody>;
@@ -53,4 +63,6 @@ export const POST: RequestHandler = async (event) => {
     slug: draft.slug,
     uploads,
   });
-};
+}
+
+export const POST: RequestHandler = handlePresign;

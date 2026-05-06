@@ -38,12 +38,12 @@ export async function writeMeta(db: DB, listingId: string, ti: ListingTypedInput
         fileCount: 0,
         totalSize: 0,
       });
-      // The schema's `category` column is JSON-typed and accepts the full
-      // SpriteVariant shape (single entry, array, or record); cast through
-      // `unknown` to satisfy Drizzle's narrower stored-row inference.
+      // `category` is a JSON column whose Drizzle-inferred insert type is
+      // `unknown`; the SpriteVariant shape (entry / array / record) all
+      // serialize to JSON cleanly.
       await db.insert(schema.spriteMeta).values({
         listingId,
-        category: ti.input.category as unknown as typeof schema.spriteMeta.$inferInsert.category,
+        category: ti.input.category,
         fileMap: ti.input.fileMap ?? null,
       });
       return;

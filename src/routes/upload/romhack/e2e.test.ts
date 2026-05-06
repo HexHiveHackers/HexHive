@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import * as schema from '$lib/db/schema';
+import { buildEvent } from '../../../../tests/event';
 
 vi.mock('$lib/storage/r2', () => ({
   presignPut: vi.fn(async (k: string) => `https://put.example/${k}`),
@@ -26,54 +27,43 @@ beforeAll(async () => {
 
 describe('romhack upload happy path', () => {
   it('drafts, finalizes, lists, fetches detail', async () => {
-    const presign = (await import('../../api/uploads/presign/+server')).POST;
-    const finalize = (await import('../../api/uploads/finalize/+server')).POST;
+    const { handlePresign } = await import('../../api/uploads/presign/+server');
+    const { handleFinalize } = await import('../../api/uploads/finalize/+server');
     const { listRomhacks, getRomhackBySlug } = await import('$lib/server/listings');
 
-    type PresignEvent = Parameters<typeof presign>[0];
-    type FinalizeEvent = Parameters<typeof finalize>[0];
-
-    function evt(body: unknown) {
-      return {
-        request: new Request('http://x', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(body),
-        }),
-        locals: { user: { id: 'u1', name: 'Author' }, session: null },
-        url: new URL('http://x'),
-      };
-    }
-
-    const presignRes = await presign(
-      evt({
-        type: 'romhack',
-        input: {
-          title: 'E2E',
-          permissions: ['Credit'],
-          baseRom: 'Emerald',
-          baseRomVersion: 'v1.0',
-          baseRomRegion: 'English',
-          release: '1.0.0',
+    const presignRes = await handlePresign(
+      buildEvent({
+        body: {
+          type: 'romhack',
+          input: {
+            title: 'E2E',
+            permissions: ['Credit'],
+            baseRom: 'Emerald',
+            baseRomVersion: 'v1.0',
+            baseRomRegion: 'English',
+            release: '1.0.0',
+          },
+          files: [{ filename: 'p.ips', contentType: 'application/octet-stream', size: 100 }],
         },
-        files: [{ filename: 'p.ips', contentType: 'application/octet-stream', size: 100 }],
-      }) as unknown as PresignEvent,
+      }),
     );
     const presignJson = await presignRes.json();
 
-    const finalizeRes = await finalize(
-      evt({
-        listingId: presignJson.listingId,
-        versionId: presignJson.versionId,
-        files: [
-          {
-            r2Key: presignJson.uploads[0].r2Key,
-            filename: presignJson.uploads[0].filename,
-            originalFilename: presignJson.uploads[0].originalFilename,
-            size: presignJson.uploads[0].size,
-          },
-        ],
-      }) as unknown as FinalizeEvent,
+    const finalizeRes = await handleFinalize(
+      buildEvent({
+        body: {
+          listingId: presignJson.listingId,
+          versionId: presignJson.versionId,
+          files: [
+            {
+              r2Key: presignJson.uploads[0].r2Key,
+              filename: presignJson.uploads[0].filename,
+              originalFilename: presignJson.uploads[0].originalFilename,
+              size: presignJson.uploads[0].size,
+            },
+          ],
+        },
+      }),
     );
     expect(finalizeRes.status).toBe(200);
 

@@ -1,8 +1,22 @@
+import type { Row } from '@libsql/core/api';
 import { sql } from 'drizzle-orm';
 import type { drizzle } from 'drizzle-orm/libsql';
 import type * as schema from '$lib/db/schema';
 
 type DB = ReturnType<typeof drizzle<typeof schema>>;
+
+// libSQL rows are array-indexable AND name-indexable. Drivers vary — some
+// hand back rows as arrays only, others as named objects. We read by name
+// when present, falling back to position. No cast needed: Row's index
+// signature accepts string and number returning Value.
+function pick(row: Row, name: string, index: number) {
+  const v = row[name];
+  return v === undefined ? row[index] : v;
+}
+const SEARCH_TYPES = new Set(['romhack', 'sprite', 'sound', 'script']);
+function asSearchType(v: unknown): SearchHit['type'] {
+  return typeof v === 'string' && SEARCH_TYPES.has(v) ? (v as SearchHit['type']) : 'romhack';
+}
 
 export interface SearchHit {
   id: string;
@@ -151,18 +165,16 @@ export async function searchListings(db: DB, query: string, opts: SearchOpts = {
     OFFSET ${offset}
   `);
 
-  return (result.rows as unknown[]).map((r) => {
-    const row = r as Record<string, unknown>;
-    let hit: SearchHit;
-    // libSQL may return positional arrays or named objects depending on driver/version
-    if (Array.isArray(r)) {
-      const arr = r as unknown[];
-      hit = { id: arr[0], type: arr[1], slug: arr[2], title: arr[3], snippet: arr[4], rank: arr[5] } as SearchHit;
-    } else {
-      hit = row as unknown as SearchHit;
-    }
-    return { ...hit, snippet: sanitizeSnippet(String(hit.snippet ?? '')), rank: Number(hit.rank) };
-  });
+  return result.rows.map(
+    (row): SearchHit => ({
+      id: String(pick(row, 'id', 0)),
+      type: asSearchType(pick(row, 'type', 1)),
+      slug: String(pick(row, 'slug', 2)),
+      title: String(pick(row, 'title', 3)),
+      snippet: sanitizeSnippet(String(pick(row, 'snippet', 4) ?? '')),
+      rank: Number(pick(row, 'rank', 5)),
+    }),
+  );
 }
 
 export async function searchListingsFacets(
@@ -200,12 +212,11 @@ export async function searchListingsFacets(
         GROUP BY l.type
       `));
 
-  for (const r of Array.isArray(result.rows) ? result.rows : []) {
-    const row = r as unknown as Record<string, unknown> | unknown[];
-    const t = Array.isArray(row) ? row[0] : row.type;
-    const n = Array.isArray(row) ? row[1] : row.n;
+  for (const row of result.rows) {
+    const t = pick(row, 'type', 0);
+    const n = pick(row, 'n', 1);
     if (typeof t === 'string' && t in out) {
-      (out as Record<string, number>)[t] = Number(n ?? 0);
+      out[t as keyof typeof out] = Number(n ?? 0);
     }
   }
   return out;
@@ -244,27 +255,14 @@ export async function searchListingsFuzzy(db: DB, query: string, opts: SearchOpt
     LIMIT ${limit}
   `);
 
-  // Mirror the array-vs-object branch the existing searchListings uses.
-  const rows = (Array.isArray(result.rows) ? result.rows : []) as unknown[];
-  return rows.map((r): SearchHit => {
-    const row = r as Record<string, unknown> | unknown[];
-    if (Array.isArray(row)) {
-      return {
-        id: String(row[0]),
-        type: row[1] as SearchHit['type'],
-        slug: String(row[2]),
-        title: String(row[3]),
-        snippet: sanitizeSnippet(String(row[4] ?? '')),
-        rank: 0,
-      };
-    }
-    return {
-      id: String(row.id),
-      type: row.type as SearchHit['type'],
-      slug: String(row.slug),
-      title: String(row.title),
-      snippet: sanitizeSnippet(String(row.snippet ?? '')),
+  return result.rows.map(
+    (row): SearchHit => ({
+      id: String(pick(row, 'id', 0)),
+      type: asSearchType(pick(row, 'type', 1)),
+      slug: String(pick(row, 'slug', 2)),
+      title: String(pick(row, 'title', 3)),
+      snippet: sanitizeSnippet(String(pick(row, 'snippet', 4) ?? '')),
       rank: 0,
-    };
-  });
+    }),
+  );
 }

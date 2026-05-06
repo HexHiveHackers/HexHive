@@ -23,7 +23,13 @@ const FinalizeBody = z.object({
     .min(1),
 });
 
-export const POST: RequestHandler = async (event) => {
+export type FinalizeCtx = {
+  request: Request;
+  locals: App.Locals;
+  url: URL;
+};
+
+export async function handleFinalize(event: FinalizeCtx) {
   requireUser(event);
 
   let body: z.infer<typeof FinalizeBody>;
@@ -44,4 +50,6 @@ export const POST: RequestHandler = async (event) => {
   });
 
   return json({ ok: true });
-};
+}
+
+export const POST: RequestHandler = handleFinalize;

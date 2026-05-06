@@ -128,12 +128,12 @@
   const accent = $derived(type ? TYPE_META[type].accent : NEUTRAL_ACCENT);
 
   // Sprite variant tree helpers (live-updated when type/subtype change).
-  type SpriteTree = Record<string, Record<string, VariantSpec>>;
-  const spriteTree = SPRITE_VARIANTS as unknown as SpriteTree;
-  const spriteTypes = Object.keys(spriteTree);
-  const spriteSubtypes = $derived(spriteTree[sprite.type] ? Object.keys(spriteTree[sprite.type]) : []);
+  const spriteTypes = Object.keys(SPRITE_VARIANTS);
+  const spriteSubtypes = $derived(
+    SPRITE_VARIANTS[sprite.type] ? Object.keys(SPRITE_VARIANTS[sprite.type]) : []
+  );
   const spriteVariantSpec = $derived<VariantSpec | undefined>(
-    spriteTree[sprite.type]?.[sprite.subtype]
+    SPRITE_VARIANTS[sprite.type]?.[sprite.subtype]
   );
   const spriteClosedList = $derived(
     spriteVariantSpec && Array.isArray((spriteVariantSpec as { variant?: unknown }).variant)

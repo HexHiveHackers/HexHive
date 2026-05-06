@@ -1,12 +1,8 @@
 import { createClient } from '@libsql/client';
-import type { RequestEvent } from '@sveltejs/kit';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import * as schema from '$lib/db/schema';
-
-type DownloadEvent = RequestEvent<{ fileId: string }, '/api/downloads/[fileId]'>;
-const fakeEvent = (fileId: string): DownloadEvent => ({ params: { fileId } }) as unknown as DownloadEvent;
 
 vi.mock('$lib/storage/r2', () => ({
   presignPut: vi.fn(),
@@ -50,15 +46,17 @@ beforeAll(async () => {
   });
 });
 
-describe('GET /api/downloads/[fileId]', () => {
+describe('handleDownload (GET /api/downloads/[fileId])', () => {
   it('404s when file not found', async () => {
-    const { GET } = await import('./+server');
-    await expect(GET(fakeEvent('nope'))).rejects.toMatchObject({ status: 404 });
+    const { handleDownload } = await import('./+server');
+    await expect(handleDownload({ params: { fileId: 'nope' } })).rejects.toMatchObject({
+      status: 404,
+    });
   });
 
   it('redirects to signed R2 URL and increments counter', async () => {
-    const { GET } = await import('./+server');
-    await expect(GET(fakeEvent('F1'))).rejects.toMatchObject({
+    const { handleDownload } = await import('./+server');
+    await expect(handleDownload({ params: { fileId: 'F1' } })).rejects.toMatchObject({
       status: 303,
       location: 'https://get.example/k1',
     });

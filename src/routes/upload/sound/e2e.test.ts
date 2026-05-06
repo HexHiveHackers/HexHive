@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import * as schema from '$lib/db/schema';
+import { buildEvent } from '../../../../tests/event';
 
 vi.mock('$lib/storage/r2', () => ({
   presignPut: vi.fn(async (k: string) => `https://put.example/${k}`),
@@ -26,54 +27,43 @@ beforeAll(async () => {
 
 describe('sound upload happy path', () => {
   it('drafts, finalizes, lists, fetches detail', async () => {
-    const presign = (await import('../../api/uploads/presign/+server')).POST;
-    const finalize = (await import('../../api/uploads/finalize/+server')).POST;
+    const { handlePresign } = await import('../../api/uploads/presign/+server');
+    const { handleFinalize } = await import('../../api/uploads/finalize/+server');
     const { listAssetHives, getAssetHiveBySlug } = await import('$lib/server/listings');
 
-    type PresignEvent = Parameters<typeof presign>[0];
-    type FinalizeEvent = Parameters<typeof finalize>[0];
-
-    function evt(body: unknown) {
-      return {
-        request: new Request('http://x', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(body),
-        }),
-        locals: { user: { id: 'u1', name: 'Author' }, session: null },
-        url: new URL('http://x'),
-      };
-    }
-
-    const presignRes = await presign(
-      evt({
-        type: 'sound',
-        input: {
-          title: 'E2E Sound',
-          description: '',
-          permissions: ['Free'],
-          targetedRoms: ['Emerald'],
-          category: 'SFX',
+    const presignRes = await handlePresign(
+      buildEvent({
+        body: {
+          type: 'sound',
+          input: {
+            title: 'E2E Sound',
+            description: '',
+            permissions: ['Free'],
+            targetedRoms: ['Emerald'],
+            category: 'SFX',
+          },
+          files: [{ filename: 'a.wav', contentType: 'audio/wav', size: 1234 }],
         },
-        files: [{ filename: 'a.wav', contentType: 'audio/wav', size: 1234 }],
-      }) as unknown as PresignEvent,
+      }),
     );
     const presignJson = await presignRes.json();
 
-    const finalizeRes = await finalize(
-      evt({
-        type: 'sound',
-        listingId: presignJson.listingId,
-        versionId: presignJson.versionId,
-        files: [
-          {
-            r2Key: presignJson.uploads[0].r2Key,
-            filename: presignJson.uploads[0].filename,
-            originalFilename: presignJson.uploads[0].originalFilename,
-            size: presignJson.uploads[0].size,
-          },
-        ],
-      }) as unknown as FinalizeEvent,
+    const finalizeRes = await handleFinalize(
+      buildEvent({
+        body: {
+          type: 'sound',
+          listingId: presignJson.listingId,
+          versionId: presignJson.versionId,
+          files: [
+            {
+              r2Key: presignJson.uploads[0].r2Key,
+              filename: presignJson.uploads[0].filename,
+              originalFilename: presignJson.uploads[0].originalFilename,
+              size: presignJson.uploads[0].size,
+            },
+          ],
+        },
+      }),
     );
     expect(finalizeRes.status).toBe(200);
 
