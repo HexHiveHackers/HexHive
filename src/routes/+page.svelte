@@ -1,5 +1,8 @@
 <script lang="ts">
   import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
+  import RomhackCard from '$lib/components/listings/RomhackCard.svelte';
+
+  let { data } = $props();
 </script>
 
 <section class="relative overflow-hidden border-b">
@@ -20,5 +23,17 @@
 </section>
 
 <section class="mx-auto max-w-6xl px-4 py-12">
-  <p class="text-sm text-muted-foreground">No listings yet. Sign in and upload the first one.</p>
+  <div class="flex items-end justify-between mb-4">
+    <h2 class="font-display text-xl">Recent romhacks</h2>
+    <a href="/romhacks" class="text-sm underline">Browse all</a>
+  </div>
+  {#if data.recent.length === 0}
+    <p class="text-sm text-muted-foreground">No listings yet. Sign in and upload the first one.</p>
+  {:else}
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {#each data.recent as item}
+        <RomhackCard {item} />
+      {/each}
+    </div>
+  {/if}
 </section>
