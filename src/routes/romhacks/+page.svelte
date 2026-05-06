@@ -2,6 +2,7 @@
   import type { RomhackListItem } from '$lib/server/listings';
   import RomhackCard from '$lib/components/listings/RomhackCard.svelte';
   import ListingsGrid from '$lib/components/listings/ListingsGrid.svelte';
+  import MatureFilterToggle from '$lib/components/listings/MatureFilterToggle.svelte';
   import { Input } from '$lib/components/ui/input';
   import { Button } from '$lib/components/ui/button';
   import { SUPPORTED_BASE_ROM } from '$lib/schemas/zod-helpers';
@@ -17,7 +18,7 @@
     <a href="/upload/romhack"><Button>Upload</Button></a>
   </header>
 
-  <form method="get" class="grid gap-3 sm:grid-cols-[1fr_auto_auto] mb-6">
+  <form method="get" class="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto] mb-6">
     <Input name="q" placeholder="Search title…" value={q} oninput={(e) => (q = e.currentTarget.value)} />
     <select name="baseRom" bind:value={baseRom}
             class="border rounded-md px-3 py-2 bg-background text-sm">
@@ -26,6 +27,7 @@
         <option value={r}>{r}</option>
       {/each}
     </select>
+    <MatureFilterToggle showing={data.filters.mature} />
     <Button type="submit" variant="outline">Filter</Button>
   </form>
 

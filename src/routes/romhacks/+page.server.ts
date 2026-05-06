@@ -10,6 +10,7 @@ export const load: PageServerLoad = async ({ url }) => {
     ? baseRomParam!
     : undefined;
 
-  const items = await listRomhacks(db, { baseRom, q, limit: 60 });
-  return { items, filters: { baseRom: baseRom ?? null, q: q ?? null } };
+  const includeMature = url.searchParams.get('mature') === 'show';
+  const items = await listRomhacks(db, { baseRom, q, includeMature, limit: 60 });
+  return { items, filters: { baseRom: baseRom ?? null, q: q ?? null, mature: includeMature } };
 };

@@ -140,11 +140,12 @@ export interface RomhackListItem {
 
 export async function listRomhacks(
   db: DB,
-  filters: { baseRom?: string; q?: string; limit?: number; offset?: number }
+  filters: { baseRom?: string; q?: string; includeMature?: boolean; limit?: number; offset?: number }
 ): Promise<RomhackListItem[]> {
   const where = [eq(schema.listing.type, 'romhack'), eq(schema.listing.status, 'published')];
   if (filters.baseRom) where.push(eq(schema.romhackMeta.baseRom, filters.baseRom));
   if (filters.q) where.push(like(schema.listing.title, `%${filters.q}%`));
+  if (!filters.includeMature) where.push(eq(schema.listing.mature, false));
 
   const rows = await db
     .select({
@@ -242,10 +243,11 @@ export interface AssetHiveListItem {
 export async function listAssetHives(
   db: DB,
   type: 'sprite' | 'sound' | 'script',
-  filters: { q?: string; limit?: number; offset?: number }
+  filters: { q?: string; includeMature?: boolean; limit?: number; offset?: number }
 ): Promise<AssetHiveListItem[]> {
   const where = [eq(schema.listing.type, type), eq(schema.listing.status, 'published')];
   if (filters.q) where.push(like(schema.listing.title, `%${filters.q}%`));
+  if (!filters.includeMature) where.push(eq(schema.listing.mature, false));
 
   const rows = await db
     .select({

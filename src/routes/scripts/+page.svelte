@@ -2,6 +2,7 @@
   import type { AssetHiveListItem } from '$lib/server/listings';
   import AssetHiveCard from '$lib/components/listings/AssetHiveCard.svelte';
   import ListingsGrid from '$lib/components/listings/ListingsGrid.svelte';
+  import MatureFilterToggle from '$lib/components/listings/MatureFilterToggle.svelte';
   import { Input } from '$lib/components/ui/input';
   import { Button } from '$lib/components/ui/button';
   let { data } = $props();
@@ -12,8 +13,9 @@
     <h1 class="font-display text-2xl">Scripts</h1>
     <a href="/upload/script"><Button>Upload</Button></a>
   </header>
-  <form method="get" class="grid gap-3 sm:grid-cols-[1fr_auto] mb-6">
+  <form method="get" class="grid gap-3 sm:grid-cols-[1fr_auto_auto] mb-6">
     <Input name="q" placeholder="Search title…" value={data.filters.q ?? ''} />
+    <MatureFilterToggle showing={data.filters.mature} />
     <Button type="submit" variant="outline">Filter</Button>
   </form>
   {#snippet card(it: AssetHiveListItem)}
