@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { passkey } from '@better-auth/passkey';
 import { env } from '$env/dynamic/private';
 import { db } from './db';
 
@@ -22,10 +23,13 @@ export const auth = betterAuth({
       : {})
   },
 
-  // NOTE: better-auth 1.6.9 does not include a passkey plugin.
-  // Passkeys were removed from the core package in this version.
-  // Re-add plugins: [passkey()] once a compatible package is available.
-  plugins: []
+  plugins: [
+    passkey({
+      rpName: 'HexHive',
+      rpID: new URL(env.BETTER_AUTH_URL).hostname,
+      origin: env.BETTER_AUTH_URL
+    })
+  ]
 });
 
 export type Session = typeof auth.$Infer.Session;
