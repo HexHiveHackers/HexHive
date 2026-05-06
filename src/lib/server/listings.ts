@@ -135,6 +135,7 @@ export interface RomhackListItem {
   downloads: number;
   authorName: string;
   createdAt: Date;
+  mature: boolean;
 }
 
 export async function listRomhacks(
@@ -157,7 +158,8 @@ export async function listRomhacks(
       categories: schema.romhackMeta.categories,
       downloads: schema.listing.downloads,
       authorName: schema.user.name,
-      createdAt: schema.listing.createdAt
+      createdAt: schema.listing.createdAt,
+      mature: schema.listing.mature
     })
     .from(schema.listing)
     .innerJoin(schema.romhackMeta, eq(schema.romhackMeta.listingId, schema.listing.id))
@@ -234,6 +236,7 @@ export interface AssetHiveListItem {
   downloads: number;
   authorName: string;
   createdAt: Date;
+  mature: boolean;
 }
 
 export async function listAssetHives(
@@ -255,7 +258,8 @@ export async function listAssetHives(
       totalSize: schema.assetHiveMeta.totalSize,
       downloads: schema.listing.downloads,
       authorName: schema.user.name,
-      createdAt: schema.listing.createdAt
+      createdAt: schema.listing.createdAt,
+      mature: schema.listing.mature
     })
     .from(schema.listing)
     .innerJoin(schema.assetHiveMeta, eq(schema.assetHiveMeta.listingId, schema.listing.id))
