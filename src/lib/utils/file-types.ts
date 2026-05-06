@@ -7,9 +7,33 @@ export const ROMHACK_LIMITS = {
   allowedExtensions: ['.ips', '.ups', '.bps', '.zip', '.7z']
 } as const;
 
+export const SPRITE_LIMITS = {
+  perFileBytes: 5 * 1024 * 1024,
+  totalBytes: 50 * 1024 * 1024,
+  maxFiles: 200,
+  allowedExtensions: ['.png', '.gif', '.bmp', '.zip']
+} as const;
+
+export const SOUND_LIMITS = {
+  perFileBytes: 20 * 1024 * 1024,
+  totalBytes: 50 * 1024 * 1024,
+  maxFiles: 50,
+  allowedExtensions: ['.wav', '.ogg', '.mp3', '.s', '.zip']
+} as const;
+
+export const SCRIPT_LIMITS = {
+  perFileBytes: 10 * 1024 * 1024,
+  totalBytes: 30 * 1024 * 1024,
+  maxFiles: 100,
+  allowedExtensions: ['.s', '.txt', '.md', '.py', '.c', '.h', '.json', '.zip']
+} as const;
+
 const LIMITS_BY_TYPE = {
-  romhack: ROMHACK_LIMITS
-} as const satisfies Partial<Record<ListingType, unknown>>;
+  romhack: ROMHACK_LIMITS,
+  sprite: SPRITE_LIMITS,
+  sound: SOUND_LIMITS,
+  script: SCRIPT_LIMITS
+} as const satisfies Record<ListingType, unknown>;
 
 export interface FileMeta {
   filename: string;
@@ -19,7 +43,7 @@ export interface FileMeta {
 
 type Result = { ok: true } | { ok: false; error: string };
 
-export function validateUploads(type: keyof typeof LIMITS_BY_TYPE, files: FileMeta[]): Result {
+export function validateUploads(type: ListingType, files: FileMeta[]): Result {
   const limits = LIMITS_BY_TYPE[type];
   if (!files.length) return { ok: false, error: 'At least one file is required' };
   if (files.length > limits.maxFiles) {

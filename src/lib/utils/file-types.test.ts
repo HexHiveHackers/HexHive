@@ -41,3 +41,32 @@ describe('validateUploads (romhack)', () => {
     expect(validateUploads('romhack', []).ok).toBe(false);
   });
 });
+
+describe('validateUploads (sprite)', () => {
+  it('accepts a .png', () => {
+    expect(validateUploads('sprite', [
+      { filename: 'a.png', contentType: 'image/png', size: 1000 }
+    ]).ok).toBe(true);
+  });
+  it('rejects .exe', () => {
+    expect(validateUploads('sprite', [
+      { filename: 'a.exe', contentType: 'x', size: 100 }
+    ]).ok).toBe(false);
+  });
+});
+
+describe('validateUploads (sound)', () => {
+  it('accepts a .wav', () => {
+    expect(validateUploads('sound', [
+      { filename: 'a.wav', contentType: 'audio/wav', size: 1000 }
+    ]).ok).toBe(true);
+  });
+});
+
+describe('validateUploads (script)', () => {
+  it('accepts a .s', () => {
+    expect(validateUploads('script', [
+      { filename: 'a.s', contentType: 'text/plain', size: 1000 }
+    ]).ok).toBe(true);
+  });
+});
