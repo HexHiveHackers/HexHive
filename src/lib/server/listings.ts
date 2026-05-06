@@ -80,9 +80,14 @@ export interface PersistedFile {
   hash: string | null;
 }
 
-export async function finalizeRomhack(
+export async function finalizeListing(
   db: DB,
-  args: { listingId: string; versionId: string; files: PersistedFile[] }
+  args: {
+    type: ListingType;
+    listingId: string;
+    versionId: string;
+    files: PersistedFile[];
+  }
 ): Promise<void> {
   for (const f of args.files) {
     await db.insert(schema.listingFile).values({
@@ -95,10 +100,26 @@ export async function finalizeRomhack(
       hash: f.hash
     });
   }
+
+  if (args.type !== 'romhack') {
+    const total = args.files.reduce((s, f) => s + f.size, 0);
+    await db
+      .update(schema.assetHiveMeta)
+      .set({ fileCount: args.files.length, totalSize: total })
+      .where(eq(schema.assetHiveMeta.listingId, args.listingId));
+  }
+
   await db
     .update(schema.listing)
     .set({ status: 'published', updatedAt: new Date() })
     .where(eq(schema.listing.id, args.listingId));
+}
+
+export async function finalizeRomhack(
+  db: DB,
+  args: { listingId: string; versionId: string; files: PersistedFile[] }
+): Promise<void> {
+  return finalizeListing(db, { type: 'romhack', ...args });
 }
 
 export interface RomhackListItem {

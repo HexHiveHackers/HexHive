@@ -4,9 +4,10 @@ import { z } from 'zod';
 import { requireUser } from '$lib/server/auth-utils';
 import { db } from '$lib/db';
 import { verifyAllUploaded } from '$lib/server/uploads';
-import { finalizeRomhack } from '$lib/server/listings';
+import { finalizeListing } from '$lib/server/listings';
 
 const FinalizeBody = z.object({
+  type: z.enum(['romhack', 'sprite', 'sound', 'script']).default('romhack'),
   listingId: z.string().min(1),
   versionId: z.string().min(1),
   files: z.array(z.object({
@@ -31,7 +32,8 @@ export const POST: RequestHandler = async (event) => {
   const ok = await verifyAllUploaded(body.files.map((f) => f.r2Key));
   if (!ok) throw error(502, 'One or more files were not received by storage');
 
-  await finalizeRomhack(db, {
+  await finalizeListing(db, {
+    type: body.type,
     listingId: body.listingId,
     versionId: body.versionId,
     files: body.files.map((f) => ({ ...f, hash: f.hash ?? null }))

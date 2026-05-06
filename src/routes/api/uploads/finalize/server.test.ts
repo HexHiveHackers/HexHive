@@ -8,7 +8,7 @@ vi.mock('$lib/storage/r2', () => ({
 vi.mock('$lib/db', () => ({ db: {} as any }));
 const finalizeMock = vi.fn(async () => {});
 vi.mock('$lib/server/listings', () => ({
-  finalizeRomhack: finalizeMock
+  finalizeListing: finalizeMock
 }));
 
 beforeEach(() => vi.clearAllMocks());

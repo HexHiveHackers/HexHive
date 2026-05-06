@@ -11,6 +11,8 @@ const draft = { listingId: 'L', versionId: 'V', slug: 'k' };
 
 vi.mock('$lib/db', () => ({ db: fakeDb }));
 vi.mock('$lib/server/listings', async () => ({
+  createListingDraft: vi.fn(async () => draft),
+  // shim still exported elsewhere; safe to provide:
   createRomhackDraft: vi.fn(async () => draft)
 }));
 
@@ -56,5 +58,35 @@ describe('POST /api/uploads/presign', () => {
     expect(json.versionId).toBe('V');
     expect(json.uploads).toHaveLength(1);
     expect(json.uploads[0].url).toContain('put.example');
+  });
+});
+
+describe('POST /api/uploads/presign — asset-hive types', () => {
+  it('presigns a sound', async () => {
+    const { POST } = await import('./+server');
+    const res = await POST(buildEvent({
+      type: 'sound',
+      input: {
+        title: 'Cries', description: '', permissions: ['Free'],
+        targetedRoms: ['Emerald'],
+        category: 'Cry'
+      },
+      files: [{ filename: 'a.wav', contentType: 'audio/wav', size: 100 }]
+    }));
+    expect(res.status).toBe(200);
+  });
+
+  it('presigns a sprite with valid category', async () => {
+    const { POST } = await import('./+server');
+    const res = await POST(buildEvent({
+      type: 'sprite',
+      input: {
+        title: 'Pack', description: '', permissions: ['Free'],
+        targetedRoms: ['Emerald'],
+        category: { type: 'Battle', subtype: 'Pokemon', variant: 'Front' }
+      },
+      files: [{ filename: 'a.png', contentType: 'image/png', size: 100 }]
+    }));
+    expect(res.status).toBe(200);
   });
 });
