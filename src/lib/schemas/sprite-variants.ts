@@ -4,6 +4,8 @@
 //   - variant === 'string'   → free-form string
 //   - variant is an array    → must be one of the listed values
 
+import { HUMAN_MOVEMENT } from './asset-vocab';
+
 export type VariantSpec = { variant?: undefined } | { variant: 'string' } | { variant: readonly string[] };
 
 export const SPRITE_VARIANTS = {
@@ -36,9 +38,9 @@ export const SPRITE_VARIANTS = {
     Pokemon: { variant: ['Animated', 'Static'] as const },
   },
   Overworld: {
-    NPC: { variant: 'string' },
+    NPC: { variant: HUMAN_MOVEMENT },
     Other: { variant: 'string' },
-    Player: { variant: 'string' },
+    Player: { variant: HUMAN_MOVEMENT },
     Pokemon: { variant: ['Follower', 'Land', 'Surfing'] as const },
   },
   UI: {

@@ -1,12 +1,14 @@
 <script lang="ts">
   import { Input } from '$lib/components/ui/input';
   import { Label } from '$lib/components/ui/label';
+  import { ROMHACK_CATEGORY, ROMHACK_STATE } from '$lib/schemas/asset-vocab';
   import {
-    ASSET_PERMISSION, 
+    ASSET_PERMISSION,
     SUPPORTED_BASE_ROM,
     SUPPORTED_BASE_ROM_REGION,
     SUPPORTED_BASE_ROM_VERSION
   } from '$lib/schemas/zod-helpers';
+  import SuggestionChips from './SuggestionChips.svelte';
 
   type FormValue = {
     title: string;
@@ -84,10 +86,12 @@
     <div class="grid gap-1.5">
       <Label for="categoriesText">Categories (comma)</Label>
       <Input id="categoriesText" bind:value={value.categoriesText} />
+      <SuggestionChips bind:value={value.categoriesText} suggestions={ROMHACK_CATEGORY} />
     </div>
     <div class="grid gap-1.5">
       <Label for="statesText">States (comma)</Label>
       <Input id="statesText" bind:value={value.statesText} />
+      <SuggestionChips bind:value={value.statesText} suggestions={ROMHACK_STATE} />
     </div>
     <div class="grid gap-1.5">
       <Label for="tagsText">Tags (comma)</Label>
