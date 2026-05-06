@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { LogOut, Settings, User as UserIcon } from '@lucide/svelte';
+  import { LogOut, Settings, Upload, User as UserIcon } from '@lucide/svelte';
   import { goto } from '$app/navigation';
   import { authClient } from '$lib/auth-client';
   import TypeIcon from '$lib/components/listings/TypeIcon.svelte';
@@ -80,9 +80,15 @@
 
     <SearchBar />
 
-    <div class="hidden lg:flex items-center gap-1 text-sm shrink-0">
-      <span class="mr-1 h-5 w-px bg-border"></span>
+    <div class="hidden lg:flex items-center gap-2 text-sm shrink-0">
       {#if user}
+        <a href="/upload">
+          <Button variant="default" size="sm">
+            <Upload size={14} />
+            Upload
+          </Button>
+        </a>
+        <span class="mx-1 h-5 w-px bg-border"></span>
         <DropdownMenu>
           <DropdownMenuTrigger
             class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-accent transition-colors"
@@ -154,6 +160,12 @@
       {/each}
       <div class="mt-2 border-t pt-3 flex flex-col items-stretch gap-2">
         {#if user}
+          <a href="/upload" onclick={() => (mobileMenuOpen = false)}>
+            <Button variant="default" class="w-full">
+              <Upload size={14} />
+              Upload
+            </Button>
+          </a>
           <a
             href={profileHref}
             class="flex min-h-12 items-center justify-center gap-2 text-sm hover:underline"

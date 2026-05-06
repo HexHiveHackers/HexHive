@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Upload } from '@lucide/svelte';
   import { page } from '$app/state';
   import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
   import VersionTimeline from '$lib/components/listings/VersionTimeline.svelte';
@@ -83,7 +84,7 @@
       <h2 class="text-sm font-medium">Versions</h2>
       {#if isAuthor}
         <a href={`/upload/${listing.type}/version?id=${listing.id}`}>
-          <Button size="sm" variant="outline">Upload new version</Button>
+          <Button size="sm" variant="outline"><Upload size={12} />Upload new version</Button>
         </a>
       {/if}
     </div>

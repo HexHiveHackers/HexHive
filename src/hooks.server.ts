@@ -23,6 +23,8 @@ const isPublic = (pathname: string) =>
   pathname.startsWith('/scripts') ||
   pathname.startsWith('/u/') ||
   pathname.startsWith('/search') ||
+  pathname.startsWith('/privacy') ||
+  pathname.startsWith('/terms') ||
   pathname.startsWith('/api/downloads/') ||
   PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 

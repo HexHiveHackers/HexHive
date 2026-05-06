@@ -4,7 +4,13 @@
 
 <footer class="border-t mt-16">
   <div class="mx-auto max-w-3xl px-4 py-10 text-xs text-muted-foreground space-y-4">
-    <p class="font-display tracking-wider text-foreground">© {year} HexHive</p>
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <p class="font-display tracking-wider text-foreground">© {year} HexHive</p>
+      <nav class="flex items-center gap-4">
+        <a href="/privacy" class="hover:text-foreground hover:underline">Privacy</a>
+        <a href="/terms" class="hover:text-foreground hover:underline">Terms</a>
+      </nav>
+    </div>
 
     <p>
       Pokémon, Nintendo, Game Boy, Game Boy Color, Game Boy Advance, and Nintendo DS are trademarks

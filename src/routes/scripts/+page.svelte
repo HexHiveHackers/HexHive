@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Upload } from '@lucide/svelte';
   import AssetHiveCard from '$lib/components/listings/AssetHiveCard.svelte';
   import MatureFilterToggle from '$lib/components/listings/MatureFilterToggle.svelte';
   import { Button } from '$lib/components/ui/button';
@@ -10,7 +11,7 @@
 <section class="mx-auto max-w-6xl px-4 py-10">
   <header class="flex items-end justify-between mb-6">
     <h1 class="font-display text-2xl">Scripts</h1>
-    <a href="/upload?type=script"><Button>Upload</Button></a>
+    <a href="/upload?type=script"><Button><Upload size={14} />Upload</Button></a>
   </header>
   <form method="get" class="grid gap-3 sm:grid-cols-[1fr_auto_auto] mb-6">
     <Input name="q" placeholder="Search title…" value={data.filters.q ?? ''} />
