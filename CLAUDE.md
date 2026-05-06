@@ -24,6 +24,25 @@ bun run db:studio          # drizzle-kit studio
 
 Run a single test file: `bun run test src/lib/server/listings.test.ts`.
 
+## Linting (Biome)
+
+Biome 2.x is installed as the linter and formatter.
+
+```bash
+bun run lint          # check for issues (exit 1 on errors)
+bun run lint:fix      # auto-fix safe issues
+bun run format        # format all files in-place
+```
+
+**Pre-commit hook:** husky + lint-staged runs `biome check --write --no-errors-on-unmatched` on staged `*.{ts,tsx,js,mjs,cjs,json,jsonc,css,svelte}` files before each commit. Commits fail if there are lint errors that Biome cannot auto-fix.
+
+**Configuration:** `biome.json` — single quotes, semicolons always, 2-space indent, 120-char line width, `html.experimentalFullSupportEnabled: true` for Svelte support (Biome 2.3+ feature).
+
+**Known caveats:**
+- `src/app.css` is excluded from Biome because it uses Tailwind v4 syntax (`@source`, `@custom-variant`, `@theme`) that Biome's CSS parser does not understand. CSS in other files is linted normally.
+- Svelte `.svelte` files are linted with some rules disabled in overrides (`useConst`, `useImportType`, `noUnusedVariables`, `noUnusedImports`, `noGlobalAssign`) to avoid false positives from Svelte's reactivity model and the experimental parser.
+- `noExplicitAny` and `noNonNullAssertion` are configured as warnings (not errors) to allow gradual cleanup.
+
 ## Conventions
 
 - **Use Bun for everything.** Don't add npm/pnpm/yarn lockfiles. The runtime is Bun via `svelte-adapter-bun`.
