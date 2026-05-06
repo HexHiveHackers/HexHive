@@ -217,6 +217,148 @@ export async function getRomhackBySlug(db: DB, slug: string): Promise<RomhackDet
   };
 }
 
+export interface AssetHiveListItem {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  type: 'sprite' | 'sound' | 'script';
+  targetedRoms: string[];
+  fileCount: number;
+  totalSize: number;
+  downloads: number;
+  authorName: string;
+  createdAt: Date;
+}
+
+export async function listAssetHives(
+  db: DB,
+  type: 'sprite' | 'sound' | 'script',
+  filters: { q?: string; limit?: number; offset?: number }
+): Promise<AssetHiveListItem[]> {
+  const where = [eq(schema.listing.type, type), eq(schema.listing.status, 'published')];
+  if (filters.q) where.push(like(schema.listing.title, `%${filters.q}%`));
+
+  const rows = await db
+    .select({
+      id: schema.listing.id,
+      slug: schema.listing.slug,
+      title: schema.listing.title,
+      description: schema.listing.description,
+      targetedRoms: schema.assetHiveMeta.targetedRoms,
+      fileCount: schema.assetHiveMeta.fileCount,
+      totalSize: schema.assetHiveMeta.totalSize,
+      downloads: schema.listing.downloads,
+      authorName: schema.user.name,
+      createdAt: schema.listing.createdAt
+    })
+    .from(schema.listing)
+    .innerJoin(schema.assetHiveMeta, eq(schema.assetHiveMeta.listingId, schema.listing.id))
+    .innerJoin(schema.user, eq(schema.user.id, schema.listing.authorId))
+    .where(and(...where))
+    .orderBy(desc(schema.listing.createdAt))
+    .limit(filters.limit ?? 60)
+    .offset(filters.offset ?? 0);
+
+  return rows.map((r) => ({ ...r, type }));
+}
+
+export interface AssetHiveDetail {
+  listing: typeof schema.listing.$inferSelect;
+  base: typeof schema.assetHiveMeta.$inferSelect;
+  meta:
+    | { kind: 'sprite'; data: typeof schema.spriteMeta.$inferSelect }
+    | { kind: 'sound'; data: typeof schema.soundMeta.$inferSelect }
+    | { kind: 'script'; data: typeof schema.scriptMeta.$inferSelect };
+  version: typeof schema.listingVersion.$inferSelect;
+  files: (typeof schema.listingFile.$inferSelect)[];
+  authorName: string;
+}
+
+export async function getAssetHiveBySlug(
+  db: DB,
+  type: 'sprite' | 'sound' | 'script',
+  slug: string
+): Promise<AssetHiveDetail | null> {
+  const lr = await db
+    .select()
+    .from(schema.listing)
+    .where(and(eq(schema.listing.type, type), eq(schema.listing.slug, slug)))
+    .limit(1);
+  const listing = lr[0];
+  if (!listing) return null;
+
+  const base = (
+    await db
+      .select()
+      .from(schema.assetHiveMeta)
+      .where(eq(schema.assetHiveMeta.listingId, listing.id))
+      .limit(1)
+  )[0];
+  if (!base) return null;
+
+  let meta: AssetHiveDetail['meta'];
+  if (type === 'sprite') {
+    const m = (
+      await db
+        .select()
+        .from(schema.spriteMeta)
+        .where(eq(schema.spriteMeta.listingId, listing.id))
+        .limit(1)
+    )[0];
+    if (!m) return null;
+    meta = { kind: 'sprite', data: m };
+  } else if (type === 'sound') {
+    const m = (
+      await db
+        .select()
+        .from(schema.soundMeta)
+        .where(eq(schema.soundMeta.listingId, listing.id))
+        .limit(1)
+    )[0];
+    if (!m) return null;
+    meta = { kind: 'sound', data: m };
+  } else {
+    const m = (
+      await db
+        .select()
+        .from(schema.scriptMeta)
+        .where(eq(schema.scriptMeta.listingId, listing.id))
+        .limit(1)
+    )[0];
+    if (!m) return null;
+    meta = { kind: 'script', data: m };
+  }
+
+  const version = (
+    await db
+      .select()
+      .from(schema.listingVersion)
+      .where(
+        and(
+          eq(schema.listingVersion.listingId, listing.id),
+          eq(schema.listingVersion.isCurrent, true)
+        )
+      )
+      .limit(1)
+  )[0];
+  if (!version) return null;
+
+  const files = await db
+    .select()
+    .from(schema.listingFile)
+    .where(eq(schema.listingFile.versionId, version.id));
+  const author = (
+    await db
+      .select({ name: schema.user.name })
+      .from(schema.user)
+      .where(eq(schema.user.id, listing.authorId))
+      .limit(1)
+  )[0];
+
+  return { listing, base, meta, version, files, authorName: author?.name ?? 'unknown' };
+}
+
 export async function incrementDownloads(db: DB, listingId: string): Promise<void> {
   await db
     .update(schema.listing)

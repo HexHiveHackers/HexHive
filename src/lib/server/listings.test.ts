@@ -8,8 +8,11 @@ import {
   createRomhackDraft,
   createListingDraft,
   finalizeRomhack,
+  finalizeListing,
   getRomhackBySlug,
   listRomhacks,
+  listAssetHives,
+  getAssetHiveBySlug,
   type RomhackCreateInput
 } from './listings';
 
@@ -151,5 +154,37 @@ describe('createListingDraft for asset-hive types', () => {
       }
     });
     expect(draft.slug).toBe('engine-mod');
+  });
+});
+
+describe('asset-hive list/detail', () => {
+  it('lists and fetches a sound', async () => {
+    const draft = await createListingDraft(db, {
+      authorId: 'u1',
+      ti: {
+        type: 'sound',
+        input: {
+          title: 'Snd',
+          description: '',
+          permissions: ['Free'],
+          targetedRoms: ['Emerald'],
+          category: 'SFX'
+        }
+      }
+    });
+    await finalizeListing(db, {
+      type: 'sound',
+      listingId: draft.listingId,
+      versionId: draft.versionId,
+      files: [{ r2Key: 'sk', filename: 'a.wav', originalFilename: 'a.wav', size: 42, hash: null }]
+    });
+    const list = await listAssetHives(db, 'sound', {});
+    expect(list.some((r) => r.slug === draft.slug && r.fileCount === 1 && r.totalSize === 42)).toBe(
+      true
+    );
+
+    const detail = await getAssetHiveBySlug(db, 'sound', draft.slug);
+    expect(detail?.meta.kind).toBe('sound');
+    if (detail?.meta.kind === 'sound') expect(detail.meta.data.category).toBe('SFX');
   });
 });
