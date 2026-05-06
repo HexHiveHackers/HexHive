@@ -11,6 +11,17 @@
   const isAuthor = page.data.user?.id === listing.authorId;
 </script>
 
+<svelte:head>
+  <title>{data.og.title}</title>
+  <meta name="description" content={data.og.description} />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content={data.og.title} />
+  <meta property="og:description" content={data.og.description} />
+  <meta property="og:url" content={data.og.url} />
+  <meta property="og:image" content={data.og.image} />
+  <meta name="twitter:card" content="summary_large_image" />
+</svelte:head>
+
 <article class="mx-auto max-w-4xl px-4 py-10">
   <header class="mb-6">
     <div class="flex items-center gap-2 text-xs text-muted-foreground">
