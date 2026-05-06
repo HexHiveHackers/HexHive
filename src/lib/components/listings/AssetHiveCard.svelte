@@ -15,8 +15,8 @@
     type: Type;
   } = $props();
 
-  const route = type === 'sprite' ? 'sprites' : type === 'sound' ? 'sounds' : 'scripts';
-  const sizeKb = Math.round(item.totalSize / 1024);
+  const route = $derived(type === 'sprite' ? 'sprites' : type === 'sound' ? 'sounds' : 'scripts');
+  const sizeKb = $derived(Math.round(item.totalSize / 1024));
 </script>
 
 <MatureWrap mature={item.mature}>
