@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { ArrowDownAZ, ArrowDownUp, Download, FileArchive, Search } from '@lucide/svelte';
+  import { ArrowDownAZ, ArrowDownUp, Download, FileArchive, Search, Star } from '@lucide/svelte';
+  import { invalidateAll } from '$app/navigation';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
   import { fileKind } from '$lib/utils/preview';
@@ -11,7 +12,32 @@
     size: number;
   };
 
-  let { files }: { files: FileRow[] } = $props();
+  let {
+    files,
+    listingId,
+    coverFileId = null,
+    canEdit = false,
+  }: {
+    files: FileRow[];
+    listingId: string;
+    coverFileId?: string | null;
+    canEdit?: boolean;
+  } = $props();
+
+  let coverPending = $state<string | null>(null);
+  async function setCover(fileId: string | null) {
+    coverPending = fileId ?? '__clear__';
+    try {
+      const res = await fetch(`/api/listings/${listingId}/cover`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId }),
+      });
+      if (res.ok) await invalidateAll();
+    } finally {
+      coverPending = null;
+    }
+  }
 
   // ──── Toolbar state ────────────────────────────────────────────────────
   type Bg = 'checker' | 'dark' | 'light' | 'magenta';
@@ -175,27 +201,59 @@
     <!-- Grid -->
     <div class="grid gap-2 {tileClass}">
       {#each filtered as f, i (f.id)}
-        <button
-          type="button"
-          class="group relative flex flex-col items-center justify-end overflow-hidden rounded-md border transition-all hover:ring-2 hover:ring-primary focus-visible:ring-2 focus-visible:ring-primary outline-none"
-          onclick={() => openLightbox(i)}
-          aria-label={`View ${f.originalFilename}`}
+        <div
+          class="group relative overflow-hidden rounded-md border transition-all hover:ring-2 hover:ring-primary focus-within:ring-2 focus-within:ring-primary"
         >
-          <div class="aspect-square w-full {bgClass} flex items-center justify-center">
-            <img
-              src={`/api/preview/${f.id}`}
-              alt={f.originalFilename}
-              loading="lazy"
-              decoding="async"
-              class="pixelated max-h-full max-w-full"
-            />
-          </div>
+          <button
+            type="button"
+            class="block w-full outline-none"
+            onclick={() => openLightbox(i)}
+            aria-label={`View ${f.originalFilename}`}
+          >
+            <div class="aspect-square w-full {bgClass} flex items-center justify-center">
+              <img
+                src={`/api/preview/${f.id}`}
+                alt={f.originalFilename}
+                loading="lazy"
+                decoding="async"
+                class="pixelated max-h-full max-w-full"
+              />
+            </div>
+          </button>
+
+          {#if coverFileId === f.id}
+            <span
+              class="pointer-events-none absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-medium text-black"
+              title="Current cover"
+            >
+              <Star size={10} />
+              Cover
+            </span>
+          {/if}
+
+          {#if canEdit}
+            <button
+              type="button"
+              class="absolute right-1.5 top-1.5 inline-flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 hover:bg-black disabled:opacity-50"
+              disabled={coverPending !== null}
+              onclick={(e) => {
+                e.stopPropagation();
+                setCover(coverFileId === f.id ? null : f.id);
+              }}
+              aria-label={coverFileId === f.id ? 'Clear cover' : 'Set as cover'}
+              title={coverFileId === f.id ? 'Clear cover (revert to first image)' : 'Set as cover'}
+            >
+              <Star size={10} fill={coverFileId === f.id ? 'currentColor' : 'none'} />
+              {coverFileId === f.id ? 'Clear' : 'Set cover'}
+            </button>
+          {/if}
+
           <span
-            class="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 via-black/40 to-transparent px-1.5 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+            class="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 via-black/40 to-transparent px-1.5 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
           >
             {f.originalFilename.split('/').pop()}
           </span>
-        </button>
+        </div>
       {/each}
     </div>
 

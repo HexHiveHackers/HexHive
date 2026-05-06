@@ -26,6 +26,7 @@
   let localBg = $state<Bg>(untrack(() => bg));
   let zoom = $state(1);
   let imgEl = $state<HTMLImageElement | null>(null);
+  let stageEl = $state<HTMLElement | null>(null);
   let naturalW = $state(0);
   let naturalH = $state(0);
 
@@ -39,8 +40,25 @@
     }[localBg],
   );
 
+  // Pick a starting zoom that fills most of the stage. For pixel art,
+  // displaying at 1× is almost always too small to be useful; this targets
+  // ~85% of stage width or height (whichever fits), capped at 16× so we
+  // don't over-zoom enormous sprites and rounded down to integer powers of
+  // 2 (1, 2, 4, 8, 16) so pixels remain perfectly aligned.
+  function autoZoom(): number {
+    if (!stageEl || naturalW === 0 || naturalH === 0) return 1;
+    const sw = stageEl.clientWidth;
+    const sh = stageEl.clientHeight;
+    if (sw === 0 || sh === 0) return 1;
+    const fit = Math.min((sw * 0.85) / naturalW, (sh * 0.85) / naturalH);
+    if (fit <= 1) return Math.max(0.25, fit);
+    // Snap to integer power of two so pixels stay crisp on the grid.
+    const power = Math.floor(Math.log2(fit));
+    return Math.min(16, 2 ** power);
+  }
+
   function fitZoom() {
-    zoom = 1;
+    zoom = autoZoom();
   }
 
   function handleKey(e: KeyboardEvent) {
@@ -57,8 +75,9 @@
       naturalW = imgEl.naturalWidth;
       naturalH = imgEl.naturalHeight;
     }
-    // Reset zoom when navigating to a new image.
-    zoom = 1;
+    // Auto-zoom when (re)loading. Pixel-art sprites are typically tiny;
+    // showing them at 1× wastes the lightbox.
+    zoom = autoZoom();
   }
 
   function onWheel(e: WheelEvent) {
@@ -133,6 +152,7 @@
 
   <!-- Image stage -->
   <div
+    bind:this={stageEl}
     class="flex-1 flex items-center justify-center overflow-auto {bgClass} relative"
     role="presentation"
     onwheel={onWheel}

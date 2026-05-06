@@ -66,7 +66,12 @@
     </div>
   </header>
 
-  <SpriteGallery {files} />
+  <SpriteGallery
+    {files}
+    listingId={listing.id}
+    coverFileId={listing.thumbnailFileId}
+    canEdit={isAuthor}
+  />
 
   <section class="border rounded-lg p-4 mb-6">
     <div class="flex items-center justify-between mb-3">

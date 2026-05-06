@@ -1,4 +1,4 @@
-import { and, desc, eq, like, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, like, sql } from 'drizzle-orm';
 import type { drizzle } from 'drizzle-orm/libsql';
 import type { ListingType } from '$lib/db/schema';
 import * as schema from '$lib/db/schema';
@@ -238,6 +238,12 @@ export interface AssetHiveListItem {
   authorName: string;
   createdAt: Date;
   mature: boolean;
+  /**
+   * Effective cover thumbnail file id. Uploader's pick (listing.thumbnailFileId)
+   * if set, otherwise the first image file in the current version. Null when
+   * neither resolves (e.g. a sound listing with no covers).
+   */
+  thumbnailFileId: string | null;
 }
 
 export async function listAssetHives(
@@ -262,6 +268,7 @@ export async function listAssetHives(
       authorName: schema.user.name,
       createdAt: schema.listing.createdAt,
       mature: schema.listing.mature,
+      thumbnailFileId: schema.listing.thumbnailFileId,
     })
     .from(schema.listing)
     .innerJoin(schema.assetHiveMeta, eq(schema.assetHiveMeta.listingId, schema.listing.id))
@@ -271,7 +278,39 @@ export async function listAssetHives(
     .limit(filters.limit ?? 60)
     .offset(filters.offset ?? 0);
 
-  return rows.map((r) => ({ ...r, type }));
+  // For listings without an explicit cover, derive one from the first image
+  // file in the current version. We do this with a single follow-up query
+  // rather than a complex correlated subquery so the SQL stays portable.
+  const needsFallback = rows.filter((r) => !r.thumbnailFileId).map((r) => r.id);
+  const fallbacks = new Map<string, string>();
+  if (needsFallback.length) {
+    const filesRows = await db
+      .select({
+        listingId: schema.listingVersion.listingId,
+        fileId: schema.listingFile.id,
+        filename: schema.listingFile.originalFilename,
+      })
+      .from(schema.listingFile)
+      .innerJoin(schema.listingVersion, eq(schema.listingVersion.id, schema.listingFile.versionId))
+      .where(and(inArray(schema.listingVersion.listingId, needsFallback), eq(schema.listingVersion.isCurrent, true)))
+      .orderBy(schema.listingFile.originalFilename);
+    for (const f of filesRows) {
+      if (fallbacks.has(f.listingId)) continue;
+      if (!isImagePath(f.filename)) continue;
+      fallbacks.set(f.listingId, f.fileId);
+    }
+  }
+
+  return rows.map((r) => ({
+    ...r,
+    type,
+    thumbnailFileId: r.thumbnailFileId ?? fallbacks.get(r.id) ?? null,
+  }));
+}
+
+const IMAGE_RE = /\.(png|gif|bmp|webp|jpe?g|apng)$/i;
+function isImagePath(filename: string): boolean {
+  return IMAGE_RE.test(filename);
 }
 
 export interface AssetHiveDetail {

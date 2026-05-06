@@ -107,6 +107,9 @@ export const listing = sqliteTable(
     permissions: text('permissions', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
     downloads: integer('downloads').notNull().default(0),
     mature: integer('mature', { mode: 'boolean' }).notNull().default(false),
+    // Optional uploader-chosen cover. When null, the list page falls back to
+    // the first image file in the listing's current version.
+    thumbnailFileId: text('thumbnail_file_id'),
     status: text('status', { enum: ['draft', 'published', 'hidden'] })
       .notNull()
       .default('draft'),

@@ -29,6 +29,13 @@
       "when": 1746691200000,
       "tag": "0003_fts_trigram",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1778112000000,
+      "tag": "0004_listing_thumbnail",
+      "breakpoints": true
     }
   ]
 }
