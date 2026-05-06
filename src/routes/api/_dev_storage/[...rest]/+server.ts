@@ -36,7 +36,7 @@ export const GET: RequestHandler = async ({ params }) => {
   // Best-effort content type from extension.
   const ext = path.split('.').pop()?.toLowerCase() ?? '';
   const contentType =
-    ext === 'png'
+    ext === 'png' || ext === 'apng'
       ? 'image/png'
       : ext === 'jpg' || ext === 'jpeg'
         ? 'image/jpeg'

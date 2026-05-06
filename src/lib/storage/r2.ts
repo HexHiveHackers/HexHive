@@ -1,6 +1,13 @@
 import { existsSync, statSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { env } from '$env/dynamic/private';
 
@@ -55,4 +62,18 @@ export async function headObject(key: string) {
   }
   // biome-ignore lint/style/noNonNullAssertion: client is non-null when isLocalStorage is false
   return client!.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+}
+
+// Best-effort delete; missing keys are silently ignored.
+export async function deleteObject(key: string): Promise<void> {
+  try {
+    if (isLocalStorage) {
+      await rm(join(LOCAL_STORAGE_DIR, key), { force: true });
+      return;
+    }
+    // biome-ignore lint/style/noNonNullAssertion: client is non-null when isLocalStorage is false
+    await client!.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+  } catch {
+    // swallow — orphaned files are acceptable, failed user-facing cascade is not
+  }
 }

@@ -6,7 +6,8 @@ import { newId } from '$lib/utils/ids';
 
 type DB = ReturnType<typeof drizzle<typeof schema>>;
 
-const ALLOWED_EXT = ['png', 'jpg', 'jpeg', 'gif', 'webp'] as const;
+// gif and webp may be animated; apng is animated png. All four animate in <img> without extra work.
+const ALLOWED_EXT = ['png', 'apng', 'jpg', 'jpeg', 'gif', 'webp'] as const;
 const MAX_SIZE = 2 * 1024 * 1024;
 
 export type AvatarPresignInput = {

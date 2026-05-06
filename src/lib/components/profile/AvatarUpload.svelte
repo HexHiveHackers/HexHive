@@ -10,7 +10,7 @@
   async function pick() {
     const inp = document.createElement('input');
     inp.type = 'file';
-    inp.accept = 'image/png,image/jpeg,image/gif,image/webp';
+    inp.accept = 'image/png,image/apng,image/jpeg,image/gif,image/webp';
     inp.onchange = async () => {
       const f = inp.files?.[0];
       if (!f) return;
@@ -62,6 +62,6 @@
       {/if}
     </div>
     {#if err}<p class="text-xs text-destructive">{err}</p>{/if}
-    <p class="text-xs text-muted-foreground">PNG / JPEG / GIF / WebP, ≤ 2 MB.</p>
+    <p class="text-xs text-muted-foreground">PNG / JPEG / GIF / WebP / APNG, ≤ 2 MB. Animated GIF/WebP/APNG OK.</p>
   </div>
 </div>
