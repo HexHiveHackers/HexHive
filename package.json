@@ -44,6 +44,7 @@
 		"@aws-sdk/client-s3": "^3.1043.0",
 		"@aws-sdk/s3-request-presigner": "^3.1043.0",
 		"@libsql/client": "^0.17.3",
+		"better-auth": "^1.6.9",
 		"clsx": "^2.1.1",
 		"drizzle-orm": "^0.45.2",
 		"shadcn-svelte": "^1.2.7",
