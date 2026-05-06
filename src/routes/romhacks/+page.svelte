@@ -15,7 +15,7 @@
 <section class="mx-auto max-w-6xl px-4 py-10">
   <header class="flex items-end justify-between mb-6">
     <h1 class="font-display text-2xl">Romhacks</h1>
-    <a href="/upload/romhack"><Button>Upload</Button></a>
+    <a href="/upload?type=romhack"><Button>Upload</Button></a>
   </header>
 
   <form method="get" class="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto] mb-6">
