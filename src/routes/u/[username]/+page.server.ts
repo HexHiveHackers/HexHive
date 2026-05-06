@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ params }) => {
     .limit(1);
   const listings = await listingsByUser(db, profile.userId, { self: false });
   return {
-    profile: { username: profile.username, bio: profile.bio, name: userRows[0]?.name ?? '' },
+    profile: { username: profile.username, bio: profile.bio, avatarKey: profile.avatarKey, name: userRows[0]?.name ?? '' },
     listings
   };
 };

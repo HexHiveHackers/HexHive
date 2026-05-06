@@ -1,5 +1,6 @@
 <script lang="ts">
   import ProfileForm from '$lib/components/profile/ProfileForm.svelte';
+  import AvatarUpload from '$lib/components/profile/AvatarUpload.svelte';
   import { Badge } from '$lib/components/ui/badge';
 
   let { data } = $props();
@@ -9,7 +10,10 @@
 <section class="mx-auto max-w-4xl px-4 py-10 grid gap-10">
   <div>
     <h1 class="font-display text-2xl mb-4">Your profile</h1>
-    <ProfileForm initial={data.profile} />
+    <div class="grid gap-6">
+      <AvatarUpload avatarKey={data.profile.avatarKey} name={data.profile.name} />
+      <ProfileForm initial={data.profile} />
+    </div>
   </div>
 
   <div>
