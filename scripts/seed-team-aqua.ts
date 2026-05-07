@@ -1,21 +1,27 @@
 /**
- * Idempotent seed: ingests ~50 listings from a local clone of the
- * Team-Aquas-Asset-Repo into HexHive, under a handful of seed users plus
- * the live `jmynes` GitHub-OAuth user (whose row already exists).
+ * Idempotent seed: ingests up to ~50 listings from a local clone of the
+ * Team-Aquas-Asset-Repo into HexHive, with one synthetic user per unique
+ * contributor folder in the repo (so author attribution mirrors the on-disk
+ * structure).
  *
  * Run with:  REPO=/tmp/Team-Aquas-Asset-Repo bun scripts/seed-team-aqua.ts
- *   --reset                wipe seed users' listings + .dev-storage and reseed
+ *   --reset                wipe seed users' listings + storage and reseed
  *   --max-listings <n>     override the listing count (default 50)
  *
- * Storage: writes file bytes into .dev-storage/<r2Key>. Persists DB rows via
- * createListingDraft + finalizeListing so the same code paths used by the API
- * are exercised end-to-end (sans HTTP/auth).
+ * Storage: when R2_ACCOUNT_ID/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY/R2_BUCKET
+ * are set in env, files are PUT directly to R2 via the S3 API. Otherwise they
+ * are copied into .dev-storage/<r2Key> for local development. DB rows are
+ * persisted via createListingDraft + finalizeListing so the same code paths
+ * used by the API are exercised end-to-end (sans HTTP/auth).
+ *
+ * To target a remote DB: set DATABASE_URL (libsql://...) and DATABASE_AUTH_TOKEN.
  */
 
 import { spawn } from 'node:child_process';
-import { copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises';
+import { copyFile, mkdir, readdir, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createClient } from '@libsql/client';
 import { eq, inArray } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
@@ -31,6 +37,47 @@ const args = new Set(process.argv.slice(2));
 const RESET = args.has('--reset');
 const maxIdx = process.argv.indexOf('--max-listings');
 const MAX = maxIdx >= 0 ? Number(process.argv[maxIdx + 1]) : 50;
+
+// R2 upload (used when R2 env is configured; otherwise falls back to copying
+// into .dev-storage/). The seeder is a Node script and can't import the
+// SvelteKit-bound src/lib/storage/r2.ts (it depends on $env/dynamic/private),
+// so we instantiate the S3 client directly here.
+const R2_CONFIGURED = !!(
+  process.env.R2_ACCOUNT_ID &&
+  process.env.R2_ACCESS_KEY_ID &&
+  process.env.R2_SECRET_ACCESS_KEY &&
+  process.env.R2_BUCKET
+);
+const r2 = R2_CONFIGURED
+  ? new S3Client({
+      region: 'auto',
+      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID as string,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY as string,
+      },
+    })
+  : null;
+const R2_BUCKET = process.env.R2_BUCKET;
+
+const CONTENT_TYPE_BY_EXT: Record<string, string> = {
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.bmp': 'image/bmp',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.mp3': 'audio/mpeg',
+  '.mid': 'audio/midi',
+  '.txt': 'text/plain',
+  '.md': 'text/markdown',
+  '.json': 'application/json',
+  '.zip': 'application/zip',
+};
+function contentTypeFor(name: string): string {
+  return CONTENT_TYPE_BY_EXT[path.extname(name).toLowerCase()] ?? 'application/octet-stream';
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Per-type allowlists (mirror src/lib/utils/file-types.ts)
@@ -228,77 +275,63 @@ async function buildBundles(): Promise<Bundle[]> {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// User seeding
-// ────────────────────────────────────────────────────────────────────────────
-
-interface SeedUser {
-  id: string;
-  name: string;
-  email: string;
-  username: string;
-  bio: string | null;
-}
-
-const SEED_USERS: SeedUser[] = [
-  {
-    id: 'seed-aqua-archie',
-    name: 'Archie',
-    email: 'archie@team-aqua.seed',
-    username: 'archie',
-    bio: 'Boss of Team Aqua. Loves the sea.',
-  },
-  {
-    id: 'seed-aqua-shelly',
-    name: 'Shelly',
-    email: 'shelly@team-aqua.seed',
-    username: 'shelly',
-    bio: 'Underwater specialist.',
-  },
-  { id: 'seed-aqua-matt', name: 'Matt', email: 'matt@team-aqua.seed', username: 'matt', bio: 'WHOOOOOO!' },
-  {
-    id: 'seed-aqua-grunt',
-    name: 'Aqua Grunt',
-    email: 'grunt@team-aqua.seed',
-    username: 'aqua_grunt',
-    bio: 'Loyal grunt for the cause.',
-  },
-];
-
-async function ensureUser(db: ReturnType<typeof drizzle<typeof schema>>, u: SeedUser) {
-  const existing = await db.select().from(schema.user).where(eq(schema.user.id, u.id)).limit(1);
-  if (!existing[0]) {
-    await db.insert(schema.user).values({ id: u.id, name: u.name, email: u.email, emailVerified: true });
-  }
-  await getOrCreateProfile(db, u.id);
-  // Allow re-seeding to a fixed username even if a previous run left it blank.
-  await setUsername(db, u.id, u.username);
-  if (u.bio) {
-    await db.update(schema.profile).set({ bio: u.bio }).where(eq(schema.profile.userId, u.id));
-  }
-}
-
-async function findJmynesUserId(db: ReturnType<typeof drizzle<typeof schema>>): Promise<string | null> {
-  const rows = await db
-    .select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
-    .from(schema.user);
-  // Match by github oauth account first, fall back to name/email substring.
-  const accounts = await db
-    .select({ userId: schema.account.userId, providerId: schema.account.providerId })
-    .from(schema.account);
-  const ghUserId = accounts.find((a) => a.providerId === 'github')?.userId;
-  if (ghUserId) return ghUserId;
-  const found = rows.find((r) => /jmynes/i.test(r.name) || /jmynes/i.test(r.email));
-  return found?.id ?? null;
-}
-
-// ────────────────────────────────────────────────────────────────────────────
 // Per-bundle seeding
 // ────────────────────────────────────────────────────────────────────────────
 
 async function copyToStorage(src: string, r2Key: string): Promise<void> {
+  if (r2 && R2_BUCKET) {
+    const body = await readFile(src);
+    await r2.send(
+      new PutObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: r2Key,
+        Body: body,
+        ContentType: contentTypeFor(src),
+      }),
+    );
+    return;
+  }
   const dest = path.join(STORAGE, r2Key);
   await mkdir(path.dirname(dest), { recursive: true });
   await copyFile(src, dest);
+}
+
+// Slugify a contributor folder name into a HexHive-safe username/id segment.
+function slugify(name: string): string {
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 32) || 'unknown'
+  );
+}
+
+// Look up or create a per-contributor seed user. Used to attribute every
+// bundle to the folder author it came from rather than round-robin across a
+// fixed cast.
+async function ensureContributorUser(
+  db: ReturnType<typeof drizzle<typeof schema>>,
+  displayName: string,
+): Promise<string> {
+  const slug = slugify(displayName);
+  const id = `seed-contrib-${slug}`;
+  const existing = await db.select().from(schema.user).where(eq(schema.user.id, id)).limit(1);
+  if (!existing[0]) {
+    await db.insert(schema.user).values({
+      id,
+      name: displayName,
+      email: `${slug}@team-aqua.seed`,
+      emailVerified: true,
+    });
+  }
+  await getOrCreateProfile(db, id);
+  await setUsername(db, id, slug);
+  await db
+    .update(schema.profile)
+    .set({ bio: `Contributor on Team Aqua's asset repo. Imported as a HexHive seed.` })
+    .where(eq(schema.profile.userId, id));
+  return id;
 }
 
 async function seedBundle(
@@ -403,7 +436,16 @@ async function seedBundle(
 // ────────────────────────────────────────────────────────────────────────────
 
 async function reset(db: ReturnType<typeof drizzle<typeof schema>>) {
-  const seedIds = SEED_USERS.map((u) => u.id);
+  // Match all synthetic seed users: the legacy fictional cast plus any
+  // path-derived `seed-contrib-*` users created by recent runs.
+  const allUsers = await db.select({ id: schema.user.id }).from(schema.user);
+  const seedIds = allUsers
+    .map((u) => u.id)
+    .filter((id) => id.startsWith('seed-aqua-') || id.startsWith('seed-contrib-'));
+  if (!seedIds.length) {
+    console.log('reset: no seed users in DB');
+    return;
+  }
   const listings = await db
     .select({ id: schema.listing.id })
     .from(schema.listing)
@@ -413,8 +455,8 @@ async function reset(db: ReturnType<typeof drizzle<typeof schema>>) {
     return;
   }
   const ids = listings.map((l) => l.id);
-  console.log(`reset: removing ${ids.length} listings owned by seed users`);
-  // Delete files on disk first (per listingId/versionId/* prefix in .dev-storage).
+  console.log(`reset: removing ${ids.length} listings owned by ${seedIds.length} seed users`);
+  // Best-effort delete of dev-storage files (no-op when running against R2).
   for (const id of ids) {
     await rm(path.join(STORAGE, id), { recursive: true, force: true });
   }
@@ -446,46 +488,37 @@ async function main() {
   const client = createClient({ url, authToken: process.env.DATABASE_AUTH_TOKEN || undefined });
   const db = drizzle(client, { schema });
 
-  // Ensure seed users + jmynes profile exist.
-  for (const u of SEED_USERS) await ensureUser(db, u);
-  const jmynesId = await findJmynesUserId(db);
-  if (jmynesId) {
-    await getOrCreateProfile(db, jmynesId).catch(() => undefined);
-    console.log(`jmynes user found: ${jmynesId} — listings will be co-authored by them`);
-  } else {
-    console.log('jmynes user not found in DB; sign in with GitHub OAuth at least once first');
-  }
-
   if (RESET) await reset(db);
 
-  // Idempotency: skip if the seed user(s) already have listings (unless --reset).
+  // Idempotency: skip if any path-derived seed contributor already has listings
+  // (unless --reset).
   if (!RESET) {
-    const existing = await db
-      .select({ id: schema.listing.id })
-      .from(schema.listing)
-      .where(
-        inArray(
-          schema.listing.authorId,
-          SEED_USERS.map((u) => u.id),
-        ),
-      )
-      .limit(1);
-    if (existing.length) {
-      console.log('seed users already have listings; pass --reset to wipe + re-seed');
-      return;
+    const allUsers = await db.select({ id: schema.user.id }).from(schema.user);
+    const existingSeedIds = allUsers.map((u) => u.id).filter((id) => id.startsWith('seed-contrib-'));
+    if (existingSeedIds.length) {
+      const existing = await db
+        .select({ id: schema.listing.id })
+        .from(schema.listing)
+        .where(inArray(schema.listing.authorId, existingSeedIds))
+        .limit(1);
+      if (existing.length) {
+        console.log('path-derived seed contributors already have listings; pass --reset to wipe + re-seed');
+        return;
+      }
     }
   }
 
-  await mkdir(STORAGE, { recursive: true });
+  if (!R2_CONFIGURED) await mkdir(STORAGE, { recursive: true });
   const bundles = await buildBundles();
-  console.log(`prepared ${bundles.length} bundles (max ${MAX})`);
+  console.log(
+    `prepared ${bundles.length} bundles (max ${MAX}); storage=${R2_CONFIGURED ? `R2:${R2_BUCKET}` : STORAGE}`,
+  );
 
-  // Round-robin authors so listings are spread across all seed users (and
-  // jmynes if available).
-  const authors = [...SEED_USERS.map((u) => u.id), ...(jmynesId ? [jmynesId] : [])];
+  // Author from path: each bundle attributes to a synthetic user derived from
+  // the contributor folder it was sourced from (slugified).
   let okCount = 0;
-  for (const [i, b] of bundles.entries()) {
-    const authorId = authors[i % authors.length];
+  for (const b of bundles) {
+    const authorId = await ensureContributorUser(db, b.contributor);
     const r = await seedBundle(db, authorId, b);
     if (r.ok) {
       okCount++;
