@@ -31,4 +31,32 @@ function excludeNodeModulesSvelteStyles(): Plugin {
 
 export default defineConfig({
   plugins: [excludeNodeModulesSvelteStyles(), sveltekit(), tailwindcss()],
+  optimizeDeps: {
+    include: ['bits-ui', '@lucide/svelte', '@icons-pack/svelte-simple-icons'],
+  },
+  ssr: {
+    optimizeDeps: {
+      include: ['bits-ui', '@lucide/svelte', '@icons-pack/svelte-simple-icons'],
+    },
+  },
+  server: {
+    warmup: {
+      clientFiles: [
+        './src/routes/+layout.svelte',
+        './src/routes/+page.svelte',
+        './src/lib/components/layout/Header.svelte',
+        './src/lib/components/layout/Footer.svelte',
+        './src/lib/components/ui/**/*.svelte',
+      ],
+      ssrFiles: [
+        './src/routes/+layout.server.ts',
+        './src/routes/+layout.svelte',
+        './src/routes/+page.svelte',
+        './src/hooks.server.ts',
+        './src/lib/components/layout/Header.svelte',
+        './src/lib/components/layout/Footer.svelte',
+        './src/lib/components/ui/**/*.svelte',
+      ],
+    },
+  },
 });
