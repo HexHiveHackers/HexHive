@@ -39,5 +39,12 @@ export const handle: Handle = async ({ event, resolve }) => {
     if (!profile.username) throw redirect(303, '/me/setup');
   }
 
-  return resolve(event);
+  const response = await resolve(event);
+  // HSTS: tell compliant browsers to always upgrade http→https for two
+  // years, including subdomains, and request inclusion in the browser
+  // preload list. Once a visitor has hit the site over https with this
+  // header, their browser auto-rewrites future http URLs client-side
+  // before any request is made, removing the 301 round-trip.
+  response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+  return response;
 };
