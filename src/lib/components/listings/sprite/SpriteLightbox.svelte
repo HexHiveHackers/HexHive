@@ -29,6 +29,22 @@
   let stageEl = $state<HTMLElement | null>(null);
   let naturalW = $state(0);
   let naturalH = $state(0);
+  // Hide the image until onLoad has computed the auto-zoom, so we don't
+  // see it flash at scale(1) and animate up to its target size.
+  let ready = $state(false);
+  // Transitions are deliberately delayed one paint past `ready` so the
+  // first frame with the auto-zoomed scale lands without animation; only
+  // subsequent user-driven zoom changes animate.
+  let animate = $state(false);
+
+  // Reset readiness whenever we navigate to a different file.
+  $effect(() => {
+    void index;
+    ready = false;
+    animate = false;
+    naturalW = 0;
+    naturalH = 0;
+  });
 
   const file = $derived(files[index]);
   const bgClass = $derived(
@@ -78,6 +94,11 @@
     // Auto-zoom when (re)loading. Pixel-art sprites are typically tiny;
     // showing them at 1× wastes the lightbox.
     zoom = autoZoom();
+    ready = true;
+    // Wait two animation frames before enabling the transition: one for
+    // Svelte to commit the visibility/scale update, one for the browser
+    // to paint it. Only then turn on `transition-transform`.
+    requestAnimationFrame(() => requestAnimationFrame(() => (animate = true)));
   }
 
   function onWheel(e: WheelEvent) {
@@ -182,8 +203,8 @@
         src={`/api/preview/${file.id}`}
         alt={file.originalFilename}
         onload={onLoad}
-        class="pixelated max-w-none max-h-none transition-transform"
-        style="transform: scale({zoom}); transform-origin: center;"
+        class="pixelated max-w-none max-h-none {animate ? 'transition-transform' : ''}"
+        style="transform: scale({zoom}); transform-origin: center; visibility: {ready ? 'visible' : 'hidden'};"
       />
     {/if}
   </div>
