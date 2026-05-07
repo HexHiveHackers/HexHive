@@ -1,0 +1,37 @@
+# Railway deployment for HexHive (SvelteKit + svelte-adapter-bun).
+#
+# Two long-lived environments — staging and production — share the
+# same build/start commands; differences live entirely in Railway's
+# per-environment service variables (DATABASE_URL, R2_*, BETTER_AUTH_*,
+# OAuth secrets, …). Each environment maps to its own Turso DB and its
+# own R2 bucket so staging cannot scribble on production data.
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "bun install --frozen-lockfile && bun run build"
+
+[deploy]
+startCommand = "bun ./build/index.js"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Production: deploys on pushes to `main`. Set Railway's "Watch Paths"
+# (or branch trigger) to main in the service settings.
+[environments.production]
+[environments.production.deploy]
+startCommand = "bun ./build/index.js"
+healthcheckPath = "/"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Staging: deploys on pushes to `staging` (or PR previews if enabled).
+# Use a separate Turso DB + R2 bucket and a `*.up.railway.app` URL until
+# a custom domain is attached.
+[environments.staging]
+[environments.staging.deploy]
+startCommand = "bun ./build/index.js"
+healthcheckPath = "/"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 1
