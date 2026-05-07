@@ -91,6 +91,12 @@ Search uses SQLite FTS5 with porter stemming for the canonical index, and a trig
 
 See [CLAUDE.md](./CLAUDE.md) for development conventions, the strict-typing policy, the structural-handler pattern, and the upload-flow contract.
 
+## Deploying
+
+Deploy is on Railway. Two environments — `production` and `staging` — share a single Bun service defined by [`railway.toml`](./railway.toml). Per-environment secrets (Turso, R2, Better Auth, OAuth) live in Railway's Variables panel; the toml itself is config-light.
+
+The full walkthrough — project setup, Turso/R2 provisioning, custom-domain DNS, OAuth redirect URI updates, and the ephemeral-filesystem caveat — is in [`docs/deploy-railway.md`](./docs/deploy-railway.md).
+
 ## Plans
 
 Implementation history is under `docs/superpowers/plans/`. The shipped/queued/scrapped roadmap is in [docs/ROADMAP.md](./docs/ROADMAP.md).

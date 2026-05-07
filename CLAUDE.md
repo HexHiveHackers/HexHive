@@ -80,9 +80,9 @@ Pre-commit hook runs `biome check --write --no-errors-on-unmatched` on staged `*
 ## Architecture
 
 - `src/lib/db/schema.ts` — single source of truth for all DB tables (Better Auth tables included).
-- `src/lib/db/index.ts` — singleton Drizzle client.
+- `src/lib/db/index.ts` — Drizzle client. **Lazy-constructed via Proxy** so module load doesn't open a libSQL connection. SvelteKit's post-build `analyse` pass imports every server module to discover routes; an eager `createClient()` would crash that pass on Railway whenever `DATABASE_URL` isn't yet set in the build environment. Same shape applies to `src/lib/auth.ts`.
 - `src/lib/storage/r2.ts` — `presignPut`, `presignGet`, `headObject`, `deleteObject`. Always import from here; never from `@aws-sdk/client-s3` directly. Falls back to a local-FS shim when R2 env isn't set (see Environment).
-- `src/lib/auth.ts` — Better Auth instance with OAuth (Google/GitHub/Discord) + `@better-auth/passkey`. Drizzle adapter writes to the same Turso DB. Exports `enabledSocialProviders` so login pages only render configured providers.
+- `src/lib/auth.ts` — Better Auth instance with OAuth (Google/GitHub/Discord) + `@better-auth/passkey`. Drizzle adapter writes to the same Turso DB. Exports `enabledSocialProviders` so login pages only render configured providers. **Lazy-constructed via Proxy** for the same `analyse`-pass reason as `db/index.ts` — better-auth runs `new URL(baseURL)` in its constructor, which crashes a build with no `BETTER_AUTH_URL`.
 - `src/hooks.server.ts` — populates `event.locals.user`/`session`; redirects signed-in users with no profile to `/me/setup`; allowlists public routes.
 - `src/lib/server/auth-utils.ts` — `requireUser(event)` returns the user or throws a 303 to `/login?next=...`.
 - `src/lib/server/profiles.ts` — `getOrCreateProfile`, `setUsername`, `setBio`, `getProfileByUsername`, `listingsByUser`.
@@ -140,7 +140,7 @@ For re-uploads, `/upload/[type]/version?id=<listingId>` drives the same loop aga
   ```
   Co-Authored-By: Claude <noreply@anthropic.com>
   ```
-- Don't push to GitHub until the user asks. The `origin` is `https://github.com/jmynes/hexhive` (private).
+- Don't push to GitHub until the user asks. The `origin` is `git@github.com:HexHiveHackers/HexHive.git` (the org repo).
 - Tags mark milestones: `foundation-complete`, `romhacks-vertical-complete`, `asset-hives-complete`, `v1-complete`, `v1.1-complete`, `v1.2-complete`.
 
 ## Plans and execution
@@ -157,6 +157,10 @@ Dark-mode only (`<html class="dark" style="color-scheme: dark">` in `app.html`).
 - Subtle CRT scanline overlay (low-opacity repeating gradient) on hero-ish areas only.
 - Type badges + the upload wizard's accent are color-coded per asset type (emerald/fuchsia/amber/sky for romhack/sprite/sound/script).
 - The upload wizard uses a hexagon-bead progress indicator that nods to "HexHive".
+
+## Deployment
+
+Deploy is on Railway. `railway.toml` defines `production` and `staging` environments sharing one Bun service; per-environment values (Turso, R2, Better Auth, OAuth) live in Railway's Variables panel. `engines.node` in `package.json` pins Node ≥ 22 so Nixpacks doesn't pick the EOL Node 18 default. Full walkthrough in [`docs/deploy-railway.md`](./docs/deploy-railway.md). Project id `2eb78a5e-b656-4826-875a-44a4c6ee5298`.
 
 ## Environment
 

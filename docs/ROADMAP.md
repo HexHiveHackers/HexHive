@@ -18,17 +18,27 @@ Live tracker for what's shipped and what's queued. Implementation is plan-driven
 
 ### Plan 8 — Production deployment
 
-Operational, not feature work. No plan file written yet. Likely tasks when picked up:
+Operational, not feature work. Walkthrough lives in [`docs/deploy-railway.md`](./deploy-railway.md). Picked Railway; `railway.toml` defines `production` and `staging` environments sharing one Bun service. Project id `2eb78a5e-b656-4826-875a-44a4c6ee5298`.
 
-- Provision a real Turso database; set `DATABASE_URL` + `DATABASE_AUTH_TOKEN` for prod.
-- Provision a Cloudflare R2 bucket; configure CORS for browser PUTs.
-- Real OAuth client IDs/secrets for Google, GitHub, Discord; verify each provider's redirect URI.
-- Generate a real `BETTER_AUTH_SECRET`; rotate procedures.
-- Pick a host (Fly.io, a small VPS, Hetzner, or similar — Bun rules out Cloudflare Workers). Set up the `svelte-adapter-bun` server image.
-- DNS, TLS, basic uptime monitoring.
-- A first-admin bootstrap path (`user.is_admin` flip).
-- Production migration story: how does `bun run db:migrate` run on deploy?
-- Run e2e against a deployed preview before flipping DNS.
+Shipped:
+
+- ✅ Railway project + service wired to `HexHiveHackers/HexHive`, watching `main`.
+- ✅ Build pipeline green: Nixpacks selects Bun + Node ≥ 22 (`engines.node` in `package.json`). Build was failing on Node 18 EOL until that pin landed.
+- ✅ DB and auth modules construct lazily (`src/lib/db/index.ts`, `src/lib/auth.ts` — Proxy-wrapped) so SvelteKit's post-build `analyse` pass no longer crashes when env vars are absent.
+- ✅ Two Turso DBs (`hexhive-prod`, `hexhive-staging`), migrations applied, URL + token in Railway per environment.
+- ✅ `BETTER_AUTH_SECRET` (per-environment) + `BETTER_AUTH_URL` set; production currently points at the Railway-issued subdomain.
+- ✅ `hexhive.app` apex CNAME landed in Namecheap; Railway domain entry verified.
+
+Remaining:
+
+- 🔲 **Cloudflare R2** — provision two buckets (`hexhive-prod`, `hexhive-staging`), one API token with R+W to both, set `R2_*` vars in each Railway environment. Until done, uploads land on Railway's ephemeral container FS via the dev-storage shim and disappear at every redeploy.
+- 🔲 **OAuth providers** — create real client IDs/secrets for Google / GitHub / Discord; add `https://hexhive.app/api/auth/callback/<provider>` (and the staging URL) as authorized redirects; paste pairs into Railway. Login pages are empty until at least one is configured.
+- 🔲 **`hexhive.app` Let's Encrypt cert** — Railway is still serving its `*.up.railway.app` wildcard at the apex. Once the cert flips to `CN=hexhive.app`, set `BETTER_AUTH_URL=https://hexhive.app` in production and re-run OAuth redirect-URI updates.
+- 🔲 **Staging deploy** — staging environment exists and has DB/auth vars, but no service domain attached and no automatic deploy trigger configured. Either create a `staging` branch and wire branch-tracking on the staging environment, or use Railway PR previews.
+- 🔲 **Email forwarding for `hexhive.app`** — apex CNAME conflicts with the SPF TXT at `@`; Namecheap flattens the CNAME but mail forwarding may misbehave. If we want mail on the domain, flip to serving from `www` and redirect apex → www.
+- 🔲 **First-admin bootstrap** — once the schema is on prod Turso, flip `user.is_admin` for a known account. No CLI or one-shot route exists yet.
+- 🔲 **Migration story on deploy** — `bun run db:migrate` is currently manual against Turso. Decide whether to wire it into `preDeployCommand` or keep it explicit.
+- 🔲 **Uptime monitoring + e2e against preview** — run Playwright against the staging URL before promoting `main` → prod.
 
 ### Sprite SpriteVariant flattening for FTS
 
