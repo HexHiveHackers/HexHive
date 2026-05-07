@@ -160,7 +160,13 @@ Dark-mode only (`<html class="dark" style="color-scheme: dark">` in `app.html`).
 
 ## Deployment
 
-Deploy is on Railway. `railway.toml` defines `production` and `staging` environments sharing one Bun service; per-environment values (Turso, R2, Better Auth, OAuth) live in Railway's Variables panel. `engines.node` in `package.json` pins Node ≥ 22 so Nixpacks doesn't pick the EOL Node 18 default. Full walkthrough in [`docs/deploy-railway.md`](./docs/deploy-railway.md). Project id `2eb78a5e-b656-4826-875a-44a4c6ee5298`.
+Deploy is on Railway. `railway.toml` defines `production` and `staging` environments sharing one Bun service; per-environment values (Turso, R2, Better Auth, OAuth) live in Railway's Variables panel. `engines.node` in `package.json` pins Node ≥ 22 so Nixpacks doesn't pick the EOL Node 18 default. Full walkthrough in [`docs/deploy-railway.md`](./docs/deploy-railway.md).
+
+Live resources:
+
+- **Railway project** id `2eb78a5e-b656-4826-875a-44a4c6ee5298`, service `HexHive`.
+- **Turso DBs**: `hexhive-prod` (`libsql://hexhive-prod-jmynes.aws-us-east-1.turso.io`) and `hexhive-staging` (`libsql://hexhive-staging-jmynes.aws-us-east-1.turso.io`). Run migrations with `DATABASE_URL=<url> DATABASE_AUTH_TOKEN=<token> bun run db:migrate`. Don't provision new ones — these are already wired into Railway.
+- **Public URL**: `https://hexhive-production.up.railway.app` (Railway-issued); custom domain `hexhive.app` is registered in Railway and the apex CNAME is in Namecheap, but Railway is still serving its `*.up.railway.app` cert — flip `BETTER_AUTH_URL` once `CN=hexhive.app` lands.
 
 ## Environment
 
