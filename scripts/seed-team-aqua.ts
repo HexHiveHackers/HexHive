@@ -28,7 +28,7 @@ import { drizzle } from 'drizzle-orm/libsql';
 import * as schema from '../src/lib/db/schema';
 import { createListingDraft, finalizeListing } from '../src/lib/server/listings';
 import type { ListingTypedInput } from '../src/lib/server/meta-writers';
-import { getOrCreateProfile, setUsername } from '../src/lib/server/profiles';
+import { setUsername } from '../src/lib/server/profiles';
 import { newId } from '../src/lib/utils/ids';
 
 const REPO = process.env.REPO ?? '/tmp/Team-Aquas-Asset-Repo';
@@ -309,7 +309,10 @@ function slugify(name: string): string {
 
 // Look up or create a per-contributor seed user. Used to attribute every
 // bundle to the folder author it came from rather than round-robin across a
-// fixed cast.
+// fixed cast. Inserts the profile row directly with a non-empty username so
+// the profile_username_unique index never sees two `''` values colliding
+// (which is what would happen if we went through getOrCreateProfile, since
+// it inserts with username='' before the caller can rename it).
 async function ensureContributorUser(
   db: ReturnType<typeof drizzle<typeof schema>>,
   displayName: string,
@@ -325,12 +328,20 @@ async function ensureContributorUser(
       emailVerified: true,
     });
   }
-  await getOrCreateProfile(db, id);
-  await setUsername(db, id, slug);
-  await db
-    .update(schema.profile)
-    .set({ bio: `Contributor on Team Aqua's asset repo. Imported as a HexHive seed.` })
-    .where(eq(schema.profile.userId, id));
+  const existingProfile = await db.select().from(schema.profile).where(eq(schema.profile.userId, id)).limit(1);
+  if (!existingProfile[0]) {
+    await db.insert(schema.profile).values({
+      userId: id,
+      username: slug,
+      bio: `Contributor on Team Aqua's asset repo. Imported as a HexHive seed.`,
+    });
+  } else {
+    await setUsername(db, id, slug);
+    await db
+      .update(schema.profile)
+      .set({ bio: `Contributor on Team Aqua's asset repo. Imported as a HexHive seed.` })
+      .where(eq(schema.profile.userId, id));
+  }
   return id;
 }
 
