@@ -363,24 +363,14 @@
   </div>
 
   <div
-    class="border border-dashed rounded-lg p-6 text-sm text-muted-foreground transition-colors {dragOver
-      ? 'border-primary bg-primary/5'
-      : ''}"
-    role="region"
-    aria-label="Drop a .mid + .inc (and optional .mp3) here"
-    ondragover={(e) => {
-      e.preventDefault();
-      dragOver = true;
-    }}
-    ondragleave={() => {
-      dragOver = false;
-    }}
-    ondrop={onDrop}
+    class="border border-dashed rounded-lg p-6 text-sm text-muted-foreground opacity-40 cursor-not-allowed select-none"
+    aria-label="Custom file drop (coming soon)"
   >
     <div class="flex items-center gap-3">
       <Upload class="size-5" />
       <div>
         Drop a <code>.mid</code> and matching voicegroup <code>.inc</code> here (optional reference <code>.mp3</code>).
+        <span class="ml-1 italic">(coming soon)</span>
       </div>
     </div>
   </div>
