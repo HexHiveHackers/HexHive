@@ -39,6 +39,7 @@ function scoreMatch(presetName: string, query: string): number {
   const a = presetName.toLowerCase();
   const q = query.toLowerCase();
   if (a === q) return 10_000;
+  if (a.startsWith(q)) return 6_000 + q.length;
   if (a.includes(q)) return 5_000 + q.length;
   const aToks = new Set(tokens(presetName));
   let s = 0;
@@ -81,14 +82,28 @@ function asChoice(p: SfPreset, reason: string): MappingChoice {
   return { bankMSB: p.bankMSB, program: p.program, label: `${p.bankMSB}:${p.program} ${p.name}`, reason };
 }
 
-const GM_FALLBACK = (slot: number, reason: string): MappingChoice => ({
-  bankMSB: 0,
-  program: slot & 0x7f,
-  label: `0:${slot & 0x7f} (GM)`,
-  reason,
-});
+// VGK is its own preset layout — bank 0 program N is NOT GM. When no name
+// match is found we fall back to the first melodic preset (typically
+// 0:0 Grand Piano in VGK) and flag the row so the user knows to override.
+function defaultMelodic(presets: readonly SfPreset[], reason: string): MappingChoice {
+  const first = presets.find((p) => !p.isAnyDrums);
+  if (first) return { ...asChoice(first, reason), label: `${first.bankMSB}:${first.program} ${first.name}` };
+  return { bankMSB: 0, program: 0, label: '0:0 (none)', reason };
+}
 
-export function autoMap(entry: VoiceEntry, slot: number, presets: readonly SfPreset[]): MappingChoice {
+// Pull a name hint out of a Sappy keysplit subgroup name. e.g.
+// `voicegroup_strings_keysplit` → "strings", `voicegroup_piano_keysplit` →
+// "piano", `voicegroup_frlg_drumset` → "drumset".
+function keysplitHint(subgroup: string): string {
+  return subgroup
+    .toLowerCase()
+    .replace(/^voicegroup_?/, '')
+    .replace(/_?keysplit$/, '')
+    .replace(/_/g, ' ')
+    .trim();
+}
+
+export function autoMap(entry: VoiceEntry, _slot: number, presets: readonly SfPreset[]): MappingChoice {
   switch (entry.kind) {
     case 'square1':
     case 'square2':
@@ -99,38 +114,50 @@ export function autoMap(entry: VoiceEntry, slot: number, presets: readonly SfPre
         entry.kind === 'square2' || entry.kind === 'square2_alt' ? 'square wave 2' : 'square wave',
       );
       if (hit) return asChoice(hit, `psg ${entry.kind}`);
-      return GM_FALLBACK(80, `psg ${entry.kind} fallback (GM Lead Square)`);
+      return defaultMelodic(presets, `psg ${entry.kind} — no VGK match, override recommended`);
     }
     case 'wave':
     case 'wave_alt': {
-      const hit = bestMelodic(presets, `programmable wave ${entry.dataName}`);
+      const hit = bestMelodic(presets, `gb wave ${entry.dataName}`);
       if (hit) return asChoice(hit, `psg wave ${entry.dataName}`);
-      return GM_FALLBACK(80, 'psg wave fallback');
+      return defaultMelodic(presets, `psg wave ${entry.dataName} — no VGK match, override recommended`);
     }
     case 'noise':
     case 'noise_alt': {
-      const hit = bestMelodic(presets, 'noise');
+      const hit = bestMelodic(presets, 'gb noise');
       if (hit) return asChoice(hit, 'psg noise');
-      return GM_FALLBACK(122, 'psg noise fallback (GM Seashore)');
+      return defaultMelodic(presets, 'psg noise — no VGK match, override recommended');
     }
     case 'directsound':
     case 'directsound_no_resample': {
       const stripped = stripSamplePrefix(entry.sampleName);
       const hit = bestMelodic(presets, stripped);
       if (hit) return asChoice(hit, `directsound ${entry.sampleName}`);
-      return GM_FALLBACK(slot, `unmatched sample ${entry.sampleName}`);
+      return defaultMelodic(presets, `unmatched sample ${entry.sampleName} — override recommended`);
     }
     case 'keysplit_all': {
-      const hit = bestDrum(presets, entry.subgroupName);
+      const hint = keysplitHint(entry.subgroupName);
+      const hit = bestDrum(presets, hint);
       if (hit) return asChoice(hit, `drumkit ${entry.subgroupName}`);
+      // Last-resort drum fallback: first drum preset in the bank, or 128:0.
+      const anyDrum = presets.find((p) => p.isAnyDrums);
+      if (anyDrum) return asChoice(anyDrum, `drumkit fallback for ${entry.subgroupName}`);
       return { bankMSB: 128, program: 0, label: '128:0 (drum)', reason: `drum fallback ${entry.subgroupName}` };
     }
-    case 'keysplit':
-      // Multi-instrument keysplits don't translate cleanly to a single SF2
-      // preset; fall back to GM-by-slot as a least-bad default.
-      return GM_FALLBACK(slot, `keysplit ${entry.subgroupName} (GM-by-slot fallback)`);
+    case 'keysplit': {
+      // Multi-instrument keysplits can't pick one preset perfectly, but the
+      // subgroup name almost always carries a usable hint
+      // (e.g. "voicegroup_strings_keysplit" → "strings"). Search the VGK
+      // melodic presets for that hint before giving up.
+      const hint = keysplitHint(entry.subgroupName);
+      if (hint) {
+        const hit = bestMelodic(presets, hint);
+        if (hit) return asChoice(hit, `keysplit ${entry.subgroupName} (matched "${hint}")`);
+      }
+      return defaultMelodic(presets, `keysplit ${entry.subgroupName} — no VGK match, override recommended`);
+    }
     case 'unknown':
-      return GM_FALLBACK(slot, 'unknown voice entry');
+      return defaultMelodic(presets, 'unknown voice entry — override recommended');
   }
 }
 
