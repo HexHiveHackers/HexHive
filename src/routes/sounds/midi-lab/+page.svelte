@@ -498,7 +498,7 @@
             ></span>
             <span class="font-display text-[0.6rem] tracking-[0.25em] text-emerald-300">
               <span class="sr-only">Synth (remapped MIDI)</span>
-              <span aria-hidden="true">[ SYNTH · MIDI ]</span>
+              <span aria-hidden="true">[ LIVE · MIDI ]</span>
             </span>
           </div>
           <span class="font-display text-[0.5rem] tracking-[0.3em] text-emerald-500/60">
@@ -593,7 +593,7 @@
           <div class="relative mb-3 flex items-center justify-between gap-3">
             <span class="font-display text-[0.6rem] tracking-[0.25em] text-amber-300">
               <span class="sr-only">Reference recording (vanilla MP3)</span>
-              <span aria-hidden="true">▷ TAPE · MP3 ◁</span>
+              <span aria-hidden="true">▷ FINAL · MP3 ◁</span>
             </span>
             <span
               class="font-display text-[0.5rem] tracking-[0.3em] text-amber-600/70 rounded border border-amber-500/30 px-1.5 py-0.5"
