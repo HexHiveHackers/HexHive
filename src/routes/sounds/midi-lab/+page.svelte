@@ -468,10 +468,53 @@
         </div>
       </div>
 
-      <div class="space-y-1">
-        <div class="text-xs uppercase tracking-wider text-muted-foreground">Synth (remapped MIDI)</div>
-        <div class="flex items-center gap-3">
-          <Button onclick={togglePlay} disabled={engineState !== 'ready'} size="sm">
+      <!-- ── SYNTH PANEL ─────────────────────────────────────────── -->
+      <div
+        class="relative rounded-md border border-emerald-500/30 bg-gradient-to-b from-emerald-950/40 via-slate-950/70 to-slate-950/40 p-4 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.06)]"
+      >
+        <!-- circuit grid overlay -->
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute inset-0 rounded-md opacity-[0.07] [background-image:linear-gradient(to_right,#10b981_1px,transparent_1px),linear-gradient(to_bottom,#10b981_1px,transparent_1px)] [background-size:8px_8px]"
+        ></div>
+        <!-- viewfinder corner brackets -->
+        <span aria-hidden="true" class="absolute size-2 border-emerald-400/60 top-1.5 left-1.5 border-l border-t"></span>
+        <span aria-hidden="true" class="absolute size-2 border-emerald-400/60 top-1.5 right-1.5 border-r border-t"></span>
+        <span
+          aria-hidden="true"
+          class="absolute size-2 border-emerald-400/60 bottom-1.5 left-1.5 border-l border-b"
+        ></span>
+        <span
+          aria-hidden="true"
+          class="absolute size-2 border-emerald-400/60 bottom-1.5 right-1.5 border-r border-b"
+        ></span>
+
+        <!-- header chip -->
+        <div class="relative mb-2 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              class="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_2px_rgba(16,185,129,0.65)] animate-pulse"
+            ></span>
+            <span class="font-display text-[0.6rem] tracking-[0.25em] text-emerald-300">
+              <span class="sr-only">Synth (remapped MIDI)</span>
+              <span aria-hidden="true">[ SYNTH · MIDI ]</span>
+            </span>
+          </div>
+          <span class="font-display text-[0.5rem] tracking-[0.3em] text-emerald-500/60">
+            vg:{loaded.voicegroup.name}
+          </span>
+        </div>
+
+        <!-- transport -->
+        <div class="relative flex items-center gap-3">
+          <Button
+            onclick={togglePlay}
+            disabled={engineState !== 'ready'}
+            size="sm"
+            variant="outline"
+            class="border-emerald-500/50 text-emerald-200 hover:bg-emerald-500/10"
+          >
             {#if engineState === 'loading'}
               <Loader2 class="size-4 animate-spin" /> loading…
             {:else if isPlaying}
@@ -480,19 +523,27 @@
               <Play class="size-4" /> Play
             {/if}
           </Button>
-          <span class="text-xs font-mono w-12 tabular-nums">{fmtTime(currentTime)}</span>
+          <span
+            class="font-display text-[0.6rem] tabular-nums tracking-wider text-white rounded bg-emerald-950/70 border border-emerald-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(16,185,129,0.25)] min-w-[3.25rem] text-center"
+          >
+            {fmtTime(currentTime)}
+          </span>
           <input
             type="range"
-            class="flex-1"
+            class="flex-1 accent-emerald-400"
             min="0"
             max={duration || 1}
             step="0.01"
             value={currentTime}
             oninput={(e) => seek(Number.parseFloat((e.currentTarget as HTMLInputElement).value))}
             disabled={engineState !== 'ready'}
-            aria-label="MIDI scrub"
+            aria-label="Synth MIDI scrub"
           />
-          <span class="text-xs font-mono w-12 tabular-nums text-right">{fmtTime(duration)}</span>
+          <span
+            class="font-display text-[0.6rem] tabular-nums tracking-wider text-white/80 rounded bg-emerald-950/70 border border-emerald-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(16,185,129,0.2)] min-w-[3.25rem] text-center"
+          >
+            {fmtTime(duration)}
+          </span>
           <button
             type="button"
             onclick={toggleLoop}
@@ -527,16 +578,82 @@
         </div>
       </div>
 
+      <!-- ── TAPE PANEL ──────────────────────────────────────────── -->
       {#if loaded.mp3Url}
-        <div class="space-y-1">
-          <div class="text-xs uppercase tracking-wider text-muted-foreground">Reference recording (vanilla MP3)</div>
-          <div class="flex items-center gap-3">
+        <div
+          class="relative rounded-2xl border-2 border-amber-500/30 bg-gradient-to-b from-amber-950/40 via-stone-950/60 to-stone-950/40 p-4 shadow-[inset_0_1px_0_rgba(245,158,11,0.15)]"
+        >
+          <!-- magnetic tape striations -->
+          <div
+            aria-hidden="true"
+            class="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.08] [background-image:repeating-linear-gradient(0deg,#f59e0b_0_1px,transparent_1px_4px)]"
+          ></div>
+
+          <!-- header chip -->
+          <div class="relative mb-3 flex items-center justify-between gap-3">
+            <span class="font-display text-[0.6rem] tracking-[0.25em] text-amber-300">
+              <span class="sr-only">Reference recording (vanilla MP3)</span>
+              <span aria-hidden="true">▷ TAPE · MP3 ◁</span>
+            </span>
+            <span
+              class="font-display text-[0.5rem] tracking-[0.3em] text-amber-600/70 rounded border border-amber-500/30 px-1.5 py-0.5"
+            >
+              side a
+            </span>
+          </div>
+
+          <!-- transport: reel · audio · reel · loop -->
+          <div class="relative flex items-center gap-3">
+            <svg
+              viewBox="0 0 24 24"
+              class="size-8 shrink-0 text-amber-400/80 animate-[spin_8s_linear_infinite]"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="0.6" />
+              <circle cx="12" cy="12" r="3" fill="currentColor" />
+              <circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.7" />
+              <g stroke="currentColor" stroke-width="0.5" opacity="0.7">
+                <line x1="12" y1="3" x2="12" y2="6" />
+                <line x1="12" y1="18" x2="12" y2="21" />
+                <line x1="3" y1="12" x2="6" y2="12" />
+                <line x1="18" y1="12" x2="21" y2="12" />
+                <line x1="5.5" y1="5.5" x2="7.5" y2="7.5" />
+                <line x1="16.5" y1="16.5" x2="18.5" y2="18.5" />
+                <line x1="18.5" y1="5.5" x2="16.5" y2="7.5" />
+                <line x1="7.5" y1="16.5" x2="5.5" y2="18.5" />
+              </g>
+            </svg>
             {#key loaded.songId}
-              <audio bind:this={mp3El} controls preload="none" class="flex-1" loop={loopOn}>
+              <audio
+                bind:this={mp3El}
+                controls
+                preload="none"
+                class="flex-1 sepia-[0.25] saturate-[0.85] contrast-[0.95]"
+                loop={loopOn}
+              >
                 <source src={loaded.mp3Url} />
                 <track kind="captions" />
               </audio>
             {/key}
+            <svg
+              viewBox="0 0 24 24"
+              class="size-8 shrink-0 text-amber-400/80 animate-[spin_8s_linear_infinite_reverse]"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="0.6" />
+              <circle cx="12" cy="12" r="3" fill="currentColor" />
+              <circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.7" />
+              <g stroke="currentColor" stroke-width="0.5" opacity="0.7">
+                <line x1="12" y1="3" x2="12" y2="6" />
+                <line x1="12" y1="18" x2="12" y2="21" />
+                <line x1="3" y1="12" x2="6" y2="12" />
+                <line x1="18" y1="12" x2="21" y2="12" />
+                <line x1="5.5" y1="5.5" x2="7.5" y2="7.5" />
+                <line x1="16.5" y1="16.5" x2="18.5" y2="18.5" />
+                <line x1="18.5" y1="5.5" x2="16.5" y2="7.5" />
+                <line x1="7.5" y1="16.5" x2="5.5" y2="18.5" />
+              </g>
+            </svg>
             <button
               type="button"
               onclick={toggleLoop}
