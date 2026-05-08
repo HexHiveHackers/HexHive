@@ -91,6 +91,27 @@
     return () => el.removeEventListener('load', onLoad);
   });
 
+  // Drive the seek-track fill via a CSS custom property so the played
+  // portion renders identically on Chromium and Firefox. Native range
+  // inputs only expose progress fill on Firefox (::-moz-range-progress)
+  // and not on Chromium, so we paint a linear-gradient on the track
+  // pseudo-element using --midi-progress (0..1) and update it from
+  // currentTime / duration via rAF while the player exists.
+  $effect(() => {
+    const el = activePlayerEl;
+    if (!el) return;
+    let rafId = 0;
+    const tick = () => {
+      if (el.duration > 0) {
+        const p = Math.min(1, Math.max(0, el.currentTime / el.duration));
+        el.style.setProperty('--midi-progress', p.toString());
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  });
+
   // ──── Derived list ─────────────────────────────────────────────────────
   type Annotated = FileRow & { kind: FileKind; mime: string | null };
   const annotated = $derived<Annotated[]>(
@@ -313,29 +334,38 @@
     height: 6px;
     background: transparent;
   }
-  /* Track: a faint amber wash sits on top of the card surface so the
-   * bar reads as a recessed channel even before any progress fill. The
-   * same color logic is duplicated for -moz- because the two engines
-   * style range-input internals on different pseudo-elements. */
+  /* Track: amber wash on the unplayed portion, solid amber on the played
+   * portion, separated by --midi-progress (0..1). Set on the host element
+   * by an effect that ticks currentTime/duration via rAF; cascades into
+   * the shadow DOM through normal CSS variable inheritance.
+   *
+   * The same gradient is duplicated on the moz pseudo so Firefox renders
+   * identically to Chromium. We deliberately do NOT use
+   * ::-moz-range-progress (Firefox-only) because that would double-fill
+   * on top of the gradient. */
   :global(midi-player::part(seek-bar))::-webkit-slider-runnable-track {
     height: 6px;
-    background: rgba(251, 191, 36, 0.15);
     border-radius: 3px;
-    border: 1px solid rgba(251, 191, 36, 0.25);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    background: linear-gradient(
+      to right,
+      #fbbf24 0%,
+      #fbbf24 calc(var(--midi-progress, 0) * 100%),
+      rgba(251, 191, 36, 0.12) calc(var(--midi-progress, 0) * 100%),
+      rgba(251, 191, 36, 0.12) 100%
+    );
   }
   :global(midi-player::part(seek-bar))::-moz-range-track {
     height: 6px;
-    background: rgba(251, 191, 36, 0.15);
     border-radius: 3px;
-    border: 1px solid rgba(251, 191, 36, 0.25);
-  }
-  /* Firefox-only progress fill (the played portion). Chromium has no
-   * cross-browser equivalent for native range inputs; it would need a
-   * JS-driven CSS variable, which is out of scope for this pass. */
-  :global(midi-player::part(seek-bar))::-moz-range-progress {
-    height: 6px;
-    background: #fbbf24;
-    border-radius: 3px;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    background: linear-gradient(
+      to right,
+      #fbbf24 0%,
+      #fbbf24 calc(var(--midi-progress, 0) * 100%),
+      rgba(251, 191, 36, 0.12) calc(var(--midi-progress, 0) * 100%),
+      rgba(251, 191, 36, 0.12) 100%
+    );
   }
   :global(midi-player::part(seek-bar))::-webkit-slider-thumb {
     appearance: none;
