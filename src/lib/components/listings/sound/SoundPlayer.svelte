@@ -31,6 +31,31 @@
     });
   });
 
+  // Soundfont selector for MIDI playback. All Magenta-hosted soundfonts
+  // implement the General MIDI program table, so any GM-targeting MIDI
+  // (the all-instruments-patch convention used by most pret/decomp hacks)
+  // sounds reasonable in any of them. The Pokemon-stock-instrument SF2s
+  // are not yet hosted; once they are, add their URLs here.
+  type Soundfont = { id: string; label: string; url: string };
+  const SOUNDFONTS: Soundfont[] = [
+    {
+      id: 'sgm-plus',
+      label: 'General MIDI (sgm_plus)',
+      url: 'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus',
+    },
+    {
+      id: 'salamander',
+      label: 'Salamander Grand Piano',
+      url: 'https://storage.googleapis.com/magentadata/js/soundfonts/salamander',
+    },
+    {
+      id: 'jazz',
+      label: 'Jazz combo',
+      url: 'https://storage.googleapis.com/magentadata/js/soundfonts/jazz',
+    },
+  ];
+  let soundfont = $state<Soundfont>(SOUNDFONTS[0]);
+
   // ──── Derived list ─────────────────────────────────────────────────────
   type Annotated = FileRow & { kind: FileKind; mime: string | null };
   const annotated = $derived<Annotated[]>(
@@ -87,6 +112,21 @@
           class="pl-8 h-8 w-48 text-xs"
         />
       </div>
+      {#if hasMidi}
+        <select
+          aria-label="MIDI soundfont"
+          class="h-8 rounded-md border bg-background px-2 text-xs"
+          value={soundfont.id}
+          onchange={(e) => {
+            const next = SOUNDFONTS.find((s) => s.id === (e.currentTarget as HTMLSelectElement).value);
+            if (next) soundfont = next;
+          }}
+        >
+          {#each SOUNDFONTS as s (s.id)}
+            <option value={s.id}>{s.label}</option>
+          {/each}
+        </select>
+      {/if}
       <Button
         size="sm"
         variant="outline"
@@ -148,7 +188,7 @@
           {#if midiReady}
             <midi-player
               src={`/api/preview/${f.id}`}
-              sound-font="https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus"
+              sound-font={soundfont.url}
               style="width: 100%;"
             ></midi-player>
           {:else}

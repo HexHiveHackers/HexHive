@@ -85,7 +85,12 @@ function contentTypeFor(name: string): string {
 
 const LIMITS = {
   sprite: { perFile: 5 * 1024 * 1024, total: 50 * 1024 * 1024, max: 200, exts: ['.png', '.gif', '.bmp', '.zip'] },
-  sound: { perFile: 20 * 1024 * 1024, total: 50 * 1024 * 1024, max: 50, exts: ['.wav', '.ogg', '.mp3', '.s', '.zip'] },
+  sound: {
+    perFile: 20 * 1024 * 1024,
+    total: 50 * 1024 * 1024,
+    max: 50,
+    exts: ['.wav', '.ogg', '.mp3', '.flac', '.m4a', '.opus', '.mid', '.midi', '.s', '.zip'],
+  },
   script: {
     perFile: 10 * 1024 * 1024,
     total: 30 * 1024 * 1024,
