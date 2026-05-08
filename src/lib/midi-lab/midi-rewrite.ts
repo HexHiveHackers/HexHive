@@ -195,12 +195,17 @@ export function rewriteProgramChanges(
         const program = e.data[0];
         channelProgram[channel] = program;
         const choice = resolve(program, channel);
+        // Drum presets in soundfonts live at bankMSB=128, but a MIDI CC value
+        // is 7-bit (0–127) so we cap at 127 here. The synth still needs to
+        // know the channel is in drum mode — that's handled separately via
+        // `detectDrumChannels` + `synth.setDrums(ch, true)`.
+        const ccBank = Math.min(choice.bankMSB, 127);
         out.push({
           delta: e.delta,
           kind: 'midi',
           status: 0xb0 | channel,
           channel,
-          data: Uint8Array.from([0, choice.bankMSB & 0x7f]),
+          data: Uint8Array.from([0, ccBank]),
         });
         out.push({
           delta: 0,
@@ -224,6 +229,25 @@ export function rewriteProgramChanges(
     smf.tracks[t] = out;
   }
   return serializeSmf(smf);
+}
+
+// Walks the song and returns the set of MIDI channels that, at any point,
+// play a slot whose chosen preset is drum-banked (bankMSB ≥ 128). The
+// caller (Player) flips `synth.setDrums(ch, true)` for each — necessary
+// because we can't transmit MSB=128 via a 7-bit CC0 value.
+export function detectDrumChannels(midi: ArrayBuffer | Uint8Array, resolve: Resolver): Set<number> {
+  const channels = new Set<number>();
+  const smf = parseSmf(midi);
+  for (const track of smf.tracks) {
+    for (const e of track) {
+      if (e.kind === 'midi' && (e.status & 0xf0) === 0xc0) {
+        const ch = e.channel ?? e.status & 0x0f;
+        const slot = e.data[0];
+        if (resolve(slot, ch).bankMSB >= 128) channels.add(ch);
+      }
+    }
+  }
+  return channels;
 }
 
 // Useful for tests: counts program-change events per track.

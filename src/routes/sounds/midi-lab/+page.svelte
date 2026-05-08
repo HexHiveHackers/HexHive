@@ -3,7 +3,7 @@
   import type { Sequencer, WorkletSynthesizer } from 'spessasynth_lib';
   import { onMount } from 'svelte';
   import { Button } from '$lib/components/ui/button';
-  import { parseSmf, rewriteProgramChanges } from '$lib/midi-lab/midi-rewrite';
+  import { detectDrumChannels, parseSmf, rewriteProgramChanges } from '$lib/midi-lab/midi-rewrite';
   import { loadOverrides, saveOverride } from '$lib/midi-lab/overrides';
   import { autoMap, listPresets, type MappingChoice, type SfPreset } from '$lib/midi-lab/preset-map';
   import { hashVoicegroup, type ParsedVoicegroup, parseVoicegroup, type VoiceEntry } from '$lib/midi-lab/voicegroup';
@@ -133,11 +133,19 @@
     const ps = presets;
     const merged = buildMappings(loaded.voicegroup, overrides, ps);
     const muted = mutedSlots;
+    const resolver = (slot: number, _ch: number) => merged[slot];
     const rewritten = rewriteProgramChanges(
       loaded.midiBytes,
-      (slot, _ch) => merged[slot],
+      resolver,
       muted.size > 0 ? (slot) => muted.has(slot) : undefined,
     );
+    // Drum kits live at SF2 bank 128 — a value MIDI's 7-bit CC0 can't
+    // transmit. Tell the synth which channels should be drum-mode so the
+    // program-change selects the kit instead of a melodic preset.
+    const drumChannels = detectDrumChannels(loaded.midiBytes, resolver);
+    if (synth) {
+      for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannels.has(ch));
+    }
     const wasPlaying = isPlaying;
     const id = `${loaded.songId}-${Date.now()}`;
     const loadedP = awaitSongLoaded(seq, id);
