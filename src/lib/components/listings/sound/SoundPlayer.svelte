@@ -126,6 +126,13 @@
   // happened in the same tick and we just call start() directly. Once
   // started we clear the loading-button state so the spinner gives way
   // to the playing player chrome.
+  //
+  // The cleanup also calls stop() on the captured element, so:
+  //   - Swapping tracks immediately stops the previous player.
+  //   - Navigating away from the listing page tears down this component,
+  //     runs the cleanup, and silences the AudioContext. Without this,
+  //     the player's disconnectedCallback alone leaves the soundfont
+  //     audio playing in the background until the tab is closed.
   $effect(() => {
     const el = activePlayerEl;
     if (!el) return;
@@ -135,10 +142,13 @@
     };
     if (el.duration > 0) {
       ready();
-      return;
+    } else {
+      el.addEventListener('load', ready);
     }
-    el.addEventListener('load', ready);
-    return () => el.removeEventListener('load', ready);
+    return () => {
+      el.removeEventListener('load', ready);
+      el.stop();
+    };
   });
 
   // Drive the seek-track fill via a CSS custom property so the played
