@@ -16,6 +16,14 @@ function build() {
 
     emailAndPassword: { enabled: false },
 
+    // Default Better Auth behaviour silently links a new OAuth sign-in to
+    // any existing user with the same verified email. We want each
+    // provider to start a separate HexHive account; users can opt-in to
+    // linking via the Connections panel on /me. Existing rows in the
+    // `account` table are unaffected by this flag — it only governs
+    // future auto-link decisions.
+    account: { accountLinking: { enabled: false } },
+
     socialProviders: {
       ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
         ? { google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET } }

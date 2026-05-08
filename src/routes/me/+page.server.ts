@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
-import { auth } from '$lib/auth';
+import { auth, enabledSocialProviders, type SocialProvider } from '$lib/auth';
 import { db } from '$lib/db';
 import * as schema from '$lib/db/schema';
 import { deleteAccount } from '$lib/server/account';
@@ -8,13 +8,37 @@ import { requireUser } from '$lib/server/auth-utils';
 import { getOrCreateProfile, listingsByUser } from '$lib/server/profiles';
 import type { Actions, PageServerLoad } from './$types';
 
+export interface ConnectedAccount {
+  provider: SocialProvider;
+  accountId: string;
+  createdAt: number;
+}
+
 export const load: PageServerLoad = async (event) => {
   const user = requireUser(event);
-  const [profile, listings, userRows] = await Promise.all([
+  const [profile, listings, userRows, accountRows] = await Promise.all([
     getOrCreateProfile(db, user.id),
     listingsByUser(db, user.id, { self: true }),
     db.select({ name: schema.user.name }).from(schema.user).where(eq(schema.user.id, user.id)).limit(1),
+    db
+      .select({
+        accountId: schema.account.accountId,
+        providerId: schema.account.providerId,
+        createdAt: schema.account.createdAt,
+      })
+      .from(schema.account)
+      .where(eq(schema.account.userId, user.id)),
   ]);
+  // Filter to only providers HexHive currently supports — defends the UI
+  // against legacy provider rows surviving from older deploys.
+  const known = new Set<string>(enabledSocialProviders);
+  const connections: ConnectedAccount[] = accountRows
+    .filter((a): a is { accountId: string; providerId: SocialProvider; createdAt: Date } => known.has(a.providerId))
+    .map((a) => ({
+      provider: a.providerId,
+      accountId: a.accountId,
+      createdAt: a.createdAt.getTime(),
+    }));
   return {
     profile: {
       username: profile.username,
@@ -24,6 +48,8 @@ export const load: PageServerLoad = async (event) => {
     },
     drafts: listings.filter((l) => l.status === 'draft'),
     published: listings.filter((l) => l.status !== 'draft'),
+    connections,
+    availableProviders: enabledSocialProviders.filter((p) => !connections.some((c) => c.provider === p)),
   };
 };
 
