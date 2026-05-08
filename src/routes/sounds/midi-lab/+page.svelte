@@ -301,7 +301,7 @@
   <link rel="preconnect" href="https://cdn.hexhive.app" crossorigin="anonymous" />
 </svelte:head>
 
-<section class="container max-w-5xl py-8 space-y-6">
+<section class="mx-auto max-w-5xl px-4 py-8 space-y-6">
   <header class="space-y-2">
     <div class="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground font-display">
       <FlaskConical class="size-4" /> beta
@@ -357,16 +357,18 @@
 
   {#if loaded}
     <section class="border rounded-lg p-4 space-y-4">
-      <div class="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <div class="text-sm text-muted-foreground">Now loaded</div>
-          <div class="font-medium">{loaded.label}</div>
-          <div class="text-xs text-muted-foreground font-mono">
-            voicegroup: {loaded.voicegroup.name} · {loaded.usedSlots.size} slots used · vgHash {loaded.vgHash}
-          </div>
+      <div>
+        <div class="text-sm text-muted-foreground">Now loaded</div>
+        <div class="font-medium">{loaded.label}</div>
+        <div class="text-xs text-muted-foreground font-mono">
+          voicegroup: {loaded.voicegroup.name} · {loaded.usedSlots.size} slots used · vgHash {loaded.vgHash}
         </div>
-        <div class="flex items-center gap-2">
-          <Button onclick={togglePlay} disabled={engineState !== 'ready'}>
+      </div>
+
+      <div class="space-y-1">
+        <div class="text-xs uppercase tracking-wider text-muted-foreground">Synth (remapped MIDI)</div>
+        <div class="flex items-center gap-3">
+          <Button onclick={togglePlay} disabled={engineState !== 'ready'} size="sm">
             {#if engineState === 'loading'}
               <Loader2 class="size-4 animate-spin" /> loading…
             {:else if isPlaying}
@@ -375,31 +377,31 @@
               <Play class="size-4" /> Play
             {/if}
           </Button>
+          <span class="text-xs font-mono w-12 tabular-nums">{fmtTime(currentTime)}</span>
+          <input
+            type="range"
+            class="flex-1"
+            min="0"
+            max={duration || 1}
+            step="0.01"
+            value={currentTime}
+            oninput={(e) => seek(Number.parseFloat((e.currentTarget as HTMLInputElement).value))}
+            disabled={engineState !== 'ready'}
+            aria-label="MIDI scrub"
+          />
+          <span class="text-xs font-mono w-12 tabular-nums text-right">{fmtTime(duration)}</span>
         </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <span class="text-xs font-mono w-12 tabular-nums">{fmtTime(currentTime)}</span>
-        <input
-          type="range"
-          class="flex-1"
-          min="0"
-          max={duration || 1}
-          step="0.01"
-          value={currentTime}
-          oninput={(e) => seek(Number.parseFloat((e.currentTarget as HTMLInputElement).value))}
-          disabled={engineState !== 'ready'}
-        />
-        <span class="text-xs font-mono w-12 tabular-nums text-right">{fmtTime(duration)}</span>
       </div>
 
       {#if loaded.mp3Url}
         <div class="space-y-1">
-          <div class="text-xs uppercase tracking-wider text-muted-foreground">Reference recording (A/B)</div>
-          <audio controls preload="none" class="w-full">
-            <source src={loaded.mp3Url} />
-            <track kind="captions" />
-          </audio>
+          <div class="text-xs uppercase tracking-wider text-muted-foreground">Reference recording (vanilla MP3)</div>
+          {#key loaded.songId}
+            <audio controls preload="none" class="w-full">
+              <source src={loaded.mp3Url} />
+              <track kind="captions" />
+            </audio>
+          {/key}
         </div>
       {/if}
     </section>
