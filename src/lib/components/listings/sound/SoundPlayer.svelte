@@ -62,25 +62,42 @@
   let seq: Sequencer | null = null;
   let rafId = 0;
 
+  // Prewarm caches: the heavy network downloads can start as soon as the
+  // user signals intent (hover/focus). Crucially, NEITHER of these
+  // touches AudioContext — browsers refuse to resume an AudioContext
+  // that wasn't created in a user-gesture handler, so the actual
+  // context creation has to wait for the click.
+  let sfBytesPromise: Promise<ArrayBuffer> | null = null;
+  let libPromise: Promise<typeof import('spessasynth_lib')> | null = null;
+  function prewarmEngine(): void {
+    if (typeof window === 'undefined') return;
+    if (!sfBytesPromise) sfBytesPromise = fetch(SOUNDFONT_URL).then((r) => r.arrayBuffer());
+    if (!libPromise) libPromise = import('spessasynth_lib');
+  }
+
+  // Must be called inside a click handler (or other user gesture) so
+  // the AudioContext is allowed to start. Reuses the prewarmed sf2
+  // bytes and library import if they're already in flight or done.
   async function initEngine(): Promise<void> {
     if (engineState === 'ready' || engineState === 'loading-engine') return;
     engineState = 'loading-engine';
     try {
-      const lib = await import('spessasynth_lib');
-      const sfPromise = fetch(SOUNDFONT_URL).then((r) => r.arrayBuffer());
+      prewarmEngine();
       const audioCtx = new AudioContext();
       await audioCtx.audioWorklet.addModule(WORKLET_URL);
+      const lib = await (libPromise as Promise<typeof import('spessasynth_lib')>);
       const s = new lib.WorkletSynthesizer(audioCtx);
-      const sf = await sfPromise;
+      // WorkletSynthesizer is created floating — nothing routes its
+      // audio out by default. Without this connect call the sequencer
+      // will happily play (currentTime advances) but the speakers stay
+      // silent, which is what you'd see as "playbar moves, no audio".
+      s.connect(audioCtx.destination);
+      const sf = await (sfBytesPromise as Promise<ArrayBuffer>);
       await s.soundBankManager.addSoundBank(sf, 'main');
       await s.isReady;
       const sq = new lib.Sequencer(s);
       sq.eventHandler.addEvent('songEnded', 'soundplayer-end', () => {
         isPlaying = false;
-      });
-      sq.eventHandler.addEvent('songChange', 'soundplayer-change', () => {
-        // duration becomes available once a new song is loaded.
-        duration = sq.duration;
       });
       ctx = audioCtx;
       synth = s;
@@ -90,6 +107,26 @@
       console.error('MIDI engine init failed', err);
       engineState = 'error';
     }
+  }
+
+  // loadNewSongList posts to the worklet asynchronously; calling play()
+  // before the song is actually loaded gets ignored ("No songs loaded
+  // in the sequencer. Ignoring the play call."). Wait for the songChange
+  // event with a one-shot listener before resolving, with a safety
+  // timeout in case the event never fires.
+  function awaitSongLoaded(s: Sequencer, id: string): Promise<void> {
+    return new Promise((resolve) => {
+      let done = false;
+      const tag = `soundplayer-load-${id}`;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        s.eventHandler.removeEvent('songChange', tag);
+        resolve();
+      };
+      s.eventHandler.addEvent('songChange', tag, finish);
+      setTimeout(finish, 5000);
+    });
   }
 
   async function playFile(id: string): Promise<void> {
@@ -115,19 +152,46 @@
       loadingFileId = null;
       return;
     }
+    if (ctx.state === 'suspended') await ctx.resume();
     try {
-      const bytes = await fetch(`/api/preview/${id}`).then((r) => r.arrayBuffer());
+      const bytes = await fetchMidiBytes(id);
+      const loaded = awaitSongLoaded(seq, id);
       seq.loadNewSongList([{ binary: bytes, fileName: id }]);
+      await loaded;
     } catch (err) {
       console.error('failed to load MIDI', err);
       loadingFileId = null;
       return;
     }
-    if (ctx.state === 'suspended') await ctx.resume();
+    duration = seq.duration;
     seq.play();
     isPlaying = true;
     loadingFileId = null;
-    duration = seq.duration;
+  }
+
+  // Fetch the .mid bytes with a single retry on transient failure. Turso
+  // occasionally 500s in this dev configuration; rather than handing the
+  // resulting `{"message":"Internal Error"}` JSON to the synth as if it
+  // were MIDI bytes (which crashes deep inside the worklet with
+  // "Expected MThd, got '{"me'"), validate status + content-type and
+  // retry once before giving up.
+  async function fetchMidiBytes(id: string): Promise<ArrayBuffer> {
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetch(`/api/preview/${id}`, { cache: attempt === 0 ? 'default' : 'reload' });
+        if (!res.ok) throw new Error(`preview ${id}: HTTP ${res.status}`);
+        const ct = res.headers.get('content-type') ?? '';
+        if (ct.includes('json') || ct.includes('html')) {
+          throw new Error(`preview ${id}: unexpected content-type ${ct}`);
+        }
+        return await res.arrayBuffer();
+      } catch (err) {
+        lastErr = err;
+        if (attempt === 0) await new Promise((r) => setTimeout(r, 250));
+      }
+    }
+    throw lastErr instanceof Error ? lastErr : new Error('preview fetch failed');
   }
 
   function pauseActive(): void {
@@ -156,14 +220,6 @@
     fetch(`/api/preview/${id}`).catch(() => {});
   }
 
-  // Background-warm the engine on first hover/focus of any Play button so
-  // the first click doesn't pay the soundfont download cost.
-  let enginePrewarmed = false;
-  function prewarmEngine(): void {
-    if (enginePrewarmed) return;
-    enginePrewarmed = true;
-    void initEngine();
-  }
 
   // Drive currentTime via rAF while playing. Stops itself when paused
   // and on component teardown.
