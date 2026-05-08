@@ -17,23 +17,36 @@
   import { Input } from '$lib/components/ui/input';
   import { audioMimeType, type FileKind, fileKind } from '$lib/utils/preview';
 
-  // ──── Soundfont ────────────────────────────────────────────────────────
-  // Self-hosted on Cloudflare R2 (cdn.hexhive.app). Single ~1 MB
-  // download replaces the ~175 small Magenta JSONs html-midi-player
-  // would otherwise stream over the network; cached by the browser for
-  // the session so subsequent tracks in the same pack play instantly.
+  // ──── Soundfont catalogue ──────────────────────────────────────────────
+  // Self-hosted on Cloudflare R2 (cdn.hexhive.app). Multiple banks; the
+  // user can switch between them from the toolbar dropdown. Bytes are
+  // cached per-id in `sfBytesCache` so once a bank has been loaded the
+  // swap-back is instant.
   //
-  // Currently shipping Braedon Mills' "Pokemon Ruby/Sapphire/Emerald/
-  // FireRed/LeafGreen Soundfont" because the samples are GBA-derived
-  // (better tonal match for romhack content than a generic GM bank).
-  // The author has remapped them onto General MIDI program numbers so
-  // any GM-authored MIDI plays with the right instrument families.
-  // Note: this is not a faithful 1:1 voicegroup-preserving extraction
-  // from any single ROM — see commit message for details. To swap back
-  // to a generic GM bank, point SOUNDFONT_URL at
-  // https://cdn.hexhive.app/soundfonts/GeneralUser-GS.sf2 (still hosted).
-  const SOUNDFONT_URL = 'https://cdn.hexhive.app/soundfonts/Pok_mon_GBA.sf2';
-  const SOUNDFONT_LABEL = 'Pokémon GBA';
+  // The default (VGK FRLG) preserves multi-bank organisation including
+  // FRLG SFX presets and PSG-waveform references — substantially more
+  // authentic than a GM-flat bank for romhack content. The other two
+  // are kept around as alternates for users who want different
+  // tonal/quality trade-offs.
+  type Soundfont = { id: string; label: string; url: string };
+  const SOUNDFONTS: Soundfont[] = [
+    {
+      id: 'vgk-frlg',
+      label: 'FireRed/LeafGreen (VGK)',
+      url: 'https://cdn.hexhive.app/soundfonts/Pokemon-FireRed-LeafGreen-VGK.sf2',
+    },
+    {
+      id: 'pkmn-gba',
+      label: 'Pokémon GBA (Mills)',
+      url: 'https://cdn.hexhive.app/soundfonts/Pok_mon_GBA.sf2',
+    },
+    {
+      id: 'gus',
+      label: 'GeneralUser GS',
+      url: 'https://cdn.hexhive.app/soundfonts/GeneralUser-GS.sf2',
+    },
+  ];
+  let soundfont = $state<Soundfont>(SOUNDFONTS[0]);
   // SpessaSynth's AudioWorklet processor; copied to static/ at build
   // time so it lives at the site origin (audioWorklet.addModule needs a
   // same-origin URL). Updated whenever spessasynth_lib bumps.
@@ -76,13 +89,27 @@
   // touches AudioContext — browsers refuse to resume an AudioContext
   // that wasn't created in a user-gesture handler, so the actual
   // context creation has to wait for the click.
-  let sfBytesPromise: Promise<ArrayBuffer> | null = null;
+  const sfBytesCache = new Map<string, Promise<ArrayBuffer>>();
   let libPromise: Promise<typeof import('spessasynth_lib')> | null = null;
+  function prewarmSoundfont(sf: Soundfont): Promise<ArrayBuffer> {
+    let p = sfBytesCache.get(sf.id);
+    if (!p) {
+      p = fetch(sf.url).then((r) => r.arrayBuffer());
+      sfBytesCache.set(sf.id, p);
+    }
+    return p;
+  }
   function prewarmEngine(): void {
     if (typeof window === 'undefined') return;
-    if (!sfBytesPromise) sfBytesPromise = fetch(SOUNDFONT_URL).then((r) => r.arrayBuffer());
+    prewarmSoundfont(soundfont);
     if (!libPromise) libPromise = import('spessasynth_lib');
   }
+
+  // Tracks which soundbank id is currently the highest-priority active
+  // bank in the synth. When the user switches banks via the dropdown we
+  // load the new SF2 (cached if previously loaded) and reorder priorities
+  // so the new one takes effect — no AudioContext or Sequencer churn.
+  let activeBankId = '';
 
   // Must be called inside a click handler (or other user gesture) so
   // the AudioContext is allowed to start. Reuses the prewarmed sf2
@@ -101,9 +128,10 @@
       // will happily play (currentTime advances) but the speakers stay
       // silent, which is what you'd see as "playbar moves, no audio".
       s.connect(audioCtx.destination);
-      const sf = await (sfBytesPromise as Promise<ArrayBuffer>);
-      await s.soundBankManager.addSoundBank(sf, 'main');
+      const sf = await prewarmSoundfont(soundfont);
+      await s.soundBankManager.addSoundBank(sf, soundfont.id);
       await s.isReady;
+      activeBankId = soundfont.id;
       const sq = new lib.Sequencer(s);
       sq.eventHandler.addEvent('songEnded', 'soundplayer-end', () => {
         isPlaying = false;
@@ -117,6 +145,30 @@
       engineState = 'error';
     }
   }
+
+  // Swap the active soundbank without touching the AudioContext or the
+  // Sequencer. Loaded banks stay resident so flipping back is instant;
+  // priorityOrder puts the chosen one first so it overrides the rest.
+  async function switchSoundbank(target: Soundfont): Promise<void> {
+    if (!synth || activeBankId === target.id) return;
+    const buf = await prewarmSoundfont(target);
+    if (!synth.soundBankManager.priorityOrder.includes(target.id)) {
+      await synth.soundBankManager.addSoundBank(buf, target.id);
+    }
+    synth.soundBankManager.priorityOrder = [
+      target.id,
+      ...synth.soundBankManager.priorityOrder.filter((id) => id !== target.id),
+    ];
+    activeBankId = target.id;
+  }
+
+  // React to the dropdown changing: prefetch new bytes immediately, and
+  // if the engine is already running, hot-swap the bank.
+  $effect(() => {
+    const target = soundfont;
+    prewarmSoundfont(target);
+    if (engineState === 'ready') void switchSoundbank(target);
+  });
 
   // loadNewSongList posts to the worklet asynchronously; calling play()
   // before the song is actually loaded gets ignored ("No songs loaded
@@ -320,9 +372,19 @@
         />
       </div>
       {#if hasMidi}
-        <span class="h-8 inline-flex items-center rounded-md border bg-background px-2 text-[11px] text-muted-foreground">
-          {SOUNDFONT_LABEL}
-        </span>
+        <select
+          aria-label="MIDI soundfont"
+          class="h-8 rounded-md border bg-background px-2 text-[11px] text-muted-foreground"
+          value={soundfont.id}
+          onchange={(e) => {
+            const next = SOUNDFONTS.find((s) => s.id === (e.currentTarget as HTMLSelectElement).value);
+            if (next) soundfont = next;
+          }}
+        >
+          {#each SOUNDFONTS as s (s.id)}
+            <option value={s.id}>{s.label}</option>
+          {/each}
+        </select>
       {/if}
       <Button
         size="sm"
