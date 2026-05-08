@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { FlaskConical, Loader2, Music, Pause, Play, RefreshCw, Upload } from '@lucide/svelte';
+  import { FlaskConical, Loader2, Music, Pause, Play, RefreshCw, Repeat, Upload } from '@lucide/svelte';
   import type { Sequencer, WorkletSynthesizer } from 'spessasynth_lib';
   import { onMount } from 'svelte';
+  import { replaceState } from '$app/navigation';
+  import { page } from '$app/state';
   import { Button } from '$lib/components/ui/button';
   import { detectDrumChannels, parseSmf, rewriteProgramChanges } from '$lib/midi-lab/midi-rewrite';
   import { loadOverrides, saveOverride } from '$lib/midi-lab/overrides';
@@ -32,6 +34,8 @@
   let warnings = $state<string[]>([]);
   let mutedChannels = $state<Set<number>>(new Set());
   let mutedSlots = $state<Set<number>>(new Set());
+  let loopOn = $state(true);
+  let mp3El = $state<HTMLAudioElement | null>(null);
 
   // Engine state mirrors SoundPlayer.svelte's lifecycle.
   let engineState = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
@@ -153,6 +157,7 @@
     new Uint8Array(buf).set(rewritten);
     seq.loadNewSongList([{ binary: buf, fileName: id }]);
     await loadedP;
+    seq.loopCount = loopOn ? Number.POSITIVE_INFINITY : 0;
     duration = seq.duration;
     if (restoreTime > 0) seq.currentTime = Math.min(restoreTime, seq.duration);
     if (wasPlaying) {
@@ -161,12 +166,27 @@
     }
   }
 
+  function toggleLoop(): void {
+    loopOn = !loopOn;
+    if (seq) seq.loopCount = loopOn ? Number.POSITIVE_INFINITY : 0;
+    if (mp3El) mp3El.loop = loopOn;
+  }
+
   async function loadFixture(f: (typeof data.fixtures)[number]): Promise<void> {
     const [midiBuf, incText] = await Promise.all([
       fetch(f.midiUrl).then((r) => r.arrayBuffer()),
       fetch(f.voicegroupUrl).then((r) => r.text()),
     ]);
     await ingest(f.id, f.label, midiBuf, incText, f.mp3Url);
+    // Sync the URL so reload + share land on the same fixture without
+    // adding history entries on every flip.
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('song') !== f.id) {
+        url.searchParams.set('song', f.id);
+        replaceState(url, page.state);
+      }
+    }
   }
 
   async function ingest(
@@ -284,13 +304,20 @@
     return () => cancelAnimationFrame(rafId);
   });
 
-  onMount(() => () => {
-    cancelAnimationFrame(rafId);
-    seq?.pause();
-    void ctx?.close();
-    seq = null;
-    synth = null;
-    ctx = null;
+  onMount(() => {
+    // Auto-load on first visit. Honour ?song=<id> if present, fall back
+    // to the first fixture so the page is never empty for new visitors.
+    const requested = page.url.searchParams.get('song');
+    const target = data.fixtures.find((f) => f.id === requested) ?? data.fixtures[0];
+    if (target) void loadFixture(target);
+    return () => {
+      cancelAnimationFrame(rafId);
+      seq?.pause();
+      void ctx?.close();
+      seq = null;
+      synth = null;
+      ctx = null;
+    };
   });
 
   // ── Drag-and-drop ─────────────────────────────────────────────────────
@@ -466,6 +493,17 @@
             aria-label="MIDI scrub"
           />
           <span class="text-xs font-mono w-12 tabular-nums text-right">{fmtTime(duration)}</span>
+          <button
+            type="button"
+            onclick={toggleLoop}
+            class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] flex items-center gap-1 {loopOn
+              ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-400'
+              : 'border-border hover:border-foreground/40'}"
+            aria-pressed={loopOn}
+            title="Loop"
+          >
+            <Repeat class="size-3" /> loop
+          </button>
         </div>
       </div>
 
@@ -492,12 +530,25 @@
       {#if loaded.mp3Url}
         <div class="space-y-1">
           <div class="text-xs uppercase tracking-wider text-muted-foreground">Reference recording (vanilla MP3)</div>
-          {#key loaded.songId}
-            <audio controls preload="none" class="w-full">
-              <source src={loaded.mp3Url} />
-              <track kind="captions" />
-            </audio>
-          {/key}
+          <div class="flex items-center gap-3">
+            {#key loaded.songId}
+              <audio bind:this={mp3El} controls preload="none" class="flex-1" loop={loopOn}>
+                <source src={loaded.mp3Url} />
+                <track kind="captions" />
+              </audio>
+            {/key}
+            <button
+              type="button"
+              onclick={toggleLoop}
+              class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] flex items-center gap-1 {loopOn
+                ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-400'
+                : 'border-border hover:border-foreground/40'}"
+              aria-pressed={loopOn}
+              title="Loop"
+            >
+              <Repeat class="size-3" /> loop
+            </button>
+          </div>
         </div>
       {/if}
     </section>
@@ -526,6 +577,11 @@
               <span class="font-mono text-xs flex-1 min-w-[16rem] truncate" title={entryLabel(row.entry)}>
                 {entryLabel(row.entry)}
               </span>
+              {#if overrides[row.slot]}
+                <Button variant="ghost" size="sm" onclick={() => void setOverride(row.slot, null)}>
+                  <RefreshCw class="size-3" /> auto
+                </Button>
+              {/if}
               <select
                 class="bg-background border rounded px-2 py-1 text-xs font-mono min-w-[14rem]"
                 value={overrides[row.slot] ? presetKey(overrides[row.slot]) : 'auto'}
@@ -538,11 +594,6 @@
                   </option>
                 {/each}
               </select>
-              {#if overrides[row.slot]}
-                <Button variant="ghost" size="sm" onclick={() => void setOverride(row.slot, null)}>
-                  <RefreshCw class="size-3" /> auto
-                </Button>
-              {/if}
               <button
                 type="button"
                 onclick={() => void toggleSlotMute(row.slot)}
