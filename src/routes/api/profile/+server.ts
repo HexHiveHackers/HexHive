@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { db } from '$lib/db';
-import { username as usernameSchema } from '$lib/schemas/zod-helpers';
+import { contactEmail as contactEmailSchema, username as usernameSchema } from '$lib/schemas/zod-helpers';
 import { requireUser } from '$lib/server/auth-utils';
 import { clearAvatar, setAvatarKey } from '$lib/server/avatars';
 import { setBio, setContactEmail, setUsername } from '$lib/server/profiles';
@@ -10,7 +10,7 @@ import type { RequestHandler } from './$types';
 const Body = z.object({
   username: usernameSchema.optional(),
   bio: z.string().max(2000).optional(),
-  contactEmail: z.string().max(254).optional(),
+  contactEmail: contactEmailSchema.optional(),
   avatarKey: z.string().min(1).max(200).nullable().optional(),
 });
 
@@ -19,7 +19,12 @@ export const PATCH: RequestHandler = async (event) => {
   let body: z.infer<typeof Body>;
   try {
     body = Body.parse(await event.request.json());
-  } catch {
+  } catch (err) {
+    // Surface the first field-specific Zod message so the client form
+    // can render it instead of the generic "Invalid request body".
+    if (err instanceof z.ZodError) {
+      throw error(400, err.issues[0]?.message ?? 'Invalid request body');
+    }
     throw error(400, 'Invalid request body');
   }
   if (body.username !== undefined) {

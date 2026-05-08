@@ -22,3 +22,19 @@ export const slug = z
   .max(80)
   .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/, 'Slug must be lowercase kebab-case')
   .refine((s) => !/^\d+$/.test(s), 'Slug cannot be only numbers');
+
+// Best-effort email validation. Requires exactly one `@`, a non-empty
+// local part, a host with at least one dot, and a final TLD label of
+// 2+ ASCII letters. Accepts subdomains and multi-segment hosts like
+// `me@hexhive.co.uk`. Internationalised TLDs are expected to arrive as
+// punycode (`xn--…`) which still matches `[a-z]{2,}`. Deliberately
+// permissive: better to accept a weird-but-valid address than reject
+// one a real user wants to put on their profile.
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+export const contactEmail = z.union([
+  z.literal(''),
+  z
+    .string()
+    .max(254, 'Email is too long')
+    .regex(EMAIL_RE, 'Enter an email address with a domain (like you@example.com).'),
+]);
