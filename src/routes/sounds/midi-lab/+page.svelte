@@ -23,12 +23,14 @@
     vgHash: string;
     mp3Url: string | null;
     usedSlots: ReadonlySet<number>;
+    usedChannels: ReadonlySet<number>;
   };
 
   let loaded = $state<Loaded | null>(null);
   let presets = $state<readonly SfPreset[]>([]);
   let overrides = $state<Record<number, MappingChoice>>({});
   let warnings = $state<string[]>([]);
+  let mutedChannels = $state<Set<number>>(new Set());
 
   // Engine state mirrors SoundPlayer.svelte's lifecycle.
   let engineState = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
@@ -112,6 +114,19 @@
     return used;
   }
 
+  // Channels (0-15) that have any MIDI event in the song. Useful for the
+  // per-channel mute strip — only show buttons for channels actually used.
+  function usedChannelsOf(midi: ArrayBuffer): Set<number> {
+    const used = new Set<number>();
+    const smf = parseSmf(midi);
+    for (const track of smf.tracks) {
+      for (const e of track) {
+        if (e.kind === 'midi' && e.channel !== undefined) used.add(e.channel);
+      }
+    }
+    return used;
+  }
+
   async function loadIntoSequencer(restoreTime = 0): Promise<void> {
     if (!seq || !loaded) return;
     const ps = presets;
@@ -150,7 +165,22 @@
     const vg = parseVoicegroup(incText);
     const vgHash = hashVoicegroup(vg);
     const used = usedSlotsOf(midiBytes);
-    loaded = { songId: id, label, midiBytes, incText, voicegroup: vg, vgHash, mp3Url, usedSlots: used };
+    const usedCh = usedChannelsOf(midiBytes);
+    loaded = {
+      songId: id,
+      label,
+      midiBytes,
+      incText,
+      voicegroup: vg,
+      vgHash,
+      mp3Url,
+      usedSlots: used,
+      usedChannels: usedCh,
+    };
+    // Reset mutes when switching songs and unmute on the synth (the previous
+    // song may have left some channels muted on this synth instance).
+    if (synth) for (const ch of mutedChannels) synth.muteChannel(ch, false);
+    mutedChannels = new Set();
     overrides = loadOverrides(vgHash);
     warnings = vg.warnings.slice();
     if (engineState !== 'ready') await initEngine();
@@ -178,6 +208,15 @@
     if (!seq) return;
     seq.currentTime = t;
     currentTime = t;
+  }
+
+  function toggleChannelMute(ch: number): void {
+    if (!synth) return;
+    const next = new Set(mutedChannels);
+    if (next.has(ch)) next.delete(ch);
+    else next.add(ch);
+    mutedChannels = next;
+    synth.muteChannel(ch, next.has(ch));
   }
 
   async function setOverride(slot: number, choice: MappingChoice | null): Promise<void> {
@@ -390,6 +429,26 @@
             aria-label="MIDI scrub"
           />
           <span class="text-xs font-mono w-12 tabular-nums text-right">{fmtTime(duration)}</span>
+        </div>
+      </div>
+
+      <div class="space-y-1">
+        <div class="text-xs uppercase tracking-wider text-muted-foreground">Channel mutes</div>
+        <div class="flex flex-wrap gap-1.5 justify-end">
+          {#each [...loaded.usedChannels].sort((a, b) => a - b) as ch}
+            <button
+              type="button"
+              onclick={() => toggleChannelMute(ch)}
+              disabled={engineState !== 'ready'}
+              class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] tabular-nums {mutedChannels.has(ch)
+                ? 'bg-destructive/20 border-destructive/60 text-destructive line-through'
+                : 'border-border hover:border-foreground/40'}"
+              aria-pressed={mutedChannels.has(ch)}
+              title="Channel {ch + 1} {mutedChannels.has(ch) ? '(muted)' : ''}"
+            >
+              ch{ch + 1}
+            </button>
+          {/each}
         </div>
       </div>
 
