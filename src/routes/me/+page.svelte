@@ -1,7 +1,8 @@
 <script lang="ts">
   import { SiDiscord, SiGithub, SiGoogle } from '@icons-pack/svelte-simple-icons';
-  import { Loader2, Trash2, Unplug } from '@lucide/svelte';
-  import { invalidateAll } from '$app/navigation';
+  import { Loader2, Trash2, Unplug, X } from '@lucide/svelte';
+  import { goto, invalidateAll } from '$app/navigation';
+  import { page } from '$app/state';
   import type { SocialProvider } from '$lib/auth';
   import { authClient } from '$lib/auth-client';
   import AvatarUpload from '$lib/components/profile/AvatarUpload.svelte';
@@ -38,13 +39,43 @@
   let busyProvider = $state<SocialProvider | null>(null);
   let connectionError = $state<string | null>(null);
 
+  // Better Auth callbacks (errorCallbackURL on linkSocial) bring the
+  // user back to /me?error=<code>. Translate known codes into something
+  // a human can read; fall back to the raw code for anything new.
+  const ERROR_MESSAGES: Record<string, string> = {
+    account_already_linked_to_different_user:
+      "That provider account is already linked to a different HexHive account. Sign in with the other account first, or unlink it there before linking it here.",
+    unable_to_link_account:
+      "We couldn't link that account. Please try again, or contact support if this keeps happening.",
+    account_not_linked:
+      "No HexHive account is linked to that provider yet. Sign in with whichever provider you used originally, then link this one from your Connections panel.",
+  };
+  const urlError = $derived(page.url.searchParams.get('error'));
+  const urlErrorMessage = $derived(
+    urlError ? (ERROR_MESSAGES[urlError] ?? `Sign-in error: ${urlError.replace(/_/g, ' ')}`) : null,
+  );
+  function dismissUrlError(): void {
+    const u = new URL(page.url);
+    u.searchParams.delete('error');
+    void goto(u.pathname + (u.search ? u.search : ''), { replaceState: true, noScroll: true });
+  }
+
   async function linkProvider(p: SocialProvider) {
     busyProvider = p;
     connectionError = null;
     try {
       // Triggers the OAuth round-trip; the user's browser navigates away
-      // and comes back to /me with the new account row attached.
-      await authClient.linkSocial({ provider: p, callbackURL: '/me' });
+      // and comes back to /me with the new account row attached. On
+      // failure (e.g. provider already linked to a different HexHive
+      // account) Better Auth would otherwise redirect to its bare
+      // /api/auth/error page; errorCallbackURL keeps the user on /me
+      // and surfaces the error code as a ?error= query param we render
+      // below.
+      await authClient.linkSocial({
+        provider: p,
+        callbackURL: '/me',
+        errorCallbackURL: '/me',
+      });
     } catch (err) {
       connectionError = err instanceof Error ? err.message : 'Failed to link provider.';
       busyProvider = null;
@@ -68,6 +99,23 @@
 </script>
 
 <section class="mx-auto max-w-4xl px-4 py-10 grid gap-10">
+  {#if urlErrorMessage}
+    <div
+      role="alert"
+      class="flex items-start gap-3 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm"
+    >
+      <span class="flex-1 text-destructive">{urlErrorMessage}</span>
+      <button
+        type="button"
+        aria-label="Dismiss"
+        class="text-destructive/70 transition-colors hover:text-destructive"
+        onclick={dismissUrlError}
+      >
+        <X size={16} />
+      </button>
+    </div>
+  {/if}
+
   <div>
     <h1 class="font-display text-2xl mb-4">Your profile</h1>
     <div class="grid gap-6">
