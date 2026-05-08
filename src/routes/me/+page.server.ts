@@ -43,6 +43,7 @@ export const load: PageServerLoad = async (event) => {
     profile: {
       username: profile.username,
       bio: profile.bio,
+      contactEmail: profile.contactEmail,
       avatarKey: profile.avatarKey,
       name: userRows[0]?.name ?? user.email,
     },

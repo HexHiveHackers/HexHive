@@ -82,6 +82,10 @@ export const profile = sqliteTable(
     username: text('username').notNull(),
     bio: text('bio'),
     avatarKey: text('avatar_key'),
+    // User-set contact email. No verification, no SMTP — purely a string
+    // the owner types in for credit / public display. Distinct from
+    // user.email which is the synthetic OAuth-identity placeholder.
+    contactEmail: text('contact_email'),
     createdAt: ts('created_at'),
     updatedAt: ts('updated_at'),
   },

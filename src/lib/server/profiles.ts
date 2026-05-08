@@ -41,6 +41,16 @@ export async function setBio(db: DB, userId: string, bio: string): Promise<void>
   await db.update(schema.profile).set({ bio, updatedAt: new Date() }).where(eq(schema.profile.userId, userId));
 }
 
+// Public-facing contact email the user types in. Free-form string,
+// no verification, optional. Empty string clears it.
+export async function setContactEmail(db: DB, userId: string, email: string): Promise<void> {
+  const trimmed = email.trim();
+  await db
+    .update(schema.profile)
+    .set({ contactEmail: trimmed === '' ? null : trimmed, updatedAt: new Date() })
+    .where(eq(schema.profile.userId, userId));
+}
+
 export interface UserListingItem {
   id: string;
   type: ListingType;

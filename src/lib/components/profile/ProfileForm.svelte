@@ -6,10 +6,13 @@
   import { Input } from '$lib/components/ui/input';
   import { Label } from '$lib/components/ui/label';
 
-  let { initial }: { initial: { username: string; bio: string | null } } = $props();
+  let {
+    initial,
+  }: { initial: { username: string; bio: string | null; contactEmail: string | null } } = $props();
   // One-time seed from the prop; the form is then locally editable.
   let username = $state(untrack(() => initial.username));
   let bio = $state(untrack(() => initial.bio ?? ''));
+  let contactEmail = $state(untrack(() => initial.contactEmail ?? ''));
   let busy = $state(false);
   let err = $state<string | null>(null);
   let ok = $state(false);
@@ -21,7 +24,7 @@
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ username, bio })
+        body: JSON.stringify({ username, bio, contactEmail })
       });
       if (!res.ok) throw new Error(await res.text());
       ok = true;
@@ -40,6 +43,18 @@
     <Label for="bio">Bio</Label>
     <textarea id="bio" rows="4" bind:value={bio}
               class="border rounded-md px-3 py-2 bg-background text-sm"></textarea>
+  </div>
+  <div class="grid gap-1.5">
+    <Label for="contactEmail">Contact email <span class="text-xs text-muted-foreground font-normal">(optional, public)</span></Label>
+    <Input
+      id="contactEmail"
+      type="email"
+      placeholder="you@example.com"
+      bind:value={contactEmail}
+    />
+    <p class="text-xs text-muted-foreground">
+      Shown on your public profile. Not verified, not used for sign-in or notifications.
+    </p>
   </div>
   {#if err}<p class="text-sm text-destructive">{err}</p>{/if}
   {#if ok}<p class="text-sm text-emerald-700 dark:text-emerald-300">Saved.</p>{/if}
