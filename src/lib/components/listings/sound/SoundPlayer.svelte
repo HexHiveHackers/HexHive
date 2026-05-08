@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ArrowDownAZ, ArrowDownUp, Download, FileArchive, FileMusic, Music, Search } from '@lucide/svelte';
+  import { ArrowDownAZ, ArrowDownUp, Download, FileArchive, FileMusic, Music, Play, Search } from '@lucide/svelte';
   import { onMount } from 'svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
@@ -55,6 +55,14 @@
     },
   ];
   let soundfont = $state<Soundfont>(SOUNDFONTS[0]);
+
+  // Only one MIDI player exists at a time. Each <midi-player> mount loads
+  // the full ~30 MB soundfont and spins up its own AudioContext, so
+  // mounting one per file in a 30-track pack would push browser memory
+  // past 1 GB and crash the tab. The user clicks Play on a track to
+  // mount the player for that file; clicking another track re-points the
+  // single instance instead of stacking another one.
+  let activeFileId = $state<string | null>(null);
 
   // ──── Derived list ─────────────────────────────────────────────────────
   type Annotated = FileRow & { kind: FileKind; mime: string | null };
@@ -185,14 +193,23 @@
             Your browser doesn't support this audio format.
           </audio>
         {:else if f.kind === 'midi'}
-          {#if midiReady}
+          {#if !midiReady}
+            <p class="text-xs text-muted-foreground">Loading MIDI player…</p>
+          {:else if activeFileId === f.id}
             <midi-player
               src={`/api/preview/${f.id}`}
               sound-font={soundfont.url}
               style="width: 100%;"
             ></midi-player>
           {:else}
-            <p class="text-xs text-muted-foreground">Loading MIDI player…</p>
+            <Button
+              size="sm"
+              variant="outline"
+              onclick={() => (activeFileId = f.id)}
+            >
+              <Play size={12} />
+              Play MIDI
+            </Button>
           {/if}
         {:else if f.kind === 'archive'}
           <p class="text-xs text-muted-foreground">
