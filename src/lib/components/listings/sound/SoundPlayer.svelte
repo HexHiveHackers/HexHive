@@ -228,3 +228,108 @@
     <p class="text-sm text-muted-foreground text-center py-8">No files match "{query}".</p>
   {/if}
 </section>
+
+<style>
+  /* MIDI player dark-mode skin.
+   *
+   * html-midi-player ships a light-grey pill (#f2f5f6) that looks like a
+   * scar on the dark hive page. Re-skin it to feel like a recessed
+   * amber-glow LCD that nods to the GBA sound provenance: muted card
+   * surface, hairline border, monospace tabular-nums clock, amber play
+   * button and progress thumb. Reaches into the shadow DOM via the
+   * ::part() hooks the package documents.
+   */
+  :global(midi-player) {
+    width: 100%;
+  }
+  :global(midi-player::part(control-panel)) {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.375rem;
+    padding: 0 0.625rem;
+    color: hsl(var(--foreground));
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      sans-serif;
+  }
+  :global(midi-player::part(play-button)) {
+    color: #fbbf24; /* amber-400 */
+    background: rgba(251, 191, 36, 0.08);
+    border-radius: 9999px;
+    transition:
+      background-color 160ms ease,
+      transform 120ms ease;
+  }
+  :global(midi-player::part(play-button):hover) {
+    background: rgba(251, 191, 36, 0.18);
+  }
+  :global(midi-player::part(play-button):active) {
+    background: rgba(251, 191, 36, 0.28);
+    transform: scale(0.96);
+  }
+  :global(midi-player::part(time)) {
+    color: hsl(var(--muted-foreground));
+    font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", "Menlo", monospace;
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+  :global(midi-player::part(current-time)) {
+    color: #fbbf24;
+  }
+  :global(midi-player::part(seek-bar)) {
+    appearance: none;
+    -webkit-appearance: none;
+    height: 4px;
+    background: transparent;
+  }
+  :global(midi-player::part(seek-bar))::-webkit-slider-runnable-track {
+    height: 4px;
+    background: hsl(var(--muted));
+    border-radius: 2px;
+  }
+  :global(midi-player::part(seek-bar))::-moz-range-track {
+    height: 4px;
+    background: hsl(var(--muted));
+    border-radius: 2px;
+    border: none;
+  }
+  :global(midi-player::part(seek-bar))::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    margin-top: -4px;
+    border-radius: 50%;
+    background: #fbbf24;
+    border: 2px solid hsl(var(--background));
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.5);
+  }
+  :global(midi-player::part(seek-bar))::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fbbf24;
+    border: 2px solid hsl(var(--background));
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.5);
+  }
+  :global(midi-player::part(seek-bar):focus-visible) {
+    outline: none;
+  }
+  :global(midi-player::part(seek-bar):focus-visible)::-webkit-slider-thumb {
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px #fbbf24;
+  }
+  :global(midi-player::part(seek-bar):focus-visible)::-moz-range-thumb {
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px #fbbf24;
+  }
+  :global(midi-player::part(loading-overlay)) {
+    background: linear-gradient(
+      110deg,
+      rgba(251, 191, 36, 0) 5%,
+      rgba(251, 191, 36, 0.18) 25%,
+      rgba(251, 191, 36, 0) 45%
+    );
+  }
+</style>
