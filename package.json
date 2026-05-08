@@ -9,6 +9,8 @@
   },
   "scripts": {
     "dev": "vite dev",
+    "dev:staging": "railway run --service HexHive --environment staging -- vite dev",
+    "dev:prod": "railway run --service HexHive --environment production -- vite dev",
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo '' && husky",
