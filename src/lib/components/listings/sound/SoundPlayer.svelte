@@ -74,6 +74,23 @@
     activeFileId = id;
   }
 
+  // Auto-start the player as soon as the freshly-mounted element finishes
+  // loading the MIDI. Without this the user has to click Play twice (once
+  // to mount, once on the player). The 'load' event fires when the
+  // NoteSequence is parsed; if duration is already populated the load
+  // happened in the same tick and we just call start() directly.
+  $effect(() => {
+    const el = activePlayerEl;
+    if (!el) return;
+    if (el.duration > 0) {
+      el.start();
+      return;
+    }
+    const onLoad = () => el.start();
+    el.addEventListener('load', onLoad);
+    return () => el.removeEventListener('load', onLoad);
+  });
+
   // ──── Derived list ─────────────────────────────────────────────────────
   type Annotated = FileRow & { kind: FileKind; mime: string | null };
   const annotated = $derived<Annotated[]>(
@@ -293,38 +310,51 @@
   :global(midi-player::part(seek-bar)) {
     appearance: none;
     -webkit-appearance: none;
-    height: 4px;
+    height: 6px;
     background: transparent;
   }
+  /* Track: a faint amber wash sits on top of the card surface so the
+   * bar reads as a recessed channel even before any progress fill. The
+   * same color logic is duplicated for -moz- because the two engines
+   * style range-input internals on different pseudo-elements. */
   :global(midi-player::part(seek-bar))::-webkit-slider-runnable-track {
-    height: 4px;
-    background: hsl(var(--muted));
-    border-radius: 2px;
+    height: 6px;
+    background: rgba(251, 191, 36, 0.15);
+    border-radius: 3px;
+    border: 1px solid rgba(251, 191, 36, 0.25);
   }
   :global(midi-player::part(seek-bar))::-moz-range-track {
-    height: 4px;
-    background: hsl(var(--muted));
-    border-radius: 2px;
-    border: none;
+    height: 6px;
+    background: rgba(251, 191, 36, 0.15);
+    border-radius: 3px;
+    border: 1px solid rgba(251, 191, 36, 0.25);
+  }
+  /* Firefox-only progress fill (the played portion). Chromium has no
+   * cross-browser equivalent for native range inputs; it would need a
+   * JS-driven CSS variable, which is out of scope for this pass. */
+  :global(midi-player::part(seek-bar))::-moz-range-progress {
+    height: 6px;
+    background: #fbbf24;
+    border-radius: 3px;
   }
   :global(midi-player::part(seek-bar))::-webkit-slider-thumb {
     appearance: none;
     -webkit-appearance: none;
-    width: 12px;
-    height: 12px;
-    margin-top: -4px;
+    width: 14px;
+    height: 14px;
+    margin-top: -5px;
     border-radius: 50%;
     background: #fbbf24;
     border: 2px solid hsl(var(--background));
-    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.5);
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.55);
   }
   :global(midi-player::part(seek-bar))::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     background: #fbbf24;
     border: 2px solid hsl(var(--background));
-    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.5);
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.55);
   }
   :global(midi-player::part(seek-bar):focus-visible) {
     outline: none;

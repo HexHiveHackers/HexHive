@@ -8,5 +8,6 @@ declare module 'html-midi-player' {
     start(): void;
     stop(): void;
     currentTime: number;
+    duration: number;
   }
 }
