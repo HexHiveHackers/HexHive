@@ -18,13 +18,22 @@
   import { audioMimeType, type FileKind, fileKind } from '$lib/utils/preview';
 
   // ──── Soundfont ────────────────────────────────────────────────────────
-  // GeneralUser GS v2.0.2 self-hosted on Cloudflare R2, served via the
-  // hexhive.app CDN. ~32 MB single download (one HTTPS round-trip)
-  // replaces the ~175 small Magenta JSONs html-midi-player would
-  // otherwise stream over the network. Cached by the browser for the
-  // session, so subsequent tracks in the same pack play instantly.
-  const SOUNDFONT_URL = 'https://cdn.hexhive.app/soundfonts/GeneralUser-GS.sf2';
-  const SOUNDFONT_LABEL = 'GeneralUser GS';
+  // Self-hosted on Cloudflare R2 (cdn.hexhive.app). Single ~1 MB
+  // download replaces the ~175 small Magenta JSONs html-midi-player
+  // would otherwise stream over the network; cached by the browser for
+  // the session so subsequent tracks in the same pack play instantly.
+  //
+  // Currently shipping Braedon Mills' "Pokemon Ruby/Sapphire/Emerald/
+  // FireRed/LeafGreen Soundfont" because the samples are GBA-derived
+  // (better tonal match for romhack content than a generic GM bank).
+  // The author has remapped them onto General MIDI program numbers so
+  // any GM-authored MIDI plays with the right instrument families.
+  // Note: this is not a faithful 1:1 voicegroup-preserving extraction
+  // from any single ROM — see commit message for details. To swap back
+  // to a generic GM bank, point SOUNDFONT_URL at
+  // https://cdn.hexhive.app/soundfonts/GeneralUser-GS.sf2 (still hosted).
+  const SOUNDFONT_URL = 'https://cdn.hexhive.app/soundfonts/Pok_mon_GBA.sf2';
+  const SOUNDFONT_LABEL = 'Pokémon GBA';
   // SpessaSynth's AudioWorklet processor; copied to static/ at build
   // time so it lives at the site origin (audioWorklet.addModule needs a
   // same-origin URL). Updated whenever spessasynth_lib bumps.
