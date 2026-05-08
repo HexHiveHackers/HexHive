@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Banner from '$lib/components/profile/Banner.svelte';
   import ProfileSummary from '$lib/components/profile/ProfileSummary.svelte';
   import { Badge } from '$lib/components/ui/badge';
 
@@ -6,7 +7,8 @@
   const route = (t: string) => t === 'romhack' ? 'romhacks' : `${t}s`;
 </script>
 
-<section class="mx-auto max-w-4xl px-4 py-10 grid gap-8">
+<section class="mx-auto max-w-4xl px-4 py-10 grid gap-6">
+  <Banner bannerKey={data.profile.bannerKey} alt={`${data.profile.username}'s banner`} />
   <ProfileSummary profile={data.profile} />
   <div>
     <h2 class="font-display text-xl mb-4">Uploads</h2>

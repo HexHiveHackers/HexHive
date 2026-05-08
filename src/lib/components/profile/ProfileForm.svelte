@@ -8,9 +8,17 @@
 
   let {
     initial,
-  }: { initial: { username: string; bio: string | null; contactEmail: string | null } } = $props();
+  }: {
+    initial: {
+      username: string;
+      pronouns: string | null;
+      bio: string | null;
+      contactEmail: string | null;
+    };
+  } = $props();
   // One-time seed from the prop; the form is then locally editable.
   let username = $state(untrack(() => initial.username));
+  let pronouns = $state(untrack(() => initial.pronouns ?? ''));
   let bio = $state(untrack(() => initial.bio ?? ''));
   let contactEmail = $state(untrack(() => initial.contactEmail ?? ''));
   let busy = $state(false);
@@ -24,7 +32,7 @@
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ username, bio, contactEmail })
+        body: JSON.stringify({ username, pronouns, bio, contactEmail })
       });
       if (!res.ok) throw new Error(await res.text());
       ok = true;
@@ -38,6 +46,15 @@
   <div class="grid gap-1.5">
     <Label for="username">Username</Label>
     <Input id="username" bind:value={username} required />
+  </div>
+  <div class="grid gap-1.5">
+    <Label for="pronouns">Pronouns <span class="text-xs text-muted-foreground font-normal">(optional, public)</span></Label>
+    <Input
+      id="pronouns"
+      placeholder="she/her, they/them, xe/xem…"
+      maxlength={80}
+      bind:value={pronouns}
+    />
   </div>
   <div class="grid gap-1.5">
     <Label for="bio">Bio</Label>

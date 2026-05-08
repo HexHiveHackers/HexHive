@@ -27,11 +27,12 @@ export async function deleteAccount(db: DB, userId: string): Promise<{ filesDele
   const r2Keys: string[] = [];
 
   const profileRows = await db
-    .select({ avatarKey: schema.profile.avatarKey })
+    .select({ avatarKey: schema.profile.avatarKey, bannerKey: schema.profile.bannerKey })
     .from(schema.profile)
     .where(eq(schema.profile.userId, userId))
     .limit(1);
   if (profileRows[0]?.avatarKey) r2Keys.push(profileRows[0].avatarKey);
+  if (profileRows[0]?.bannerKey) r2Keys.push(profileRows[0].bannerKey);
 
   const fileRows = await db
     .select({ r2Key: schema.listingFile.r2Key })

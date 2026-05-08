@@ -12,6 +12,7 @@ const PUBLIC_PREFIXES = [
   '/me/setup',
   '/api/profile',
   '/api/avatars/',
+  '/api/banners/',
   '/api/_dev_storage/',
 ];
 

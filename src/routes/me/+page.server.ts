@@ -42,9 +42,11 @@ export const load: PageServerLoad = async (event) => {
   return {
     profile: {
       username: profile.username,
+      pronouns: profile.pronouns,
       bio: profile.bio,
       contactEmail: profile.contactEmail,
       avatarKey: profile.avatarKey,
+      bannerKey: profile.bannerKey,
       name: userRows[0]?.name ?? user.email,
     },
     drafts: listings.filter((l) => l.status === 'draft'),

@@ -80,8 +80,10 @@ export const profile = sqliteTable(
       .primaryKey()
       .references(() => user.id, { onDelete: 'cascade' }),
     username: text('username').notNull(),
+    pronouns: text('pronouns'),
     bio: text('bio'),
     avatarKey: text('avatar_key'),
+    bannerKey: text('banner_key'),
     // User-set contact email. No verification, no SMTP — purely a string
     // the owner types in for credit / public display. Distinct from
     // user.email which is the synthetic OAuth-identity placeholder.

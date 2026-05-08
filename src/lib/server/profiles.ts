@@ -51,6 +51,15 @@ export async function setContactEmail(db: DB, userId: string, email: string): Pr
     .where(eq(schema.profile.userId, userId));
 }
 
+// Free-form pronouns string, public on the profile. Empty clears it.
+export async function setPronouns(db: DB, userId: string, pronouns: string): Promise<void> {
+  const trimmed = pronouns.trim();
+  await db
+    .update(schema.profile)
+    .set({ pronouns: trimmed === '' ? null : trimmed, updatedAt: new Date() })
+    .where(eq(schema.profile.userId, userId));
+}
+
 export interface UserListingItem {
   id: string;
   type: ListingType;

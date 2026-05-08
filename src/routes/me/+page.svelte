@@ -6,6 +6,7 @@
   import type { SocialProvider } from '$lib/auth';
   import { authClient } from '$lib/auth-client';
   import AvatarUpload from '$lib/components/profile/AvatarUpload.svelte';
+  import BannerUpload from '$lib/components/profile/BannerUpload.svelte';
   import ProfileForm from '$lib/components/profile/ProfileForm.svelte';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
@@ -119,6 +120,7 @@
   <div>
     <h1 class="font-display text-2xl mb-4">Your profile</h1>
     <div class="grid gap-6">
+      <BannerUpload bannerKey={data.profile.bannerKey} name={data.profile.name} />
       <AvatarUpload avatarKey={data.profile.avatarKey} name={data.profile.name} />
       <ProfileForm initial={data.profile} />
     </div>
