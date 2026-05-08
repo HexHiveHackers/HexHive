@@ -72,3 +72,4 @@ tramp
 .vercel/
 .netlify/
 
+.wrangler/

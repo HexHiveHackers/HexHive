@@ -7,18 +7,28 @@
     FileMusic,
     Loader2,
     Music,
+    Pause,
     Play,
     Search,
   } from '@lucide/svelte';
-  import type { MidiPlayerElement } from 'html-midi-player';
+  import type { Sequencer, WorkletSynthesizer } from 'spessasynth_lib';
   import { onMount } from 'svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
   import { audioMimeType, type FileKind, fileKind } from '$lib/utils/preview';
 
-  // Magenta-hosted soundfonts; we preconnect/prefetch against this origin
-  // so the first instrument download isn't gated on a cold TLS handshake.
-  const SOUNDFONT_ORIGIN = 'https://storage.googleapis.com';
+  // ──── Soundfont ────────────────────────────────────────────────────────
+  // GeneralUser GS v2.0.2 self-hosted on Cloudflare R2, served via the
+  // hexhive.app CDN. ~32 MB single download (one HTTPS round-trip)
+  // replaces the ~175 small Magenta JSONs html-midi-player would
+  // otherwise stream over the network. Cached by the browser for the
+  // session, so subsequent tracks in the same pack play instantly.
+  const SOUNDFONT_URL = 'https://cdn.hexhive.app/soundfonts/GeneralUser-GS.sf2';
+  const SOUNDFONT_LABEL = 'GeneralUser GS';
+  // SpessaSynth's AudioWorklet processor; copied to static/ at build
+  // time so it lives at the site origin (audioWorklet.addModule needs a
+  // same-origin URL). Updated whenever spessasynth_lib bumps.
+  const WORKLET_URL = '/spessasynth_processor.min.js';
 
   type FileRow = {
     id: string;
@@ -34,84 +44,111 @@
   let sortAsc = $state(true);
   let query = $state('');
 
-  // ──── Lazy-load html-midi-player only when there's a MIDI file in the
-  // pack. The component registers a custom <midi-player> element once
-  // imported. Keeps the JS bundle off other pages.
-  let midiReady = $state(false);
+  // ──── MIDI engine state ────────────────────────────────────────────────
+  // One AudioContext + one Synthesizer + one Sequencer for the whole page.
+  // The soundbank is loaded once and reused across every track in the
+  // pack. Switching tracks just calls loadNewSongList — no soundfont
+  // re-download, no AudioContext churn.
   const hasMidi = $derived(files.some((f) => fileKind(f.originalFilename) === 'midi'));
-  onMount(() => {
-    if (!hasMidi) return;
-    import('html-midi-player').then(() => {
-      midiReady = true;
-    });
-  });
-
-  // Soundfont selector for MIDI playback. All Magenta-hosted soundfonts
-  // implement the General MIDI program table, so any GM-targeting MIDI
-  // (the all-instruments-patch convention used by most pret/decomp hacks)
-  // sounds reasonable in any of them. The Pokemon-stock-instrument SF2s
-  // are not yet hosted; once they are, add their URLs here.
-  type Soundfont = { id: string; label: string; url: string };
-  const SOUNDFONTS: Soundfont[] = [
-    {
-      id: 'sgm-plus',
-      label: 'General MIDI (sgm_plus)',
-      url: 'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus',
-    },
-    {
-      id: 'salamander',
-      label: 'Salamander Grand Piano',
-      url: 'https://storage.googleapis.com/magentadata/js/soundfonts/salamander',
-    },
-    {
-      id: 'jazz',
-      label: 'Jazz combo',
-      url: 'https://storage.googleapis.com/magentadata/js/soundfonts/jazz',
-    },
-  ];
-  let soundfont = $state<Soundfont>(SOUNDFONTS[0]);
-
-  // Only one MIDI player exists at a time. Each <midi-player> mount loads
-  // the full ~30 MB soundfont and spins up its own AudioContext, so
-  // mounting one per file in a 30-track pack would push browser memory
-  // past 1 GB and crash the tab. The user clicks Play on a track to
-  // mount the player for that file; clicking another track stops the
-  // current player, lets it unmount, and mounts a fresh one for the new
-  // file. (The element's disconnectedCallback doesn't suspend its own
-  // AudioContext, so we have to call .stop() ourselves before swapping.)
+  let engineState = $state<'idle' | 'loading-engine' | 'ready' | 'error'>('idle');
   let activeFileId = $state<string | null>(null);
-  let activePlayerEl = $state<MidiPlayerElement | null>(null);
-  // Tracks "user has clicked Play but the player isn't audibly going yet"
-  // so the button can show a spinner instead of vanishing into the
-  // not-yet-ready player chrome (closes the perceptual gap during the
-  // first-soundfont-fetch window).
   let loadingFileId = $state<string | null>(null);
+  let isPlaying = $state(false);
+  let currentTime = $state(0);
+  let duration = $state(0);
 
-  // One-shot flag: prewarm the GM soundfont manifests on the first user
-  // interaction with any track. Doing it on page load would burn data for
-  // visitors who never play; doing it once per click would re-fetch
-  // (cached, but still wasteful in dev tools / SW pass-through scenarios).
-  let soundfontPrewarmed = false;
-  function prewarmSoundfont(url: string): void {
-    if (soundfontPrewarmed || typeof window === 'undefined') return;
-    soundfontPrewarmed = true;
-    // Manifest of the active soundfont; the per-instrument JSONs cascade
-    // from this once the player needs them. Best-effort.
-    fetch(`${url}/soundfont.json`).catch(() => {});
+  let ctx: AudioContext | null = null;
+  let synth: WorkletSynthesizer | null = null;
+  let seq: Sequencer | null = null;
+  let rafId = 0;
+
+  async function initEngine(): Promise<void> {
+    if (engineState === 'ready' || engineState === 'loading-engine') return;
+    engineState = 'loading-engine';
+    try {
+      const lib = await import('spessasynth_lib');
+      const sfPromise = fetch(SOUNDFONT_URL).then((r) => r.arrayBuffer());
+      const audioCtx = new AudioContext();
+      await audioCtx.audioWorklet.addModule(WORKLET_URL);
+      const s = new lib.WorkletSynthesizer(audioCtx);
+      const sf = await sfPromise;
+      await s.soundBankManager.addSoundBank(sf, 'main');
+      await s.isReady;
+      const sq = new lib.Sequencer(s);
+      sq.eventHandler.addEvent('songEnded', 'soundplayer-end', () => {
+        isPlaying = false;
+      });
+      sq.eventHandler.addEvent('songChange', 'soundplayer-change', () => {
+        // duration becomes available once a new song is loaded.
+        duration = sq.duration;
+      });
+      ctx = audioCtx;
+      synth = s;
+      seq = sq;
+      engineState = 'ready';
+    } catch (err) {
+      console.error('MIDI engine init failed', err);
+      engineState = 'error';
+    }
   }
 
-  function playFile(id: string): void {
-    if (id === activeFileId) return;
-    activePlayerEl?.stop();
-    activeFileId = id;
+  async function playFile(id: string): Promise<void> {
+    // Same track, currently playing → pause toggle.
+    if (id === activeFileId && isPlaying) {
+      seq?.pause();
+      isPlaying = false;
+      return;
+    }
+    // Same track, paused with the song already loaded → resume.
+    if (id === activeFileId && !isPlaying && seq && ctx) {
+      if (ctx.state === 'suspended') await ctx.resume();
+      seq.play();
+      isPlaying = true;
+      return;
+    }
+    // New track: lazy-init the engine on first ever play, fetch the
+    // .mid bytes, hand them to the sequencer, start playback.
     loadingFileId = id;
-    prewarmSoundfont(soundfont.url);
+    activeFileId = id;
+    if (engineState !== 'ready') await initEngine();
+    if (engineState !== 'ready' || !seq || !ctx) {
+      loadingFileId = null;
+      return;
+    }
+    try {
+      const bytes = await fetch(`/api/preview/${id}`).then((r) => r.arrayBuffer());
+      seq.loadNewSongList([{ binary: bytes, fileName: id }]);
+    } catch (err) {
+      console.error('failed to load MIDI', err);
+      loadingFileId = null;
+      return;
+    }
+    if (ctx.state === 'suspended') await ctx.resume();
+    seq.play();
+    isPlaying = true;
+    loadingFileId = null;
+    duration = seq.duration;
   }
 
-  // Prefetch the .mid bytes on hover/focus of the Play button so that by
-  // the time the user actually clicks, the file is already in the browser
-  // HTTP cache and the player's own GET hits warm. Best-effort: a stale
-  // presigned URL after 10 minutes just means the prefetch was wasted.
+  function pauseActive(): void {
+    seq?.pause();
+    isPlaying = false;
+  }
+
+  function seekActive(t: number): void {
+    if (!seq) return;
+    seq.currentTime = t;
+    currentTime = t;
+  }
+
+  function formatTime(t: number): string {
+    if (!Number.isFinite(t) || t < 0) return '0:00';
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // Prefetch the .mid bytes on hover so click-to-play hits warm cache.
   const prefetched = new Set<string>();
   function prefetchMidi(id: string): void {
     if (typeof window === 'undefined' || prefetched.has(id)) return;
@@ -119,57 +156,37 @@
     fetch(`/api/preview/${id}`).catch(() => {});
   }
 
-  // Auto-start the player as soon as the freshly-mounted element finishes
-  // loading the MIDI. Without this the user has to click Play twice (once
-  // to mount, once on the player). The 'load' event fires when the
-  // NoteSequence is parsed; if duration is already populated the load
-  // happened in the same tick and we just call start() directly. Once
-  // started we clear the loading-button state so the spinner gives way
-  // to the playing player chrome.
-  //
-  // The cleanup also calls stop() on the captured element, so:
-  //   - Swapping tracks immediately stops the previous player.
-  //   - Navigating away from the listing page tears down this component,
-  //     runs the cleanup, and silences the AudioContext. Without this,
-  //     the player's disconnectedCallback alone leaves the soundfont
-  //     audio playing in the background until the tab is closed.
-  $effect(() => {
-    const el = activePlayerEl;
-    if (!el) return;
-    const ready = (): void => {
-      el.start();
-      loadingFileId = null;
-    };
-    if (el.duration > 0) {
-      ready();
-    } else {
-      el.addEventListener('load', ready);
-    }
-    return () => {
-      el.removeEventListener('load', ready);
-      el.stop();
-    };
-  });
+  // Background-warm the engine on first hover/focus of any Play button so
+  // the first click doesn't pay the soundfont download cost.
+  let enginePrewarmed = false;
+  function prewarmEngine(): void {
+    if (enginePrewarmed) return;
+    enginePrewarmed = true;
+    void initEngine();
+  }
 
-  // Drive the seek-track fill via a CSS custom property so the played
-  // portion renders identically on Chromium and Firefox. Native range
-  // inputs only expose progress fill on Firefox (::-moz-range-progress)
-  // and not on Chromium, so we paint a linear-gradient on the track
-  // pseudo-element using --midi-progress (0..1) and update it from
-  // currentTime / duration via rAF while the player exists.
+  // Drive currentTime via rAF while playing. Stops itself when paused
+  // and on component teardown.
   $effect(() => {
-    const el = activePlayerEl;
-    if (!el) return;
-    let rafId = 0;
-    const tick = () => {
-      if (el.duration > 0) {
-        const p = Math.min(1, Math.max(0, el.currentTime / el.duration));
-        el.style.setProperty('--midi-progress', p.toString());
-      }
+    if (!isPlaying) return;
+    const tick = (): void => {
+      if (seq) currentTime = seq.currentHighResolutionTime;
       rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
+  });
+
+  // Tear down on component unmount: stop sequencer, close AudioContext,
+  // free the soundbank. Critical to silence MIDI when navigating away
+  // from the listing page.
+  onMount(() => () => {
+    cancelAnimationFrame(rafId);
+    seq?.pause();
+    void ctx?.close();
+    seq = null;
+    synth = null;
+    ctx = null;
   });
 
   // ──── Derived list ─────────────────────────────────────────────────────
@@ -212,9 +229,9 @@
 <svelte:head>
   {#if hasMidi}
     <!-- Open the TLS handshake to the soundfont CDN ahead of the first
-         instrument fetch. Cuts ~100-200 ms off the initial play latency. -->
-    <link rel="preconnect" href={SOUNDFONT_ORIGIN} crossorigin="anonymous" />
-    <link rel="dns-prefetch" href={SOUNDFONT_ORIGIN} />
+         sf2 fetch. Cuts ~100-200 ms off cold first-play latency. -->
+    <link rel="preconnect" href="https://cdn.hexhive.app" crossorigin="anonymous" />
+    <link rel="dns-prefetch" href="https://cdn.hexhive.app" />
   {/if}
 </svelte:head>
 
@@ -238,19 +255,9 @@
         />
       </div>
       {#if hasMidi}
-        <select
-          aria-label="MIDI soundfont"
-          class="h-8 rounded-md border bg-background px-2 text-xs"
-          value={soundfont.id}
-          onchange={(e) => {
-            const next = SOUNDFONTS.find((s) => s.id === (e.currentTarget as HTMLSelectElement).value);
-            if (next) soundfont = next;
-          }}
-        >
-          {#each SOUNDFONTS as s (s.id)}
-            <option value={s.id}>{s.label}</option>
-          {/each}
-        </select>
+        <span class="h-8 inline-flex items-center rounded-md border bg-background px-2 text-[11px] text-muted-foreground">
+          {SOUNDFONT_LABEL}
+        </span>
       {/if}
       <Button
         size="sm"
@@ -288,6 +295,8 @@
   <ul class="grid gap-3">
     {#each filtered as f (f.id)}
       {@const Icon = iconFor(f.kind)}
+      {@const isActive = activeFileId === f.id}
+      {@const isLoading = loadingFileId === f.id}
       <li class="rounded-md border p-3">
         <div class="flex items-center justify-between gap-3 mb-2">
           <span class="flex items-center gap-2 min-w-0 text-sm">
@@ -310,32 +319,61 @@
             Your browser doesn't support this audio format.
           </audio>
         {:else if f.kind === 'midi'}
-          {#if !midiReady}
-            <p class="text-xs text-muted-foreground">Loading MIDI player…</p>
-          {:else if activeFileId === f.id}
-            <!-- Single mounted player (don't tear down for the loading
-                 caption — that would re-trigger the whole soundfont
-                 fetch). The caption renders above the player chrome
-                 while loadingFileId still equals this file id. -->
-            {#if loadingFileId === f.id}
-              <div class="mb-2 flex items-center gap-2 text-[11px] text-amber-400">
-                <Loader2 size={12} class="animate-spin" />
-                Warming up… fetching soundfont samples for first playback
-              </div>
-            {/if}
-            <midi-player
-              bind:this={activePlayerEl}
-              src={`/api/preview/${f.id}`}
-              sound-font={soundfont.url}
-              style="width: 100%;"
-            ></midi-player>
+          {#if isActive}
+            <!-- Custom amber LCD player: same engine, re-rendered per
+                 track based on the shared activeFileId so seek and time
+                 reflect the currently-loaded MIDI. -->
+            <div class="midi-bar" role="region" aria-label="MIDI player">
+              <button
+                type="button"
+                class="midi-play"
+                aria-label={isPlaying ? 'Pause' : 'Play'}
+                onclick={() => (isPlaying ? pauseActive() : playFile(f.id))}
+              >
+                {#if isLoading}
+                  <Loader2 size={14} class="animate-spin" />
+                {:else if isPlaying}
+                  <Pause size={14} />
+                {:else}
+                  <Play size={14} />
+                {/if}
+              </button>
+              <span class="midi-time">
+                <span class="midi-time-current">{formatTime(currentTime)}</span>
+                <span class="midi-time-sep">/</span>
+                <span class="midi-time-total">{formatTime(duration)}</span>
+              </span>
+              <input
+                type="range"
+                class="midi-seek"
+                aria-label="Playback position"
+                min="0"
+                max={Math.max(duration, 0.001)}
+                step="any"
+                value={currentTime}
+                disabled={!duration || isLoading}
+                style={`--midi-progress: ${duration > 0 ? Math.min(1, currentTime / duration) : 0}`}
+                oninput={(e) => seekActive(Number((e.currentTarget as HTMLInputElement).value))}
+              />
+              {#if isLoading}
+                <span class="midi-status">
+                  {engineState === 'loading-engine' ? 'Loading soundfont…' : 'Loading track…'}
+                </span>
+              {/if}
+            </div>
           {:else}
             <Button
               size="sm"
               variant="outline"
               onclick={() => playFile(f.id)}
-              onmouseenter={() => prefetchMidi(f.id)}
-              onfocus={() => prefetchMidi(f.id)}
+              onmouseenter={() => {
+                prewarmEngine();
+                prefetchMidi(f.id);
+              }}
+              onfocus={() => {
+                prewarmEngine();
+                prefetchMidi(f.id);
+              }}
             >
               <Play size={12} />
               Play MIDI
@@ -357,74 +395,91 @@
   {#if filtered.length === 0}
     <p class="text-sm text-muted-foreground text-center py-8">No files match "{query}".</p>
   {/if}
+
+  {#if engineState === 'error'}
+    <p class="mt-3 text-xs text-red-400">
+      MIDI engine failed to start. Try reloading the page.
+    </p>
+  {/if}
 </section>
 
 <style>
-  /* MIDI player dark-mode skin.
-   *
-   * html-midi-player ships a light-grey pill (#f2f5f6) that looks like a
-   * scar on the dark hive page. Re-skin it to feel like a recessed
-   * amber-glow LCD that nods to the GBA sound provenance: muted card
-   * surface, hairline border, monospace tabular-nums clock, amber play
-   * button and progress thumb. Reaches into the shadow DOM via the
-   * ::part() hooks the package documents.
-   */
-  :global(midi-player) {
-    width: 100%;
-  }
-  :global(midi-player::part(control-panel)) {
+  /* Custom amber-LCD MIDI player. Built on top of native elements (no
+   * shadow DOM, no third-party UI) so styling reaches everywhere
+   * without ::part() gymnastics, and the look is identical on Chromium
+   * and Firefox. Deliberately inherits the dark card surface so it
+   * sits on the listing without floating. */
+  .midi-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 0.75rem;
     background: hsl(var(--card));
     border: 1px solid hsl(var(--border));
     border-radius: 0.375rem;
-    padding: 0 0.625rem;
     color: hsl(var(--foreground));
-    font-family:
-      ui-sans-serif,
-      system-ui,
-      -apple-system,
-      sans-serif;
   }
-  :global(midi-player::part(play-button)) {
-    color: #fbbf24; /* amber-400 */
-    background: rgba(251, 191, 36, 0.08);
+  .midi-play {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 9999px;
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+    border: none;
+    cursor: pointer;
     transition:
       background-color 160ms ease,
       transform 120ms ease;
   }
-  :global(midi-player::part(play-button):hover) {
-    background: rgba(251, 191, 36, 0.18);
+  .midi-play:hover {
+    background: rgba(251, 191, 36, 0.22);
   }
-  :global(midi-player::part(play-button):active) {
-    background: rgba(251, 191, 36, 0.28);
+  .midi-play:active {
+    background: rgba(251, 191, 36, 0.32);
     transform: scale(0.96);
   }
-  :global(midi-player::part(time)) {
-    color: hsl(var(--muted-foreground));
+  .midi-play:focus-visible {
+    outline: 2px solid #fbbf24;
+    outline-offset: 2px;
+  }
+  .midi-time {
+    flex-shrink: 0;
     font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", "Menlo", monospace;
     font-size: 0.7rem;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.04em;
+    color: hsl(var(--muted-foreground));
+    min-width: 5.5rem;
+    text-align: center;
   }
-  :global(midi-player::part(current-time)) {
+  .midi-time-current {
     color: #fbbf24;
   }
-  :global(midi-player::part(seek-bar)) {
+  .midi-time-sep {
+    margin: 0 0.2em;
+    opacity: 0.6;
+  }
+  .midi-seek {
+    flex: 1;
+    min-width: 0;
     appearance: none;
     -webkit-appearance: none;
     height: 6px;
     background: transparent;
+    cursor: pointer;
   }
-  /* Track: amber wash on the unplayed portion, solid amber on the played
-   * portion, separated by --midi-progress (0..1). Set on the host element
-   * by an effect that ticks currentTime/duration via rAF; cascades into
-   * the shadow DOM through normal CSS variable inheritance.
-   *
-   * The same gradient is duplicated on the moz pseudo so Firefox renders
-   * identically to Chromium. We deliberately do NOT use
-   * ::-moz-range-progress (Firefox-only) because that would double-fill
-   * on top of the gradient. */
-  :global(midi-player::part(seek-bar))::-webkit-slider-runnable-track {
+  .midi-seek:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  /* Track painted with the played-portion gradient driven by
+   * --midi-progress (0..1). Same gradient on both engines so Chromium
+   * and Firefox match exactly. */
+  .midi-seek::-webkit-slider-runnable-track {
     height: 6px;
     border-radius: 3px;
     border: 1px solid rgba(251, 191, 36, 0.3);
@@ -436,7 +491,7 @@
       rgba(251, 191, 36, 0.12) 100%
     );
   }
-  :global(midi-player::part(seek-bar))::-moz-range-track {
+  .midi-seek::-moz-range-track {
     height: 6px;
     border-radius: 3px;
     border: 1px solid rgba(251, 191, 36, 0.3);
@@ -448,7 +503,7 @@
       rgba(251, 191, 36, 0.12) 100%
     );
   }
-  :global(midi-player::part(seek-bar))::-webkit-slider-thumb {
+  .midi-seek::-webkit-slider-thumb {
     appearance: none;
     -webkit-appearance: none;
     width: 14px;
@@ -459,7 +514,7 @@
     border: 2px solid hsl(var(--background));
     box-shadow: 0 0 6px rgba(251, 191, 36, 0.55);
   }
-  :global(midi-player::part(seek-bar))::-moz-range-thumb {
+  .midi-seek::-moz-range-thumb {
     width: 14px;
     height: 14px;
     border-radius: 50%;
@@ -467,21 +522,19 @@
     border: 2px solid hsl(var(--background));
     box-shadow: 0 0 6px rgba(251, 191, 36, 0.55);
   }
-  :global(midi-player::part(seek-bar):focus-visible) {
-    outline: none;
+  .midi-seek:focus-visible::-webkit-slider-thumb {
+    box-shadow:
+      0 0 0 2px hsl(var(--background)),
+      0 0 0 4px #fbbf24;
   }
-  :global(midi-player::part(seek-bar):focus-visible)::-webkit-slider-thumb {
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px #fbbf24;
+  .midi-seek:focus-visible::-moz-range-thumb {
+    box-shadow:
+      0 0 0 2px hsl(var(--background)),
+      0 0 0 4px #fbbf24;
   }
-  :global(midi-player::part(seek-bar):focus-visible)::-moz-range-thumb {
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px #fbbf24;
-  }
-  :global(midi-player::part(loading-overlay)) {
-    background: linear-gradient(
-      110deg,
-      rgba(251, 191, 36, 0) 5%,
-      rgba(251, 191, 36, 0.18) 25%,
-      rgba(251, 191, 36, 0) 45%
-    );
+  .midi-status {
+    font-size: 11px;
+    color: #fbbf24;
+    flex-shrink: 0;
   }
 </style>
