@@ -226,6 +226,22 @@
     await loadIntoSequencer(t);
   }
 
+  async function isolateSlot(slot: number): Promise<void> {
+    if (!loaded) return;
+    const allOthersMuted =
+      mutedSlots.size === loaded.usedSlots.size - 1 && [...loaded.usedSlots].every((s) => s === slot || mutedSlots.has(s));
+    if (allOthersMuted) {
+      // Toggle off: this slot was already isolated → unmute everything.
+      mutedSlots = new Set();
+    } else {
+      const next = new Set<number>(loaded.usedSlots);
+      next.delete(slot);
+      mutedSlots = next;
+    }
+    const t = seq?.currentTime ?? 0;
+    await loadIntoSequencer(t);
+  }
+
   async function muteAllSlots(mute: boolean): Promise<void> {
     if (!loaded) return;
     mutedSlots = mute ? new Set(loaded.usedSlots) : new Set();
@@ -530,6 +546,20 @@
                 title={mutedSlots.has(row.slot) ? 'Unmute slot' : 'Mute slot'}
               >
                 {mutedSlots.has(row.slot) ? 'muted' : 'mute'}
+              </button>
+              <button
+                type="button"
+                onclick={() => void isolateSlot(row.slot)}
+                disabled={engineState !== 'ready'}
+                class="font-mono text-xs px-2 py-1 rounded border min-w-[3.5rem] {!mutedSlots.has(row.slot) &&
+                mutedSlots.size > 0 &&
+                loaded &&
+                mutedSlots.size === loaded.usedSlots.size - 1
+                  ? 'bg-amber-500/20 border-amber-500/60 text-amber-300'
+                  : 'border-border hover:border-foreground/40'}"
+                title="Solo this slot (mute everything else)"
+              >
+                solo
               </button>
             </li>
           {/each}
