@@ -75,6 +75,41 @@ describe('rewriteProgramChanges', () => {
     expect(foundPair).toBe(true);
   });
 
+  it('zeroes NoteOn velocity for events on a muted slot', () => {
+    const orig = readMidi('pallet/mus_pallet.mid');
+    // Mute every slot — no audible NoteOn should remain.
+    const rewritten = rewriteProgramChanges(
+      orig,
+      (slot) => ({ bankMSB: 0, program: slot, label: '', reason: '' }),
+      () => true,
+    );
+    const smf = parseSmf(rewritten);
+    let nonZeroNoteOns = 0;
+    for (const track of smf.tracks) {
+      for (const e of track) {
+        if (e.kind === 'midi' && (e.status & 0xf0) === 0x90 && e.data[1] > 0) nonZeroNoteOns++;
+      }
+    }
+    expect(nonZeroNoteOns).toBe(0);
+  });
+
+  it('leaves NoteOns untouched for unmuted slots', () => {
+    const orig = readMidi('pallet/mus_pallet.mid');
+    const rewritten = rewriteProgramChanges(
+      orig,
+      (slot) => ({ bankMSB: 0, program: slot, label: '', reason: '' }),
+      () => false,
+    );
+    const smf = parseSmf(rewritten);
+    let nonZeroNoteOns = 0;
+    for (const track of smf.tracks) {
+      for (const e of track) {
+        if (e.kind === 'midi' && (e.status & 0xf0) === 0x90 && e.data[1] > 0) nonZeroNoteOns++;
+      }
+    }
+    expect(nonZeroNoteOns).toBeGreaterThan(0);
+  });
+
   it('preserves total event count + 1 CC0 per original PC across all fixtures', () => {
     for (const f of fixtures) {
       const orig = readMidi(f);

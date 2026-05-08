@@ -176,14 +176,24 @@ export function serializeSmf(smf: ParsedSmf): Uint8Array {
   return Uint8Array.from(bytes);
 }
 
-export function rewriteProgramChanges(midi: ArrayBuffer | Uint8Array, resolve: Resolver): Uint8Array {
+// `isMuted(slot, channel)`, when provided, silences NoteOn events on a
+// channel while the channel's *current* voicegroup slot is muted. We zero
+// the velocity (the conventional MIDI note-off form) instead of dropping
+// the event so timing is byte-identical and there are no hanging notes.
+export function rewriteProgramChanges(
+  midi: ArrayBuffer | Uint8Array,
+  resolve: Resolver,
+  isMuted?: (slot: number, channel: number) => boolean,
+): Uint8Array {
   const smf = parseSmf(midi);
+  const channelProgram = new Array<number>(16).fill(0);
   for (let t = 0; t < smf.tracks.length; t++) {
     const out: MidiEvent[] = [];
     for (const e of smf.tracks[t]) {
       if (e.kind === 'midi' && (e.status & 0xf0) === 0xc0) {
         const channel = e.channel ?? e.status & 0x0f;
         const program = e.data[0];
+        channelProgram[channel] = program;
         const choice = resolve(program, channel);
         out.push({
           delta: e.delta,
@@ -199,6 +209,14 @@ export function rewriteProgramChanges(midi: ArrayBuffer | Uint8Array, resolve: R
           channel,
           data: Uint8Array.from([choice.program & 0x7f]),
         });
+      } else if (
+        isMuted &&
+        e.kind === 'midi' &&
+        (e.status & 0xf0) === 0x90 &&
+        isMuted(channelProgram[e.channel ?? e.status & 0x0f], e.channel ?? e.status & 0x0f)
+      ) {
+        // NoteOn on a muted slot → set velocity to 0 (= note-off semantics).
+        out.push({ ...e, data: Uint8Array.from([e.data[0], 0]) });
       } else {
         out.push(e);
       }

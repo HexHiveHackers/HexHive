@@ -31,6 +31,7 @@
   let overrides = $state<Record<number, MappingChoice>>({});
   let warnings = $state<string[]>([]);
   let mutedChannels = $state<Set<number>>(new Set());
+  let mutedSlots = $state<Set<number>>(new Set());
 
   // Engine state mirrors SoundPlayer.svelte's lifecycle.
   let engineState = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
@@ -131,7 +132,12 @@
     if (!seq || !loaded) return;
     const ps = presets;
     const merged = buildMappings(loaded.voicegroup, overrides, ps);
-    const rewritten = rewriteProgramChanges(loaded.midiBytes, (slot, _ch) => merged[slot]);
+    const muted = mutedSlots;
+    const rewritten = rewriteProgramChanges(
+      loaded.midiBytes,
+      (slot, _ch) => merged[slot],
+      muted.size > 0 ? (slot) => muted.has(slot) : undefined,
+    );
     const wasPlaying = isPlaying;
     const id = `${loaded.songId}-${Date.now()}`;
     const loadedP = awaitSongLoaded(seq, id);
@@ -181,6 +187,7 @@
     // song may have left some channels muted on this synth instance).
     if (synth) for (const ch of mutedChannels) synth.muteChannel(ch, false);
     mutedChannels = new Set();
+    mutedSlots = new Set();
     overrides = loadOverrides(vgHash);
     warnings = vg.warnings.slice();
     if (engineState !== 'ready') await initEngine();
@@ -208,6 +215,22 @@
     if (!seq) return;
     seq.currentTime = t;
     currentTime = t;
+  }
+
+  async function toggleSlotMute(slot: number): Promise<void> {
+    const next = new Set(mutedSlots);
+    if (next.has(slot)) next.delete(slot);
+    else next.add(slot);
+    mutedSlots = next;
+    const t = seq?.currentTime ?? 0;
+    await loadIntoSequencer(t);
+  }
+
+  async function muteAllSlots(mute: boolean): Promise<void> {
+    if (!loaded) return;
+    mutedSlots = mute ? new Set(loaded.usedSlots) : new Set();
+    const t = seq?.currentTime ?? 0;
+    await loadIntoSequencer(t);
   }
 
   function toggleChannelMute(ch: number): void {
@@ -424,7 +447,7 @@
 
       <div class="space-y-1">
         <div class="text-xs uppercase tracking-wider text-muted-foreground">Channel mutes</div>
-        <div class="flex flex-wrap gap-1.5 justify-end">
+        <div class="flex flex-wrap gap-1.5">
           {#each [...loaded.usedChannels].sort((a, b) => a - b) as ch}
             <button
               type="button"
@@ -456,8 +479,18 @@
     </section>
 
     <section class="border rounded-lg overflow-hidden">
-      <header class="px-4 py-2 border-b text-xs uppercase tracking-wider text-muted-foreground">
-        Voicegroup → SF2 mapping ({rows.length} slots)
+      <header class="px-4 py-2 border-b flex items-center justify-between gap-3">
+        <div class="text-xs uppercase tracking-wider text-muted-foreground">
+          Voicegroup → SF2 mapping ({rows.length} slots)
+        </div>
+        <button
+          type="button"
+          onclick={() => void muteAllSlots(mutedSlots.size < (loaded?.usedSlots.size ?? 0))}
+          disabled={engineState !== 'ready'}
+          class="font-mono text-xs px-2 py-1 rounded border hover:border-foreground/40"
+        >
+          {mutedSlots.size > 0 && loaded && mutedSlots.size >= loaded.usedSlots.size ? 'unmute all' : 'mute all'}
+        </button>
       </header>
       {#if presets.length === 0}
         <div class="p-4 text-sm text-muted-foreground">Loading SF2 preset list…</div>
@@ -486,6 +519,18 @@
                   <RefreshCw class="size-3" /> auto
                 </Button>
               {/if}
+              <button
+                type="button"
+                onclick={() => void toggleSlotMute(row.slot)}
+                disabled={engineState !== 'ready'}
+                class="font-mono text-xs px-2 py-1 rounded border min-w-[3rem] {mutedSlots.has(row.slot)
+                  ? 'bg-destructive/20 border-destructive/60 text-destructive line-through'
+                  : 'border-border hover:border-foreground/40'}"
+                aria-pressed={mutedSlots.has(row.slot)}
+                title={mutedSlots.has(row.slot) ? 'Unmute slot' : 'Mute slot'}
+              >
+                {mutedSlots.has(row.slot) ? 'muted' : 'mute'}
+              </button>
             </li>
           {/each}
         </ul>
