@@ -1,10 +1,24 @@
 <script lang="ts">
-  import { ArrowDownAZ, ArrowDownUp, Download, FileArchive, FileMusic, Music, Play, Search } from '@lucide/svelte';
+  import {
+    ArrowDownAZ,
+    ArrowDownUp,
+    Download,
+    FileArchive,
+    FileMusic,
+    Loader2,
+    Music,
+    Play,
+    Search,
+  } from '@lucide/svelte';
   import type { MidiPlayerElement } from 'html-midi-player';
   import { onMount } from 'svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
   import { audioMimeType, type FileKind, fileKind } from '$lib/utils/preview';
+
+  // Magenta-hosted soundfonts; we preconnect/prefetch against this origin
+  // so the first instrument download isn't gated on a cold TLS handshake.
+  const SOUNDFONT_ORIGIN = 'https://storage.googleapis.com';
 
   type FileRow = {
     id: string;
@@ -67,28 +81,64 @@
   // AudioContext, so we have to call .stop() ourselves before swapping.)
   let activeFileId = $state<string | null>(null);
   let activePlayerEl = $state<MidiPlayerElement | null>(null);
+  // Tracks "user has clicked Play but the player isn't audibly going yet"
+  // so the button can show a spinner instead of vanishing into the
+  // not-yet-ready player chrome (closes the perceptual gap during the
+  // first-soundfont-fetch window).
+  let loadingFileId = $state<string | null>(null);
 
-  function playFile(id: string) {
+  // One-shot flag: prewarm the GM soundfont manifests on the first user
+  // interaction with any track. Doing it on page load would burn data for
+  // visitors who never play; doing it once per click would re-fetch
+  // (cached, but still wasteful in dev tools / SW pass-through scenarios).
+  let soundfontPrewarmed = false;
+  function prewarmSoundfont(url: string): void {
+    if (soundfontPrewarmed || typeof window === 'undefined') return;
+    soundfontPrewarmed = true;
+    // Manifest of the active soundfont; the per-instrument JSONs cascade
+    // from this once the player needs them. Best-effort.
+    fetch(`${url}/soundfont.json`).catch(() => {});
+  }
+
+  function playFile(id: string): void {
     if (id === activeFileId) return;
     activePlayerEl?.stop();
     activeFileId = id;
+    loadingFileId = id;
+    prewarmSoundfont(soundfont.url);
+  }
+
+  // Prefetch the .mid bytes on hover/focus of the Play button so that by
+  // the time the user actually clicks, the file is already in the browser
+  // HTTP cache and the player's own GET hits warm. Best-effort: a stale
+  // presigned URL after 10 minutes just means the prefetch was wasted.
+  const prefetched = new Set<string>();
+  function prefetchMidi(id: string): void {
+    if (typeof window === 'undefined' || prefetched.has(id)) return;
+    prefetched.add(id);
+    fetch(`/api/preview/${id}`).catch(() => {});
   }
 
   // Auto-start the player as soon as the freshly-mounted element finishes
   // loading the MIDI. Without this the user has to click Play twice (once
   // to mount, once on the player). The 'load' event fires when the
   // NoteSequence is parsed; if duration is already populated the load
-  // happened in the same tick and we just call start() directly.
+  // happened in the same tick and we just call start() directly. Once
+  // started we clear the loading-button state so the spinner gives way
+  // to the playing player chrome.
   $effect(() => {
     const el = activePlayerEl;
     if (!el) return;
-    if (el.duration > 0) {
+    const ready = (): void => {
       el.start();
+      loadingFileId = null;
+    };
+    if (el.duration > 0) {
+      ready();
       return;
     }
-    const onLoad = () => el.start();
-    el.addEventListener('load', onLoad);
-    return () => el.removeEventListener('load', onLoad);
+    el.addEventListener('load', ready);
+    return () => el.removeEventListener('load', ready);
   });
 
   // Drive the seek-track fill via a CSS custom property so the played
@@ -148,6 +198,15 @@
     return FileMusic;
   }
 </script>
+
+<svelte:head>
+  {#if hasMidi}
+    <!-- Open the TLS handshake to the soundfont CDN ahead of the first
+         instrument fetch. Cuts ~100-200 ms off the initial play latency. -->
+    <link rel="preconnect" href={SOUNDFONT_ORIGIN} crossorigin="anonymous" />
+    <link rel="dns-prefetch" href={SOUNDFONT_ORIGIN} />
+  {/if}
+</svelte:head>
 
 <section class="border rounded-lg p-4 mb-6">
   <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
@@ -244,6 +303,16 @@
           {#if !midiReady}
             <p class="text-xs text-muted-foreground">Loading MIDI player…</p>
           {:else if activeFileId === f.id}
+            <!-- Single mounted player (don't tear down for the loading
+                 caption — that would re-trigger the whole soundfont
+                 fetch). The caption renders above the player chrome
+                 while loadingFileId still equals this file id. -->
+            {#if loadingFileId === f.id}
+              <div class="mb-2 flex items-center gap-2 text-[11px] text-amber-400">
+                <Loader2 size={12} class="animate-spin" />
+                Warming up… fetching soundfont samples for first playback
+              </div>
+            {/if}
             <midi-player
               bind:this={activePlayerEl}
               src={`/api/preview/${f.id}`}
@@ -255,6 +324,8 @@
               size="sm"
               variant="outline"
               onclick={() => playFile(f.id)}
+              onmouseenter={() => prefetchMidi(f.id)}
+              onfocus={() => prefetchMidi(f.id)}
             >
               <Play size={12} />
               Play MIDI
