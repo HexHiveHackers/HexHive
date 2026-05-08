@@ -9,9 +9,14 @@
 </script>
 
 <section class="mx-auto max-w-6xl px-4 py-10">
-  <header class="flex items-end justify-between mb-6">
+  <header class="flex items-end justify-between mb-6 gap-3 flex-wrap">
     <h1 class="font-display text-2xl">Sounds</h1>
-    <a href="/upload?type=sound"><Button><Upload size={14} />Upload</Button></a>
+    <div class="flex items-center gap-3">
+      <a href="/sounds/midi-lab" class="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
+        MIDI lab (beta)
+      </a>
+      <a href="/upload?type=sound"><Button><Upload size={14} />Upload</Button></a>
+    </div>
   </header>
   <form method="get" class="grid gap-3 sm:grid-cols-[1fr_auto_auto] mb-6">
     <Input name="q" placeholder="Search title…" value={data.filters.q ?? ''} />
