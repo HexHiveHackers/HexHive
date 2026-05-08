@@ -62,9 +62,10 @@
   <div class="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between gap-4">
     <a
       href="/"
-      class="font-display text-lg tracking-wider shrink-0"
+      class="font-display text-lg tracking-wider shrink-0 inline-flex items-center gap-2"
       onclick={() => (mobileMenuOpen = false)}
     >
+      <img src="/favicon.ico" alt="" width="24" height="24" class="h-6 w-6" />
       HEXHIVE
     </a>
 
