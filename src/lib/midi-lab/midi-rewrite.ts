@@ -195,25 +195,35 @@ export function rewriteProgramChanges(
         const program = e.data[0];
         channelProgram[channel] = program;
         const choice = resolve(program, channel);
-        // Drum presets in soundfonts live at bankMSB=128, but a MIDI CC value
-        // is 7-bit (0–127) so we cap at 127 here. The synth still needs to
-        // know the channel is in drum mode — that's handled separately via
-        // `detectDrumChannels` + `synth.setDrums(ch, true)`.
-        const ccBank = Math.min(choice.bankMSB, 127);
-        out.push({
-          delta: e.delta,
-          kind: 'midi',
-          status: 0xb0 | channel,
-          channel,
-          data: Uint8Array.from([0, ccBank]),
-        });
-        out.push({
-          delta: 0,
-          kind: 'midi',
-          status: 0xc0 | channel,
-          channel,
-          data: Uint8Array.from([choice.program & 0x7f]),
-        });
+        if (choice.bankMSB >= 128) {
+          // Drum-bank presets can't be addressed by CC0 (7-bit). Emitting
+          // CC0=127 here would actually fight `synth.setDrums(ch, true)` —
+          // spessasynth interprets the bank-select and toggles the channel
+          // back out of drum mode. Skip the CC0 entirely; setDrums + the
+          // raw program-change is enough to reach the drum kit.
+          out.push({
+            delta: e.delta,
+            kind: 'midi',
+            status: 0xc0 | channel,
+            channel,
+            data: Uint8Array.from([choice.program & 0x7f]),
+          });
+        } else {
+          out.push({
+            delta: e.delta,
+            kind: 'midi',
+            status: 0xb0 | channel,
+            channel,
+            data: Uint8Array.from([0, choice.bankMSB & 0x7f]),
+          });
+          out.push({
+            delta: 0,
+            kind: 'midi',
+            status: 0xc0 | channel,
+            channel,
+            data: Uint8Array.from([choice.program & 0x7f]),
+          });
+        }
       } else if (
         isMuted &&
         e.kind === 'midi' &&
