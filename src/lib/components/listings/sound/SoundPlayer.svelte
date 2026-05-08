@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ArrowDownAZ, ArrowDownUp, Download, FileArchive, FileMusic, Music, Play, Search } from '@lucide/svelte';
+  import type { MidiPlayerElement } from 'html-midi-player';
   import { onMount } from 'svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
@@ -60,9 +61,18 @@
   // the full ~30 MB soundfont and spins up its own AudioContext, so
   // mounting one per file in a 30-track pack would push browser memory
   // past 1 GB and crash the tab. The user clicks Play on a track to
-  // mount the player for that file; clicking another track re-points the
-  // single instance instead of stacking another one.
+  // mount the player for that file; clicking another track stops the
+  // current player, lets it unmount, and mounts a fresh one for the new
+  // file. (The element's disconnectedCallback doesn't suspend its own
+  // AudioContext, so we have to call .stop() ourselves before swapping.)
   let activeFileId = $state<string | null>(null);
+  let activePlayerEl = $state<MidiPlayerElement | null>(null);
+
+  function playFile(id: string) {
+    if (id === activeFileId) return;
+    activePlayerEl?.stop();
+    activeFileId = id;
+  }
 
   // ──── Derived list ─────────────────────────────────────────────────────
   type Annotated = FileRow & { kind: FileKind; mime: string | null };
@@ -197,6 +207,7 @@
             <p class="text-xs text-muted-foreground">Loading MIDI player…</p>
           {:else if activeFileId === f.id}
             <midi-player
+              bind:this={activePlayerEl}
               src={`/api/preview/${f.id}`}
               sound-font={soundfont.url}
               style="width: 100%;"
@@ -205,7 +216,7 @@
             <Button
               size="sm"
               variant="outline"
-              onclick={() => (activeFileId = f.id)}
+              onclick={() => playFile(f.id)}
             >
               <Play size={12} />
               Play MIDI
