@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { SiDiscord } from '@icons-pack/svelte-simple-icons';
+
   const year = new Date().getFullYear();
+  const DISCORD_URL = 'https://discord.gg/YSVdnqjHE';
 </script>
 
 <footer class="border-t mt-16">
@@ -7,6 +10,16 @@
     <div class="flex items-center justify-between gap-4 flex-wrap">
       <p class="font-display tracking-wider text-foreground">© {year} HexHive</p>
       <nav class="flex items-center gap-4">
+        <a
+          href={DISCORD_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1.5 transition-colors hover:text-[#5865F2]"
+          aria-label="Join HexHive on Discord"
+        >
+          <SiDiscord size={14} />
+          Discord
+        </a>
         <a href="/privacy" class="hover:text-foreground hover:underline">Privacy</a>
         <a href="/terms" class="hover:text-foreground hover:underline">Terms</a>
       </nav>

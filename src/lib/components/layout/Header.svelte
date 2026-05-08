@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { SiDiscord } from '@icons-pack/svelte-simple-icons';
   import { LogOut, Settings, Upload, User as UserIcon } from '@lucide/svelte';
   import { goto } from '$app/navigation';
   import { authClient } from '$lib/auth-client';
@@ -14,6 +15,8 @@
     DropdownMenuSeparator,
     DropdownMenuTrigger,
   } from '$lib/components/ui/dropdown-menu';
+
+  const DISCORD_URL = 'https://discord.gg/YSVdnqjHE';
 
   type HeaderUser = {
     id: string;
@@ -81,6 +84,16 @@
     <SearchBar />
 
     <div class="hidden lg:flex items-center gap-2 text-sm shrink-0">
+      <a
+        href={DISCORD_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="discord-link inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-[#5865F2]/10 hover:text-[#5865F2]"
+        aria-label="Join HexHive on Discord"
+        title="Join HexHive on Discord"
+      >
+        <SiDiscord size={16} />
+      </a>
       {#if user}
         <a href="/upload">
           <Button variant="default" size="sm">
@@ -158,6 +171,16 @@
           {link.label}
         </a>
       {/each}
+      <a
+        href={DISCORD_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="discord-link flex min-h-12 select-none items-center justify-center gap-2 text-sm text-muted-foreground transition-colors hover:text-[#5865F2]"
+        onclick={() => (mobileMenuOpen = false)}
+      >
+        <SiDiscord size={16} />
+        Discord
+      </a>
       <div class="mt-2 border-t pt-3 flex flex-col items-stretch gap-2">
         {#if user}
           <a href="/upload" onclick={() => (mobileMenuOpen = false)}>
