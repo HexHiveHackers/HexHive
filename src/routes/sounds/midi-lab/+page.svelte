@@ -11,54 +11,171 @@
   import { hashVoicegroup, type ParsedVoicegroup, parseVoicegroup, type VoiceEntry } from '$lib/midi-lab/voicegroup';
   import type { PageData } from './$types';
 
-  type Soundfont = { id: string; label: string; url: string };
+  // Each soundfont is rendered as a "BANK CHIP" — generation/era drives the
+  // colour stripe + LED, games and platform appear as small mono pills, and
+  // engine-specific banks (Pokémon Essentials) get their own ENGINE tag.
+  type Era = 'gen1' | 'gen2' | 'gen1-2' | 'gen3' | 'engine' | 'gm';
+  type Platform = 'GB' | 'GBA' | 'Engine' | 'Universal';
+  type Soundfont = {
+    id: string;
+    url: string;
+    title: string; // short human title for the chip face
+    label: string; // long label for accessible-name + dropdowns
+    byline: string; // creator / source line
+    era: Era;
+    platform: Platform;
+    games: readonly string[]; // short codes: "FR/LG", "R/S/E", "Em.", "R/B/Y", "G/S/C"
+    context?: string; // for engine banks: which engine this targets
+  };
   const SOUNDFONTS: Soundfont[] = [
     {
       id: 'vgk-frlg',
-      label: 'FireRed/LeafGreen (VGK)',
       url: 'https://cdn.hexhive.app/soundfonts/Pokemon-FireRed-LeafGreen-VGK.sf2',
+      title: 'FireRed / LeafGreen',
+      label: 'FireRed/LeafGreen (VGK)',
+      byline: 'VGK rip',
+      era: 'gen3',
+      platform: 'GBA',
+      games: ['FR/LG'],
     },
     {
       id: 'pkmn-gba',
-      label: 'Pokémon GBA (Mills)',
       url: 'https://cdn.hexhive.app/soundfonts/Pok_mon_GBA.sf2',
+      title: 'Pokémon GBA',
+      label: 'Pokémon GBA (Mills)',
+      byline: 'Mills · multi-game',
+      era: 'gen3',
+      platform: 'GBA',
+      games: ['R/S/E', 'FR/LG'],
     },
     {
       id: 'emerald-updated',
-      label: 'Pokémon Emerald (updated 2025-08-29)',
       url: 'https://cdn.hexhive.app/soundfonts/Pokemon-Emerald-Updated-2025-08-29.sf2',
+      title: 'Emerald · updated',
+      label: 'Pokémon Emerald (updated 2025-08-29)',
+      byline: 'community · 2025-08-29',
+      era: 'gen3',
+      platform: 'GBA',
+      games: ['Em.'],
     },
     {
       id: 'rse-v2',
-      label: 'Pokémon RSE v2.0 (unofficial)',
       url: 'https://cdn.hexhive.app/soundfonts/Pokemon-RSE-v2.0-unofficial.sf2',
+      title: 'RSE v2.0',
+      label: 'Pokémon RSE v2.0 (unofficial)',
+      byline: 'unofficial · v2.0',
+      era: 'gen3',
+      platform: 'GBA',
+      games: ['R/S/E'],
     },
     {
       id: 'emerald-actual',
-      label: 'Pokémon Emerald (Actual)',
       url: 'https://cdn.hexhive.app/soundfonts/Pokemon-Emerald-Actual.sf2',
+      title: 'Emerald · actual',
+      label: 'Pokémon Emerald (Actual)',
+      byline: 'verbatim ROM rip',
+      era: 'gen3',
+      platform: 'GBA',
+      games: ['Em.'],
     },
     {
       id: 'gmgsx-zeak',
-      label: 'GMGSx (Pokémon Essentials / zeak6464)',
       url: 'https://cdn.hexhive.app/soundfonts/GMGSx-zeak-Fire-Red.sf2',
+      title: 'GMGSx',
+      label: 'GMGSx (Pokémon Essentials / zeak6464)',
+      byline: 'zeak6464 · GM-style',
+      era: 'engine',
+      platform: 'Engine',
+      games: [],
+      context: 'Pokémon Essentials',
     },
     {
       id: 'gameboy-gm-cynthia',
-      label: 'Game Boy GM — Pokémon Gen 1+2 (CynthiaCelestic)',
       url: 'https://cdn.hexhive.app/soundfonts/Gameboy-GM-CynthiaCelestic.sf2',
+      title: 'Game Boy GM',
+      label: 'Game Boy GM — Pokémon Gen 1+2 (CynthiaCelestic)',
+      byline: 'CynthiaCelestic',
+      era: 'gen1-2',
+      platform: 'GB',
+      games: ['R/B/Y', 'G/S/C'],
     },
     {
       id: 'gameboy-gm-stgiga',
-      label: 'Game Boy GM — Pokémon Gen 1+2 (stgiga fixed)',
       url: 'https://cdn.hexhive.app/soundfonts/Gameboy-GM-stgiga-fixed.sf2',
+      title: 'Game Boy GM · fixed',
+      label: 'Game Boy GM — Pokémon Gen 1+2 (stgiga fixed)',
+      byline: 'stgiga · re-tuned',
+      era: 'gen1-2',
+      platform: 'GB',
+      games: ['R/B/Y', 'G/S/C'],
     },
     {
       id: 'gus',
-      label: 'GeneralUser GS',
       url: 'https://cdn.hexhive.app/soundfonts/GeneralUser-GS.sf2',
+      title: 'GeneralUser GS',
+      label: 'GeneralUser GS',
+      byline: 'S. Christian Collins',
+      era: 'gm',
+      platform: 'Universal',
+      games: [],
+      context: 'universal GM bank',
     },
   ];
+
+  // Display metadata per era. Tailwind classes are written out in full so
+  // the JIT picks them up — no string interpolation in class= attributes.
+  const ERA_LABEL: Record<Era, string> = {
+    gen1: 'GEN I',
+    gen2: 'GEN II',
+    'gen1-2': 'GEN I·II',
+    gen3: 'GEN III',
+    engine: 'ENGINE',
+    gm: 'GM',
+  };
+  const ERA_STRIPE: Record<Era, string> = {
+    gen1: 'bg-red-500/70',
+    gen2: 'bg-amber-500/70',
+    'gen1-2': 'bg-gradient-to-r from-red-500/70 via-amber-500/70 to-amber-400/70',
+    gen3: 'bg-emerald-500/70',
+    engine: 'bg-fuchsia-500/70',
+    gm: 'bg-sky-400/70',
+  };
+  const ERA_LED_READY: Record<Era, string> = {
+    gen1: 'bg-red-400/80 shadow-[0_0_4px_1px_rgba(248,113,113,0.5)]',
+    gen2: 'bg-amber-400/80 shadow-[0_0_4px_1px_rgba(251,191,36,0.5)]',
+    'gen1-2': 'bg-amber-300/80 shadow-[0_0_4px_1px_rgba(252,211,77,0.5)]',
+    gen3: 'bg-emerald-400/80 shadow-[0_0_4px_1px_rgba(52,211,153,0.5)]',
+    engine: 'bg-fuchsia-400/80 shadow-[0_0_4px_1px_rgba(232,121,249,0.5)]',
+    gm: 'bg-sky-300/80 shadow-[0_0_4px_1px_rgba(125,211,252,0.5)]',
+  };
+  const ERA_TEXT: Record<Era, string> = {
+    gen1: 'text-red-300',
+    gen2: 'text-amber-300',
+    'gen1-2': 'text-amber-200',
+    gen3: 'text-emerald-300',
+    engine: 'text-fuchsia-300',
+    gm: 'text-sky-200',
+  };
+
+  // Bank rack tabs — group by era so the user picks family first, chip
+  // second. Order matters: Gen III is the most-used and goes first.
+  type GroupId = 'gen3' | 'gen1-2' | 'engine' | 'gm';
+  const GROUPS: { id: GroupId; label: string; sub: string; eras: readonly Era[] }[] = [
+    { id: 'gen3', label: 'Gen III', sub: 'Game Boy Advance', eras: ['gen3'] },
+    { id: 'gen1-2', label: 'Gen I · II', sub: 'Game Boy / Color', eras: ['gen1', 'gen2', 'gen1-2'] },
+    { id: 'engine', label: 'Engines', sub: 'Pokémon Essentials et al.', eras: ['engine'] },
+    { id: 'gm', label: 'Universal', sub: 'GM fallback', eras: ['gm'] },
+  ];
+  function groupOf(era: Era): GroupId {
+    return GROUPS.find((g) => g.eras.includes(era))?.id ?? 'gen3';
+  }
+  let activeTab = $state<GroupId>(groupOf(SOUNDFONTS[0].era));
+  // Whenever the active soundfont changes (e.g. via fixture auto-switch),
+  // jump the tab to the group that contains it so the user can see what's
+  // selected without hunting.
+  $effect(() => {
+    activeTab = groupOf(soundfont.era);
+  });
   const WORKLET_URL = '/spessasynth_processor.min.js';
 
   let { data }: { data: PageData } = $props();
@@ -89,6 +206,9 @@
   let loopOn = $state(true);
   let soundfont = $state<Soundfont>(SOUNDFONTS[0]);
   let activeBankId = '';
+  // Per-bank ready state. A bank is "ready" once the worklet has parsed it
+  // and it can be activated via a pure priorityOrder swap (no parse delay).
+  let bankReady = $state<Record<string, boolean>>({});
   // Cache the byte payload of every soundbank we've fetched so that
   // hot-swapping back to a previous one doesn't re-download.
   const sfBytesCache = new Map<string, Promise<ArrayBuffer>>();
@@ -125,6 +245,16 @@
     if (!libPromise) libPromise = import('spessasynth_lib');
   }
 
+  // Add a bank to the worklet (parses the SF2) and mark it ready. Idempotent.
+  async function ensureBankLoaded(s: WorkletSynthesizer, sf: Soundfont): Promise<void> {
+    if (bankReady[sf.id]) return;
+    const buf = await fetchSoundfont(sf);
+    if (!s.soundBankManager.priorityOrder.includes(sf.id)) {
+      await s.soundBankManager.addSoundBank(buf, sf.id);
+    }
+    bankReady = { ...bankReady, [sf.id]: true };
+  }
+
   async function initEngine(): Promise<void> {
     if (engineState === 'ready' || engineState === 'loading') return;
     engineState = 'loading';
@@ -135,8 +265,10 @@
       const lib = await (libPromise as Promise<typeof import('spessasynth_lib')>);
       const s = new lib.WorkletSynthesizer(audioCtx);
       s.connect(audioCtx.destination);
-      const sf = await fetchSoundfont(soundfont);
-      await s.soundBankManager.addSoundBank(sf, soundfont.id);
+      // Block readiness on the user-selected bank only. The rest pre-warm
+      // in the background so subsequent swaps are pure priorityOrder
+      // changes (no parse latency).
+      await ensureBankLoaded(s, soundfont);
       activeBankId = soundfont.id;
       await s.isReady;
       const sq = new lib.Sequencer(s);
@@ -148,6 +280,26 @@
       seq = sq;
       presets = listPresets(s);
       engineState = 'ready';
+      // Sequential pre-warm — the worklet is single-threaded, so parallel
+      // adds just queue up. Sequential keeps the UI responsive between
+      // banks (each completion ticks `bankReady` so chips light up).
+      void (async () => {
+        for (const other of SOUNDFONTS) {
+          if (other.id === soundfont.id) continue;
+          try {
+            await ensureBankLoaded(s, other);
+          } catch (err) {
+            console.warn('midi-lab: pre-warm failed for', other.id, err);
+          }
+        }
+        // Re-assert priority so the active bank stays on top after the
+        // background loads have shuffled the order.
+        s.soundBankManager.priorityOrder = [
+          activeBankId,
+          ...s.soundBankManager.priorityOrder.filter((id) => id !== activeBankId),
+        ];
+        presets = listPresets(s);
+      })();
     } catch (err) {
       console.error('midi-lab: engine init failed', err);
       engineState = 'error';
@@ -155,22 +307,17 @@
   }
 
   // Swap the active soundbank without touching the AudioContext or the
-  // Sequencer. Loaded banks stay resident; priorityOrder puts the chosen
-  // one first so it overrides the rest. Mirrors SoundPlayer.svelte.
+  // Sequencer. With pre-warm, every bank is already loaded after init, so
+  // this is a pure priorityOrder change + MIDI rewrite. If the user clicks
+  // a chip before its pre-warm finished, we await the parse here.
   async function switchSoundbank(target: Soundfont): Promise<void> {
     if (!synth || activeBankId === target.id) return;
-    const buf = await fetchSoundfont(target);
-    if (!synth.soundBankManager.priorityOrder.includes(target.id)) {
-      await synth.soundBankManager.addSoundBank(buf, target.id);
-    }
+    await ensureBankLoaded(synth, target);
     synth.soundBankManager.priorityOrder = [
       target.id,
       ...synth.soundBankManager.priorityOrder.filter((id) => id !== target.id),
     ];
     activeBankId = target.id;
-    // Refresh the preset list so the mapping table dropdowns reflect the
-    // new bank, and re-rewrite the MIDI so program-changes target the
-    // newly-active presets at the same playhead position.
     presets = listPresets(synth);
     if (loaded) {
       const t = seq?.currentTime ?? 0;
@@ -595,23 +742,165 @@
     {/each}
   </div>
 
-  <div class="flex flex-wrap items-center gap-2">
-    <label for="midi-lab-soundfont" class="text-xs uppercase tracking-wider text-muted-foreground mr-2">
-      Soundfont:
-    </label>
-    <select
-      id="midi-lab-soundfont"
-      class="bg-background border rounded px-2 py-1 text-xs font-mono"
-      value={soundfont.id}
-      onchange={(e) => {
-        const next = SOUNDFONTS.find((s) => s.id === (e.currentTarget as HTMLSelectElement).value);
-        if (next) soundfont = next;
-      }}
-    >
-      {#each SOUNDFONTS as s (s.id)}
-        <option value={s.id}>{s.label}</option>
+  <!-- ── BANK RACK ─────────────────────────────────────────────────────
+       Two-tier hierarchy: era tabs at top group banks by hardware family,
+       cards below show full title/games/byline at readable sizes. LED on
+       each card signals parse state — emerald glow = active, amber pulse
+       = worklet still parsing, era-coloured dot = ready, dim = not loaded
+       yet. The header summarises what's currently driving the synth. -->
+  <div class="space-y-3">
+    <div class="flex flex-wrap items-baseline justify-between gap-3">
+      <div class="flex items-baseline gap-3">
+        <span class="text-xs uppercase tracking-[0.25em] text-foreground font-display">
+          Bank rack
+        </span>
+        <span class="text-xs text-muted-foreground">
+          active:
+          <span class="font-mono text-foreground">{soundfont.title}</span>
+          <span class="font-display text-[0.6rem] tracking-[0.2em] {ERA_TEXT[soundfont.era]} ml-1">
+            {ERA_LABEL[soundfont.era]}
+          </span>
+        </span>
+      </div>
+      {#if engineState !== 'idle'}
+        {@const total = SOUNDFONTS.length}
+        {@const ready = SOUNDFONTS.filter((s) => bankReady[s.id]).length}
+        <span class="font-mono text-xs tabular-nums text-muted-foreground inline-flex items-center gap-1.5">
+          {#if ready < total}
+            <Loader2 class="size-3.5 animate-spin text-amber-400" />
+            <span>warming {ready}/{total}…</span>
+          {:else}
+            <span class="size-2 rounded-full bg-emerald-400 shadow-[0_0_6px_1px_rgba(16,185,129,0.7)]"></span>
+            <span class="text-emerald-300">all {total} banks armed · swap is instant</span>
+          {/if}
+        </span>
+      {/if}
+    </div>
+
+    <!-- tab strip -->
+    <div role="tablist" aria-label="Soundfont families" class="flex flex-wrap gap-1 border-b border-border/60">
+      {#each GROUPS as g (g.id)}
+        {@const count = SOUNDFONTS.filter((sf) => g.eras.includes(sf.era)).length}
+        {@const containsActive = g.eras.includes(soundfont.era)}
+        <button
+          role="tab"
+          type="button"
+          aria-selected={activeTab === g.id}
+          onclick={() => {
+            activeTab = g.id;
+          }}
+          class="relative -mb-px flex items-center gap-2 px-3 py-2 text-sm transition-colors
+            {activeTab === g.id
+              ? 'border-b-2 border-emerald-400 text-foreground'
+              : 'border-b-2 border-transparent text-muted-foreground hover:text-foreground'}"
+        >
+          <span class="font-display text-[0.65rem] tracking-[0.2em]">{g.label}</span>
+          <span class="text-xs text-muted-foreground/70 font-mono hidden md:inline">{g.sub}</span>
+          <span
+            class="rounded-full px-1.5 py-0.5 font-mono text-[0.6rem] tabular-nums
+              {activeTab === g.id ? 'bg-emerald-500/15 text-emerald-200' : 'bg-muted/40 text-muted-foreground'}"
+          >
+            {count}
+          </span>
+          {#if containsActive}
+            <span
+              aria-hidden="true"
+              class="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_1px_rgba(16,185,129,0.7)]"
+            ></span>
+          {/if}
+        </button>
       {/each}
-    </select>
+    </div>
+
+    <!-- chip grid (current tab only) -->
+    <div
+      role="tabpanel"
+      aria-label="{GROUPS.find((g) => g.id === activeTab)?.label} soundfonts"
+      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+    >
+      {#each SOUNDFONTS.filter((sf) => GROUPS.find((g) => g.id === activeTab)?.eras.includes(sf.era)) as sf (sf.id)}
+        {@const isActive = soundfont.id === sf.id}
+        {@const isReady = bankReady[sf.id] === true}
+        {@const isParsing = engineState !== 'idle' && !isReady}
+        <button
+          type="button"
+          onclick={() => {
+            soundfont = sf;
+          }}
+          aria-pressed={isActive}
+          aria-label="{sf.label}{sf.context ? ` — ${sf.context}` : ''}"
+          class="group relative overflow-hidden rounded-md border bg-slate-950/70 p-4 text-left transition-all
+            {isActive
+              ? 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.3),0_0_24px_-6px_rgba(16,185,129,0.75)]'
+              : 'border-border/70 hover:border-foreground/40 hover:bg-slate-900/70'}"
+        >
+          <!-- era stripe -->
+          <span aria-hidden="true" class="absolute inset-x-0 top-0 h-[3px] {ERA_STRIPE[sf.era]}"></span>
+
+          <!-- circuit-grid texture -->
+          <span
+            aria-hidden="true"
+            class="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:linear-gradient(to_right,#94a3b8_1px,transparent_1px),linear-gradient(to_bottom,#94a3b8_1px,transparent_1px)] [background-size:8px_8px]"
+          ></span>
+
+          <!-- LED -->
+          <span aria-hidden="true" class="absolute top-2.5 right-2.5 flex size-3 items-center justify-center">
+            {#if isActive}
+              <span class="size-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_3px_rgba(16,185,129,0.85)] animate-pulse"></span>
+            {:else if isParsing}
+              <span class="size-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.7)] animate-pulse"></span>
+            {:else if isReady}
+              <span class="size-2 rounded-full {ERA_LED_READY[sf.era]}"></span>
+            {:else}
+              <span class="size-2 rounded-full bg-slate-700"></span>
+            {/if}
+          </span>
+
+          <!-- era tag + platform -->
+          <div class="relative mb-2 flex items-center gap-2">
+            <span class="font-display text-[0.6rem] tracking-[0.25em] {ERA_TEXT[sf.era]}">
+              {ERA_LABEL[sf.era]}
+            </span>
+            <span class="text-[0.65rem] uppercase tracking-wider text-muted-foreground font-mono">
+              · {sf.platform}
+            </span>
+          </div>
+
+          <!-- title -->
+          <div class="relative pr-5 text-base font-medium leading-snug text-foreground">
+            {sf.title}
+          </div>
+
+          <!-- byline -->
+          <div class="relative mt-0.5 font-mono text-xs text-muted-foreground truncate">
+            {sf.byline}
+          </div>
+
+          <!-- engine context (Pokémon Essentials etc.) -->
+          {#if sf.context}
+            <div
+              class="relative mt-2 inline-flex items-center gap-1 rounded-sm border border-fuchsia-500/50 bg-fuchsia-500/10 px-1.5 py-0.5 font-mono text-[0.7rem] text-fuchsia-200"
+            >
+              <span aria-hidden="true">⌬</span>
+              {sf.context}
+            </div>
+          {/if}
+
+          <!-- game pills -->
+          {#if sf.games.length > 0}
+            <div class="relative mt-2 flex flex-wrap gap-1">
+              {#each sf.games as game}
+                <span
+                  class="rounded-sm border border-border/60 bg-slate-900/70 px-1.5 py-0.5 font-mono text-[0.7rem] tabular-nums text-foreground/80"
+                >
+                  {game}
+                </span>
+              {/each}
+            </div>
+          {/if}
+        </button>
+      {/each}
+    </div>
   </div>
 
   <div
