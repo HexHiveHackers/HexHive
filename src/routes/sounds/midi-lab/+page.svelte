@@ -36,6 +36,10 @@
   let mutedSlots = $state<Set<number>>(new Set());
   let loopOn = $state(true);
   let mp3El = $state<HTMLAudioElement | null>(null);
+  // Track which song the Sequencer currently has loaded so we don't
+  // re-process the MIDI on every override/mute change unnecessarily, and
+  // so we know whether the first Play click needs to do the initial load.
+  let seqLoadedFor = $state<string | null>(null);
 
   // Engine state mirrors SoundPlayer.svelte's lifecycle.
   let engineState = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
@@ -134,6 +138,7 @@
 
   async function loadIntoSequencer(restoreTime = 0): Promise<void> {
     if (!seq || !loaded) return;
+    seqLoadedFor = null;
     const ps = presets;
     const merged = buildMappings(loaded.voicegroup, overrides, ps);
     const muted = mutedSlots;
@@ -160,6 +165,7 @@
     seq.loopCount = loopOn ? Number.POSITIVE_INFINITY : 0;
     duration = seq.duration;
     if (restoreTime > 0) seq.currentTime = Math.min(restoreTime, seq.duration);
+    seqLoadedFor = loaded.songId;
     if (wasPlaying) {
       seq.play();
       isPlaying = true;
@@ -218,16 +224,31 @@
     mutedSlots = new Set();
     overrides = loadOverrides(vgHash);
     warnings = vg.warnings.slice();
-    if (engineState !== 'ready') await initEngine();
-    if (engineState === 'ready' && ctx?.state === 'suspended') await ctx.resume();
     isPlaying = false;
     currentTime = 0;
-    await loadIntoSequencer();
+    duration = 0;
+    seqLoadedFor = null;
+    // If the engine is already running (because the user has played at
+    // least once and is just switching fixtures), reload immediately so
+    // the new song is ready to play. Otherwise defer to the first Play
+    // click, when we'll have a real user gesture to resume the
+    // AudioContext — loading a song while the context is suspended makes
+    // the worklet treat it as already-ended and Play silently no-ops.
+    if (engineState === 'ready' && ctx?.state === 'running') {
+      await loadIntoSequencer();
+    }
   }
 
-  function play(): void {
-    if (!seq || !ctx) return;
-    if (ctx.state === 'suspended') void ctx.resume();
+  async function play(): Promise<void> {
+    if (!loaded) return;
+    // Lazy engine init on first user gesture. Creating the AudioContext
+    // before a click leaves it suspended, and any song loaded into the
+    // sequencer while suspended is treated as already-ended — so the
+    // first Play would blink to Pause and back to Play with no audio.
+    if (engineState !== 'ready') await initEngine();
+    if (!ctx || !seq) return;
+    if (ctx.state === 'suspended') await ctx.resume();
+    if (seqLoadedFor !== loaded.songId) await loadIntoSequencer();
     seq.play();
     isPlaying = true;
   }
@@ -237,7 +258,7 @@
   }
   function togglePlay(): void {
     if (isPlaying) pause();
-    else play();
+    else void play();
   }
   function seek(t: number): void {
     if (!seq) return;
