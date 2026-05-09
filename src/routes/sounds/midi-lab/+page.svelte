@@ -44,6 +44,16 @@
       url: 'https://cdn.hexhive.app/soundfonts/GMGSx-zeak-Fire-Red.sf2',
     },
     {
+      id: 'gameboy-gm-cynthia',
+      label: 'Game Boy GM — Pokémon Gen 1+2 (CynthiaCelestic)',
+      url: 'https://cdn.hexhive.app/soundfonts/Gameboy-GM-CynthiaCelestic.sf2',
+    },
+    {
+      id: 'gameboy-gm-stgiga',
+      label: 'Game Boy GM — Pokémon Gen 1+2 (stgiga fixed)',
+      url: 'https://cdn.hexhive.app/soundfonts/Gameboy-GM-stgiga-fixed.sf2',
+    },
+    {
       id: 'gus',
       label: 'GeneralUser GS',
       url: 'https://cdn.hexhive.app/soundfonts/GeneralUser-GS.sf2',
@@ -680,7 +690,7 @@
         <div class="relative flex items-center gap-3">
           <Button
             onclick={togglePlay}
-            disabled={engineState !== 'ready'}
+            disabled={engineState === 'loading' || engineState === 'error' || !loaded}
             size="sm"
             variant="outline"
             class="border-emerald-500/50 text-emerald-200 hover:bg-emerald-500/10"

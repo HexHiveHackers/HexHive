@@ -73,3 +73,6 @@ tramp
 .netlify/
 
 .wrangler/
+
+# Playwright MCP scratch state
+.playwright-mcp/

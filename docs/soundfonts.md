@@ -6,21 +6,31 @@ Hashes (sha256 + md5) are recorded so we can detect duplicates across mirrors, v
 
 ## Status snapshot
 
-| R2 file | Original filename | Source URL recorded? |
-|---|---|---|
-| `Pokemon-FireRed-LeafGreen-VGK.sf2` | `Pokemon FireRed and LeafGreen.sf2` | ✅ — musical-artifacts #8297 by VideoGameKid |
-| `Pok_mon_GBA.sf2` | `Pok_mon_GBA.sf2` | ✅ — musical-artifacts #7166 by Braedon Mills (CC-BY 3.0) |
-| `GeneralUser-GS.sf2` | `GeneralUser GS v<version>.sf2` | ✅ |
-| `Pokemon-Emerald-Updated-2025-08-29.sf2` | `Pokemon Emerald Soundfont (Updated August 29, 2025).sf2` | ✅ |
-| `Pokemon-RSE-v2.0-unofficial.sf2` | `Pokemon_RSE_v2.0__Unofficial_Update_.sf2` | ✅ |
-| `Pokemon-Emerald-Actual.sf2` | `Pokemon Emerald Soundfont (Actual).sf2` | ✅ |
-| `Pokemon-FireRed-LeafGreen-0ADSR.sf2` | `(0 ADSR) Pokemon FireRed and LeafGreen.sf2` | ✅ — bundled with VGK in #8297 |
-| `archives/musical-artifacts-8297-Pokemon_FireRed_and_LeafGreen_Soundfont.zip` | `Pokemon_FireRed_and_LeafGreen_Soundfont.zip` | ✅ — full source archive of #8297 (mirror) |
-| `archives/musical-artifacts-1150-PKMN_FRLG.zip` | `PKMN_FRLG.zip` | ✅ — musical-artifacts #1150 by Exabyte U (mirror; 315 instrument SF2s + 60 FRLG MIDIs) |
-| `CATALOGUE.md` | this file | ✅ — mirrored to R2 |
-| `SOURCES.md` | `soundfont-sources.md` | ✅ — mirrored to R2 |
+| R2 file | Games / Gen | Type | Source |
+|---|---|---|---|
+| `Gameboy-GM-CynthiaCelestic.sf2` | Pokémon R/B/G/Y, G/S/C — **Gen 1 & 2** | GM (Game Boy / GBC) | musical-artifacts #924 (CynthiaCelestic + ASIA LUNAR + Moetsukiro; WTFPL 2.0) |
+| `Gameboy-GM-stgiga-fixed.sf2` | Pokémon R/B/G/Y, G/S/C — **Gen 1 & 2** | GM (Game Boy / GBC; polyphony-fix) | musical-artifacts #3246 (stgiga's polyphony-fix on top of #924; WTFPL 2.0) |
+| `Pokemon-FireRed-LeafGreen-VGK.sf2` | Pokémon FireRed / LeafGreen — **Gen 3 (GBA)** | Sappy/voicegroup-style rip | musical-artifacts #8297 (VideoGameKid; CC-BY) |
+| `Pokemon-FireRed-LeafGreen-0ADSR.sf2` | Pokémon FireRed / LeafGreen — **Gen 3 (GBA)** | Sappy rip, ADSR=0 variant | bundled with #8297 |
+| `Pokemon-Emerald-Updated-2025-08-29.sf2` | Pokémon Emerald — **Gen 3 (GBA)** | Sappy rip | MezmerKaiser via Mediafire (linked from #579) |
+| `Pokemon-Emerald-Actual.sf2` | Pokémon Emerald — **Gen 3 (GBA)** | Sappy rip | MezmerKaiser via Mediafire (linked from #579) |
+| `Pokemon-RSE-v2.0-unofficial.sf2` | Pokémon Ruby/Sapphire/Emerald — **Gen 3 (GBA)** | Sappy rip + drum-fix | musical-artifacts #579 (MezmerKaiser samples + IkaMusumeYiyaRoxie fix) |
+| `Pok_mon_GBA.sf2` | Pokémon RSE + FRLG — **Gen 3 (GBA)** | GM-flat (single SF2 across all 4) | musical-artifacts #7166 (Braedon Mills; CC-BY 3.0) |
+| `GMGSx-zeak-Fire-Red.sf2` | none Pokémon-specific (generic GM) | GM general bank | github.com/zeak6464/Fire-Red (Public Domain GMGSx by Awave Studio) |
+| `GeneralUser-GS.sf2` | none Pokémon-specific (generic GM) | GM general bank | schristiancollins.com (Christian Collins) |
+| `archives/musical-artifacts-8297-Pokemon_FireRed_and_LeafGreen_Soundfont.zip` | Gen 3 (FRLG) | source archive mirror | #8297 |
+| `archives/musical-artifacts-1150-PKMN_FRLG.zip` | Gen 3 (FRLG) | sample-pack + MIDIs mirror | musical-artifacts #1150 (Exabyte U) |
+| `CATALOGUE.md` | — | catalogue mirror | this file |
+| `SOURCES.md` | — | upstream-pages mirror | `soundfont-sources.md` |
 
 Full upstream descriptions (verbatim) live in [`soundfont-sources.md`](./soundfont-sources.md).
+
+### Generation legend (Pokémon)
+
+- **Gen 1**: Red, Blue, Yellow, Green — Game Boy (also playable on GBC).
+- **Gen 2**: Gold, Silver, Crystal — Game Boy / Game Boy Color.
+- **Gen 3**: Ruby, Sapphire, Emerald, FireRed, LeafGreen — Game Boy Advance (Sappy audio engine, voicegroup-driven).
+- **Gen 4+**: not yet covered. Add an entry here when we host one.
 
 ## Missing source URLs
 
@@ -28,8 +38,33 @@ Full upstream descriptions (verbatim) live in [`soundfont-sources.md`](./soundfo
 
 ## Hosted on `cdn.hexhive.app/soundfonts/`
 
+### Gameboy-GM-CynthiaCelestic.sf2 — 23,781,494 bytes (22.7 MB)
+- **R2 key**: `soundfonts/Gameboy-GM-CynthiaCelestic.sf2`
+- **Games / generation**: Pokémon Red, Blue, Yellow, Green (**Gen 1**) + Gold, Silver, Crystal (**Gen 2**) — Game Boy / Game Boy Color era. The SF2's `ICMT` reads "Pokémon R/B/G/Y & G/S/C Soundfont." literally.
+- **Type**: GM-laid-out general-MIDI bank derived from authentic Game Boy / GBC sample work.
+- **Original filename**: `Gameboy_GM_Soundfont_2_.SF2`
+- **Authors**: CynthiaCelestic (Rodolfo Ruiz-Velasco), derived from the non-GM works of Moetsukiro / ASIA LUNAR.
+- **Source URL**: https://musical-artifacts.com/artifacts/924 — direct https://musical-artifacts.com/artifacts/924/Gameboy_GM_Soundfont_2_.SF2
+- **License**: WTFPL 2.0 (Do What The Fuck You Want To Public License).
+- **Discovery**: https://www.reddit.com/r/soundfonts/comments/zo0510/is_there_such_a_thing_as_a_soundfont_for_the/
+- **sha256**: `2110158d111d01e823ba8961fa58a9952d4fa04a0cd4b9a7deb89e58dfae7fe0`
+- **md5**: `94ddad877c1e370771c82b308dbad193`
+
+### Gameboy-GM-stgiga-fixed.sf2 — 23,779,518 bytes (22.7 MB)
+- **R2 key**: `soundfonts/Gameboy-GM-stgiga-fixed.sf2`
+- **Games / generation**: Pokémon **Gen 1 & 2** (same as the source file — same `ICMT`).
+- **Type**: GM bank; polyphony-fix variant of #924 (Exclusive Class settings stripped so chords no longer cut each other off).
+- **Original filename**: `Gameboy_GM_Soundfont_2_FixTest.SF2.sf2` (verbatim — the double extension is from the upstream).
+- **Authors**: stgiga (the fix) on top of CynthiaCelestic + ASIALUNAR + Moetsukiro (the underlying samples).
+- **Source URL**: https://musical-artifacts.com/artifacts/3246 — direct https://musical-artifacts.com/artifacts/3246/Gameboy_GM_Soundfont_2_FixTest.SF2.sf2
+- **License**: WTFPL 2.0.
+- **Predecessor**: musical-artifacts #924.
+- **sha256**: `e1bf37750269c45c3dd41d6c01b81107cbdd7ba43921c1cf92d03af2917c2b0e`
+- **md5**: `cccacc407d22c63bc2c62e56b5b30cbc`
+
 ### Pokemon-FireRed-LeafGreen-VGK.sf2 — 7,329,446 bytes (7.0 MB)
 - **R2 key**: `soundfonts/Pokemon-FireRed-LeafGreen-VGK.sf2`
+- **Games / generation**: Pokémon FireRed / LeafGreen — **Gen 3 (GBA)**.
 - **Used by**: midi-lab default; SoundPlayer dropdown "FireRed/LeafGreen (VGK)" (default).
 - **Original filename**: `Pokemon FireRed and LeafGreen.sf2` (the `-VGK` suffix was our rename — turns out **`VGK` is the author's initials (VideoGameKid)**, not a soundfont line, so the suffix is actually accurate; bank `INAM` is `Pokemon FireRed & LeafGreen`).
 - **Author**: VideoGameKid (`IENG: VGK` in the SF2 metadata; matches their musical-artifacts username on #8297). Built with Polyphone, dated 2026-03-02.
@@ -42,6 +77,7 @@ Full upstream descriptions (verbatim) live in [`soundfont-sources.md`](./soundfo
 
 ### Pok_mon_GBA.sf2 — 924,998 bytes (904 KB)
 - **R2 key**: `soundfonts/Pok_mon_GBA.sf2`
+- **Games / generation**: Pokémon Ruby/Sapphire/Emerald + FireRed/LeafGreen — **Gen 3 (GBA)** (single SF2 covering all four; per `IPRD`).
 - **Used by**: SoundPlayer dropdown "Pokémon GBA (Mills)".
 - **Original filename**: `Pok_mon_GBA.sf2`. Bank `INAM`: `Pokémon Ruby/Sapphire/Emerald/FireRed/LeafGreen Soundfont` — a single SF2 covering all four GBA Pokémon games (44 presets).
 - **Author**: **Braedon Mills** (`IENG: Braedon Mills`, original `ICRD: 2025-11-29T00:54:12Z`, built with Polyphone). License: **CC-BY 3.0 Unported** per the artifact page.
@@ -54,6 +90,7 @@ Full upstream descriptions (verbatim) live in [`soundfont-sources.md`](./soundfo
 
 ### GeneralUser-GS.sf2 — 32,322,864 bytes (30.8 MB)
 - **R2 key**: `soundfonts/GeneralUser-GS.sf2`
+- **Games / generation**: not Pokémon-specific — generic GM/GS reference bank, useful as a "what does this MIDI sound like outside of any Pokémon-flavoured rendering" baseline.
 - **Used by**: SoundPlayer dropdown "GeneralUser GS".
 - **Provenance**: Christian Collins's _GeneralUser GS_ — widely-used GM/GS soundfont.
 - **Original filename**: typically `GeneralUser GS v<version>.sf2`. We renamed for the URL.
@@ -61,8 +98,19 @@ Full upstream descriptions (verbatim) live in [`soundfont-sources.md`](./soundfo
 - **sha256**: `c278464b823daf9c52106c0957f752817da0e52964817ff682fe3a8d2f8446ce`
 - **md5**: `1cc160a92fadb6a43eb1695563524982`
 
+### GMGSx-zeak-Fire-Red.sf2 — 4,146,440 bytes (4.0 MB)
+- **R2 key**: `soundfonts/GMGSx-zeak-Fire-Red.sf2`
+- **Games / generation**: not Pokémon-specific. Generic public-domain GM bank (Awave Studio's _GMGSx_), repackaged in zeak6464/Fire-Red and used by mkxp+fluidsynth to render the project's Audio/BGM .ogg files. Useful as the "ground-truth" bank for those specific MIDIs.
+- **Original filename**: `soundfont.sf2` (in-repo); SF2 `INAM` reveals the bank is `GMGSx.sf2`.
+- **Source URL**: https://github.com/zeak6464/Fire-Red/blob/main/soundfont.sf2 (in a Pokémon Essentials project).
+- **License**: Public Domain (per `ICOP`).
+- See [`docs/midi-corpus.md`](./midi-corpus.md) for the full mid+ogg pair catalogue and the lab's GM-mode fixture wiring.
+- **sha256**: `614ffa8eb1ac9bbb63fc97943dd67aa8fa706e2178b888777610c87e4e4b8cc8`
+- **md5**: `bd515a31167adaf6417b7cbbd08ef81c`
+
 ### Pokemon-Emerald-Updated-2025-08-29.sf2 — 59,574,844 bytes (57 MB)
 - **R2 key**: `soundfonts/Pokemon-Emerald-Updated-2025-08-29.sf2`
+- **Games / generation**: Pokémon Emerald — **Gen 3 (GBA)**.
 - **Original filename**: `Pokemon Emerald Soundfont (Updated August 29, 2025).sf2`
 - **Author**: **MezmerKaiser** (`ICOP: Ripped and assembled by MezmerKaiser`, channel https://www.youtube.com/@MezmerKaiser725). Embedded comment: "Please credit if used!".
 - **Source URL**: https://www.mediafire.com/file/ysbtegcf4tc6uxd/Pokemon_Emerald_Soundfont_%28Updated_April_20%2C_2021%29.sf2/file
@@ -73,6 +121,7 @@ Full upstream descriptions (verbatim) live in [`soundfont-sources.md`](./soundfo
 
 ### Pokemon-RSE-v2.0-unofficial.sf2 — 37,144,280 bytes (35.4 MB)
 - **R2 key**: `soundfonts/Pokemon-RSE-v2.0-unofficial.sf2`
+- **Games / generation**: Pokémon Ruby / Sapphire / Emerald — **Gen 3 (GBA)**. (Despite the "RSE" name the underlying samples by MezmerKaiser are described in #579's metadata as covering "Ruby/Sapphire/Emerald/FireRed and LeafGreen".)
 - **Original filename**: `Pokemon_RSE_v2.0__Unofficial_Update_.sf2`
 - **Authors** (`ICOP` / `ICMT` in the SF2): _"Samples Ripped By **MezmerKaiser**, Unoficial Update made by **IkaMusumeYiyaRoxie**"_; copyright `(c) 2011-2015 MezmerKaiser, Pokémon (C) Nintendo, Game Freak, The Pokemon Company. (C) 2018 IkaMusumeYiyaRoxie`. The unofficial update fixed drum-kit preset placement (moved to bank 128). Embedded metadata identifies IkaMusumeYiyaRoxie as the otherwise-unnamed re-uploader on artifact #579.
 - **Source URL**: https://musical-artifacts.com/artifacts/579/Pokemon_RSE_v2.0__Unofficial_Update_.sf2
@@ -83,6 +132,7 @@ Full upstream descriptions (verbatim) live in [`soundfont-sources.md`](./soundfo
 
 ### Pokemon-Emerald-Actual.sf2 — 25,903,042 bytes (24.7 MB)
 - **R2 key**: `soundfonts/Pokemon-Emerald-Actual.sf2`
+- **Games / generation**: Pokémon Emerald — **Gen 3 (GBA)**.
 - **Original filename**: `Pokemon Emerald Soundfont (Actual).sf2`
 - **Original SF2 author**: MezmerKaiser (channel https://www.youtube.com/@MezmerKaiser725, video https://www.youtube.com/watch?v=USc2yLnBuRo "Pokémon Emerald Soundfont Download").
 - **Source URL**: https://www.mediafire.com/file/d94xrp62alnaai2/Pokemon+Emerald+Soundfont+%28Actual%29.sf2 (linked as a "Mirror" from musical-artifacts #579).
@@ -93,6 +143,7 @@ Full upstream descriptions (verbatim) live in [`soundfont-sources.md`](./soundfo
 
 ### Pokemon-FireRed-LeafGreen-0ADSR.sf2 — 7,327,300 bytes (7.0 MB)
 - **R2 key**: `soundfonts/Pokemon-FireRed-LeafGreen-0ADSR.sf2`
+- **Games / generation**: Pokémon FireRed / LeafGreen — **Gen 3 (GBA)** (envelope-stripped variant of the regular VGK file).
 - **Used by**: not yet wired into a dropdown — kept on R2 as a companion to the regular VGK file. Useful in DAW workflows where the envelope curve is more of a hindrance than a help.
 - **Original filename**: `(0 ADSR) Pokemon FireRed and LeafGreen.sf2`.
 - **Author**: VideoGameKid (same as the regular VGK).

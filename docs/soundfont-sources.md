@@ -124,6 +124,101 @@ ISFT: Polyphone
 
 ---
 
+## musical-artifacts.com / artifact #924
+
+> **Source of**: R2 `Gameboy-GM-CynthiaCelestic.sf2`. **Games / generation**: Pokémon **Gen 1 & 2** (R/B/G/Y, G/S/C; Game Boy / Game Boy Color).
+
+- **URL**: https://musical-artifacts.com/artifacts/924
+- **Direct download**: https://musical-artifacts.com/artifacts/924/Gameboy_GM_Soundfont_2_.SF2 (22.7 MB)
+- **Title**: Gameboy GM Soundfont
+- **Authors**: CynthiaCelestic + ASIALUNAR + Moetsukiro
+- **Uploaded**: Dec 14, 2019 (last updated May 19, 2024)
+- **License**: **Do What The Fuck You Want To Public License 2.0** (WTFPL 2.0)
+- **Tags**: qsynth, fluidsynth, fantasia, qsampler, linuxsampler, video game, gm, gameboy, soundfont, sf2
+- **Likes**: 9 ("This is cool!"), Downloads: 21,503 at fetch time
+- **Discovered via**: https://www.reddit.com/r/soundfonts/comments/zo0510/is_there_such_a_thing_as_a_soundfont_for_the/
+
+### Description (verbatim)
+
+> A GM gameboy soundfont by CynthiaClestic derived from the non-gm works of Moetsukiro/ASIA LUNAR.
+
+### Embedded SF2 metadata (RIFF INFO)
+
+```
+INAM: Gameboy GM Soundfont
+ICRD: Sunday 24 July 2016, 17:03:38
+IENG: CynthiaCelestic (Rodolfo Ruiz-Velasco)
+ICMT: Pokémon R/B/G/Y & G/S/C Soundfont.
+ISFT: Polyphone
+```
+
+→ confirms the bank covers Pokémon Gen 1 (R/B/G/Y) and Gen 2 (G/S/C).
+
+### File-content listing (first ~60 of many presets)
+
+```
+000-000 SQ1:1 Down7 Mod1
+000-001 SQ1:1 Down7 Mod2
+000-002 SQ1:3 Down7 Mod1
+000-003 SQ1:3 Down7 Mod2
+000-004 SQ1:7 Down7 Mod1
+000-005 SQ1:7 Down7 Mod2
+000-008 Celesta
+000-009 Glockenspiel
+000-010 Music Box
+000-011 Vibraphone
+000-012 Marimba
+000-013 Xylophone
+000-014 Tubular Bell
+000-015 Dulcimer
+000-016 VRC6 SQ 8\16
+…
+000-024 SCC Guitar1
+…
+000-032 SCC Bass
+…
+000-040 SCC Strings1
+…
+000-056 SCC Brass1
+…
+```
+
+(SQ1 = Game Boy pulse-channel-1 emulations; VRC6 = Famicom expansion-chip square; SCC = Konami Sound Custom Chip — a chiptune-multichip-flavoured GM bank.)
+
+---
+
+## musical-artifacts.com / artifact #3246
+
+> **Source of**: R2 `Gameboy-GM-stgiga-fixed.sf2`. **Games / generation**: Pokémon **Gen 1 & 2** (same as #924; same `ICMT`).
+
+- **URL**: https://musical-artifacts.com/artifacts/3246
+- **Direct download**: https://musical-artifacts.com/artifacts/3246/Gameboy_GM_Soundfont_2_FixTest.SF2.sf2 (22.7 MB)
+- **Title**: Gameboy GM SoundFont (Fixed)
+- **Authors**: stgiga (the polyphony fix) + CynthiaCelestic + ASIALUNAR + Moetsukiro (the underlying samples)
+- **Uploaded**: Sep 26, 2023
+- **License**: **WTFPL 2.0**
+- **Tags**: general midi, general mid, gm bank, gm, gm1, sf2, emu soundfont
+- **Likes**: 13 ("This is cool!"), Downloads: 17,820 at fetch time
+- **More info**: https://musical-artifacts.com/artifacts/924 (canonical predecessor)
+
+### Description (verbatim)
+
+> I'm stgiga, and as for this SoundFont, someone on Reddit asked me to remove the Exclusive Class settings on this bank to allow proper polyphony so I did. The pitch limits are hard to fix because some regions only play on certain pitches, in a segmented way, and while I COULD completely remove pitch limits, god forbid your ears. Even the original is kind of loud. (The JummBox bank, with some exceptions, isn't, and unlike this SoundFont or my Famicom Multichip bank, is compatible with OpenMPT.)
+
+### Embedded SF2 metadata (RIFF INFO)
+
+```
+INAM: Gameboy GM Soundfont
+ICRD: Sunday 24 July 2016, 17:03:38
+IENG: CynthiaCelestic (Rodolfo Ruiz-Velasco)
+ICMT: Pokémon R/B/G/Y & G/S/C Soundfont.
+ISFT: Polyphone
+```
+
+→ ICRD/IENG/ICMT are inherited from #924 (stgiga didn't rewrite the INFO chunk; only the SFGEN-level Exclusive Class data changed).
+
+---
+
 ## musical-artifacts.com / artifact #7166
 
 > **Source of**: R2 `Pok_mon_GBA.sf2`.
