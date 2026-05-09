@@ -9,7 +9,7 @@ Hashes (sha256 + md5) are recorded so we can detect duplicates across mirrors, v
 | R2 file | Original filename | Source URL recorded? |
 |---|---|---|
 | `Pokemon-FireRed-LeafGreen-VGK.sf2` | `Pokemon FireRed and LeafGreen.sf2` | ✅ — musical-artifacts #8297 by VideoGameKid |
-| `Pok_mon_GBA.sf2` | `Pok_mon_GBA.sf2` | ❌ — see "Missing source URLs" |
+| `Pok_mon_GBA.sf2` | `Pok_mon_GBA.sf2` | ✅ — musical-artifacts #7166 by Braedon Mills (CC-BY 3.0) |
 | `GeneralUser-GS.sf2` | `GeneralUser GS v<version>.sf2` | ✅ |
 | `Pokemon-Emerald-Updated-2025-08-29.sf2` | `Pokemon Emerald Soundfont (Updated August 29, 2025).sf2` | ✅ |
 | `Pokemon-RSE-v2.0-unofficial.sf2` | `Pokemon_RSE_v2.0__Unofficial_Update_.sf2` | ✅ |
@@ -21,18 +21,18 @@ Full upstream descriptions (verbatim) live in [`soundfont-sources.md`](./soundfo
 
 ## Missing source URLs
 
-Only one item still without a confirmed origin URL:
-
-1. **`Pok_mon_GBA.sf2`** (904 KB, 44 GM-named presets including "Steel String Guitar"). Latin-1-mangled filename (`_` = stripped "é") is musical-artifacts-export style, but it didn't surface on a `?q=Pokemon` browse and it doesn't match #2322 by hash. Not yet found. Probably worth checking other community indexes (VGM rips, GM-flat SF2 collections, Mills's site if reachable).
+✅ **None as of 2026-05-09.** Every R2-hosted soundfont and every local-only file under `~/Downloads/PokeSoundfonts/` has a confirmed origin URL recorded above.
 
 ## Hosted on `cdn.hexhive.app/soundfonts/`
 
 ### Pokemon-FireRed-LeafGreen-VGK.sf2 — 7,329,446 bytes (7.0 MB)
 - **R2 key**: `soundfonts/Pokemon-FireRed-LeafGreen-VGK.sf2`
 - **Used by**: midi-lab default; SoundPlayer dropdown "FireRed/LeafGreen (VGK)" (default).
-- **Original filename**: `Pokemon FireRed and LeafGreen.sf2` (the `-VGK` suffix and `Pokemon-FireRed-LeafGreen-` prefix were our renames; "VGK" was a guess that turned out wrong). Keep the R2 key for stability — the canonical filename is the one in the source archive.
-- **Author**: VideoGameKid.
-- **Source URL**: https://musical-artifacts.com/artifacts/8297 (direct archive: https://musical-artifacts.com/artifacts/8297/Pokemon_FireRed_and_LeafGreen_Soundfont.zip). Released as a 15 MB zip containing the 7 MB SF2, the 7 MB `(0 ADSR)` variant, and a status PNG. Ripped using GBAMusRipper, double-checked against the VGM and Pokémon Sound Sources. Banks: 0=general+GB presets, 1=closed hi-hat, 2=SFX, 3=unused, 128=drumkits. License: CC-BY (per the page footer link). Full description in [`soundfont-sources.md`](./soundfont-sources.md).
+- **Original filename**: `Pokemon FireRed and LeafGreen.sf2` (the `-VGK` suffix was our rename — turns out **`VGK` is the author's initials (VideoGameKid)**, not a soundfont line, so the suffix is actually accurate; bank `INAM` is `Pokemon FireRed & LeafGreen`).
+- **Author**: VideoGameKid (`IENG: VGK` in the SF2 metadata; matches their musical-artifacts username on #8297). Built with Polyphone, dated 2026-03-02.
+- **Composer credits** (`ICOP`): Go Ichinose & Junichi Masuda — Game Freak / The Pokémon Company / Nintendo.
+- **Source URL**: https://musical-artifacts.com/artifacts/8297 (direct archive: https://musical-artifacts.com/artifacts/8297/Pokemon_FireRed_and_LeafGreen_Soundfont.zip). Released as a 15 MB zip containing the 7 MB SF2, the 7 MB `(0 ADSR)` variant, and a status PNG. Ripped using GBAMusRipper, double-checked against the VGM and Pokémon Sound Sources. Banks: 0=general+GB presets, 1=closed hi-hat, 2=SFX, 3=unused, 128=drumkits. License: CC-BY (per the page footer link).
+- Full embedded metadata + page description in [`soundfont-sources.md`](./soundfont-sources.md).
 - **sha256**: `c9430711e41a0a96293b64d0ef76061d77ca3d695d8d092ef705d023c3715ac1`
 - **md5**: `c86d3bb9d008d963766ca6c6aa9a8afb`
 - **Aliases by hash**: `~/Downloads/PokeSoundfonts/Pokemon_FireRed_and_LeafGreen_Soundfont/Pokemon FireRed and LeafGreen.sf2` (byte-identical).
@@ -40,11 +40,14 @@ Only one item still without a confirmed origin URL:
 ### Pok_mon_GBA.sf2 — 924,998 bytes (904 KB)
 - **R2 key**: `soundfonts/Pok_mon_GBA.sf2`
 - **Used by**: SoundPlayer dropdown "Pokémon GBA (Mills)".
-- **Original filename**: `Pok_mon_GBA.sf2` (the underscore is a Latin-1-mangled "é"; canonical title is "Pokémon GBA"). Filename style is characteristic of musical-artifacts.com.
-- **Source URL**: _unknown — TODO_ (likely musical-artifacts.com; verify and back-fill).
-- **sha256**: `3f865e4c9261a2464cb4529b364e2ab84ccf208900d17ef7cd5d62750e00a1d3`
-- **md5**: `575c22794ef35c55287949e1758cbc21`
-- **Aliases by hash**: `~/Downloads/PokeSoundfonts/Pok_mon_GBA.sf2` (byte-identical).
+- **Original filename**: `Pok_mon_GBA.sf2`. Bank `INAM`: `Pokémon Ruby/Sapphire/Emerald/FireRed/LeafGreen Soundfont` — a single SF2 covering all four GBA Pokémon games (44 presets).
+- **Author**: **Braedon Mills** (`IENG: Braedon Mills`, original `ICRD: 2025-11-29T00:54:12Z`, built with Polyphone). License: **CC-BY 3.0 Unported** per the artifact page.
+- **Source URL**: https://musical-artifacts.com/artifacts/7166 (direct: https://musical-artifacts.com/artifacts/7166/Pok_mon_GBA.sf2). Uploaded by Braedon Mills himself on Oct 10, 2025; the file is updated occasionally — last updated 2026-05-09 swapped program 62 from "Synth Brass" to "Charang". Re-fetch when the page's "last updated" advances.
+- **sha256** (current revision, on R2): `059acfa8e37eb0180ec4ad674439e7fe9c13746fd84f6d260e27fe8ddf430b31`
+- **md5**: `54df8bc2a92acdf611f80ed17e762f88`
+- **Prior revisions seen**:
+  - sha256 `3f865e4c9261a2464cb4529b364e2ab84ccf208900d17ef7cd5d62750e00a1d3` / md5 `575c22794ef35c55287949e1758cbc21` — pre-2026-05-09; preset 62 was "Synth Brass" instead of program 84 "Charang".
+- **Aliases by hash**: `~/Downloads/PokeSoundfonts/Pok_mon_GBA.sf2` matches the prior-revision hash; redownload from #7166 to refresh.
 
 ### GeneralUser-GS.sf2 — 32,322,864 bytes (30.8 MB)
 - **R2 key**: `soundfonts/GeneralUser-GS.sf2`
@@ -58,6 +61,7 @@ Only one item still without a confirmed origin URL:
 ### Pokemon-Emerald-Updated-2025-08-29.sf2 — 59,574,844 bytes (57 MB)
 - **R2 key**: `soundfonts/Pokemon-Emerald-Updated-2025-08-29.sf2`
 - **Original filename**: `Pokemon Emerald Soundfont (Updated August 29, 2025).sf2`
+- **Author**: **MezmerKaiser** (`ICOP: Ripped and assembled by MezmerKaiser`, channel https://www.youtube.com/@MezmerKaiser725). Embedded comment: "Please credit if used!".
 - **Source URL**: https://www.mediafire.com/file/ysbtegcf4tc6uxd/Pokemon_Emerald_Soundfont_%28Updated_April_20%2C_2021%29.sf2/file
 - **Note**: Mediafire URL slug still says "April 20, 2021" but the file behind it was rotated. Always re-check the hash if re-fetched.
 - **Discovery**: Reddit https://www.reddit.com/r/PokemonRMXP/comments/14dctyr/ → musical-artifacts.com #579 → YouTube https://www.youtube.com/watch?v=USc2yLnBuRo (description carries the Mediafire link).
@@ -67,7 +71,7 @@ Only one item still without a confirmed origin URL:
 ### Pokemon-RSE-v2.0-unofficial.sf2 — 37,144,280 bytes (35.4 MB)
 - **R2 key**: `soundfonts/Pokemon-RSE-v2.0-unofficial.sf2`
 - **Original filename**: `Pokemon_RSE_v2.0__Unofficial_Update_.sf2`
-- **Original SF2 author**: MezmerKaiser. Re-uploaded to musical-artifacts (with the drum-kit preset moved to bank 128) by an unknown user, May 21 2018, last updated May 19 2024.
+- **Authors** (`ICOP` / `ICMT` in the SF2): _"Samples Ripped By **MezmerKaiser**, Unoficial Update made by **IkaMusumeYiyaRoxie**"_; copyright `(c) 2011-2015 MezmerKaiser, Pokémon (C) Nintendo, Game Freak, The Pokemon Company. (C) 2018 IkaMusumeYiyaRoxie`. The unofficial update fixed drum-kit preset placement (moved to bank 128). Embedded metadata identifies IkaMusumeYiyaRoxie as the otherwise-unnamed re-uploader on artifact #579.
 - **Source URL**: https://musical-artifacts.com/artifacts/579/Pokemon_RSE_v2.0__Unofficial_Update_.sf2
 - **Catalogue**: https://musical-artifacts.com/artifacts/579
 - **License**: Licensing Gray Area / Non-free.

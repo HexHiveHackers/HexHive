@@ -1,6 +1,84 @@
 # Soundfont source records
 
-Verbatim copies of the upstream pages we sourced our soundfonts from, captured 2026-05-09. Kept separately from `soundfonts.md` so the catalogue stays scannable while still preserving the original author's words. When the upstream page rotates a Mediafire URL, changes the description, or disappears, this file is the fallback record.
+Verbatim copies of the upstream pages we sourced our soundfonts from + the metadata embedded inside each SF2's RIFF `INFO` chunk, captured 2026-05-09. Kept separately from `soundfonts.md` so the catalogue stays scannable while still preserving the original author's words. When the upstream page rotates a Mediafire URL, changes the description, or disappears, this file is the fallback record.
+
+## Embedded SF2 metadata (RIFF INFO)
+
+Each SoundFont 2 file carries an `INFO` chunk with author, date, copyright, and free-text comment fields. These are the canonical "in-band readme" — extracted with a small Python helper (`/tmp/sf2info.py`) and reproduced verbatim below for every file we touch.
+
+### `Pokemon FireRed and LeafGreen.sf2` (R2: `Pokemon-FireRed-LeafGreen-VGK.sf2`)
+
+```
+ifil (SoundFont version): 2.01
+isng (Target sound engine): EMU8000
+INAM (Bank name): Pokemon FireRed & LeafGreen
+ICRD (Creation date): Monday 2 March 2026, 17:22:24
+IENG (Author/Engineer): VGK
+IPRD (Product/Target): Pokemon FireRed & LeafGreen - January 29, 2004 (GBA)
+ICOP (Copyright): Go Ichinose & Junichi Masuda (Composers) - Game Freak (Developer), The Pokémon Company & Nintendo (Publisher)
+ISFT (Software used): Polyphone
+```
+
+→ confirms **VGK = VideoGameKid** (the musical-artifacts username on #8297).
+
+### `(0 ADSR) Pokemon FireRed and LeafGreen.sf2`
+
+```
+INAM: (0 ADSR) Pokemon FireRed & LeafGreen
+ICRD: Monday 2 March 2026, 17:22:24
+IENG: VGK
+IPRD: Pokemon FireRed & LeafGreen - January 29, 2004 (Nintendo GBA)
+ICOP: Go Ichinose & Junichi Masuda (Composers) - Game Freak (Developer), The Pokémon Company & Nintendo (Publisher)
+ICMT (Comments): Version with 0 ADSR
+ISFT: Polyphone
+```
+
+### `Pokemon Emerald Soundfont (Updated August 29, 2025).sf2` (R2: `Pokemon-Emerald-Updated-2025-08-29.sf2`)
+
+```
+INAM: Pokemon Emerald Soundfont (Updated Aug 29, 2025)
+IENG: Nintendo Game Boy Advance SoundFont
+IPRD: Pokemon Emerald Soundfont
+ICOP: Ripped and assembled by MezmerKaiser
+ICMT: Please credit if used!
+ISFT: Polyphone
+```
+
+### `Pokemon_RSE_v2.0__Unofficial_Update_.sf2` (R2: `Pokemon-RSE-v2.0-unofficial.sf2`)
+
+```
+INAM: Pokemon RSE v2.0 (Unofficial Update).sf2
+IENG: MezmerKaiser
+ICOP: (c) 2011-2015 MezmerKaiser, Pokémon (C) Nintendo, Game Freak, The Pokemon Company. (C) 2018 IkaMusumeYiyaRoxie
+ICMT: Samples Ripped By MezmerKaiser, Unoficial Update made by IkaMusumeYiyaRoxie
+ISFT: Polyphone
+```
+
+→ identifies **IkaMusumeYiyaRoxie** as the unofficial-update author (and the unnamed re-uploader on artifact #579).
+
+### `Pokemon Emerald Soundfont (Actual).sf2` (R2: `Pokemon-Emerald-Actual.sf2`)
+
+```
+INAM: Pokemon Emerald Soundfont
+IENG: Nintendo Game Boy Advance SoundFont
+IPRD: Pokemon Emerald Soundfont
+ICOP: Ripped and assembled by MezmerKaiser
+ICMT: Please credit if used
+ISFT: Polyphone
+```
+
+### `Pok_mon_GBA.sf2` (R2: same)
+
+```
+INAM: Pokémon Ruby/Sapphire/Emerald/FireRed/LeafGreen Soundfont
+ICRD: 2025-11-29T00:54:12Z
+IENG: Braedon Mills
+IPRD: Pokémon Ruby/Sapphire (2002); Pokémon FireRed/LeafGreen (2004); Pokémon Emerald (2004)
+ICOP: Nintendo
+ISFT: Polyphone
+```
+
+→ identifies **Braedon Mills** as the author (matches the existing "Pokémon GBA (Mills)" label in `SoundPlayer.svelte`). Single SF2 covers all four GBA Pokémon games. Source URL still TBD; created 2025-11-29 so it's quite recent.
 
 ---
 
@@ -43,6 +121,83 @@ Verbatim copies of the upstream pages we sourced our soundfonts from, captured 2
 > PS: As always, I do plan to compose something original using this soundfont. I'll be sure to link it once that happens and hope I didn't disappoint with this rip!
 >
 > Another PS: I do plan to compile Ruby/Sapphire's and Emerald's soundfont when I can since it's nice to have all of them fully ripped and see how slightly different they are via the instrument differences. Also, Emerald did add a few more instruments for its exclusive OST so even more reason. Tho it'll take a bit since I'll have to handle the unique voice clips that is found within its music files (it's not found in FRLG's files).
+
+---
+
+## musical-artifacts.com / artifact #7166
+
+> **Source of**: R2 `Pok_mon_GBA.sf2`.
+
+- **URL**: https://musical-artifacts.com/artifacts/7166
+- **Direct download**: https://musical-artifacts.com/artifacts/7166/Pok_mon_GBA.sf2 (903 KB)
+- **Title**: Pokémon Ruby/Sapphire/Emerald/FireRed/LeafGreen Soundfont
+- **Author**: Braedon Mills (uploaded by the author themselves)
+- **Uploaded**: Oct 10, 2025 (last updated May 09, 2026)
+- **License**: **Creative Commons Attribution 3.0 Unported** ("Has to give attribution")
+- **Tags**: qsynth, fluidsynth, fantasia, qsampler, linuxsampler, sf2
+- **Likes**: 3 ("This is cool!"), Downloads: 1,200 at fetch time
+
+### Description (verbatim)
+
+> (No description available)
+
+### File-content listing for `Pok_mon_GBA.sf2` (44 presets)
+
+```
+000-000 Grand Piano
+000-004 Electric Piano 1
+000-005 Electric Piano 2
+000-009 Glockenspiel
+000-010 Music Box
+000-013 Xylophone
+000-014 Tubular Bells
+000-015 Dulcimer
+000-017 Percussive Organ
+000-018 Rock Organ
+000-019 Church Organ
+000-020 Reed Organ
+000-021 Accordion
+000-024 Nylon String Guitar
+000-025 Steel String Guitar
+000-029 Overdriven Guitar
+000-030 Distortion Guitar
+000-031 Guitar Harmonics
+000-032 Acoustic Bass
+000-033 Fingered Bass
+000-035 Fretless Bass
+000-036 Slap Bass 1
+000-038 Synth Bass 1
+000-039 Synth Bass 2
+000-045 Pizzicato Strings
+000-046 Harp
+000-047 Timpani
+000-048 Strings
+000-052 Choir Aahs
+000-056 Trumpet
+000-058 Tuba
+000-060 French Horn
+000-068 Oboe
+000-069 English Horn
+000-073 Flute
+000-075 Pan Flute
+000-077 Shakuhachi
+000-078 Whistle
+000-080 Square
+000-084 Charang
+000-090 Polysynth
+000-106 Shamisen
+000-107 Koto
+128-000 Standard Drum Kit
+```
+
+### Revision notes
+
+The file at #7166 has been re-saved by the author at least once. The 2026-05-09 update swapped program 62 ("Synth Brass" in the prior revision) for program 84 ("Charang"). Both revisions are 924,998 bytes. Hashes seen so far:
+
+- 2025-11-29 .. ≤2026-05-08 → sha256 `3f865e4c…`, md5 `575c2279…`
+- 2026-05-09 → sha256 `059acfa8…` (current on R2)
+
+If the page's "last updated" advances again, fetch + re-hash + re-upload to R2 and append the new sha256 here.
 
 ---
 
