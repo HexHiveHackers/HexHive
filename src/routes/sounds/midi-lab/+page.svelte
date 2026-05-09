@@ -148,7 +148,9 @@
     gm: 'GM',
   };
   const TONE_STRIPE: Record<Tone, string> = {
-    orange: 'bg-orange-500/80',
+    // FRLG flame gradient — red → orange → amber. Most-hacked GBA target,
+    // earns the warmest stripe in the rack.
+    orange: 'bg-gradient-to-r from-red-500/80 via-orange-500/80 to-amber-400/80',
     emerald: 'bg-emerald-500/80',
     violet: 'bg-violet-500/80',
     fuchsia: 'bg-fuchsia-500/80',
@@ -264,6 +266,11 @@
   // Engine state mirrors SoundPlayer.svelte's lifecycle.
   let engineState = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
   let isPlaying = $state(false);
+  // Set when the user explicitly pauses; cleared when they explicitly play.
+  // Async loads (soundfont swap, fixture switch) capture isPlaying at the
+  // start and re-play after the load — without this latch, a pause click
+  // mid-load would be silently undone by the auto-resume.
+  let pauseLatch = $state(false);
   let currentTime = $state(0);
   let duration = $state(0);
   let ctx: AudioContext | null = null;
@@ -448,6 +455,13 @@
       if (synth) for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, false);
     }
     const wasPlaying = isPlaying;
+    // Pause for the duration of the load. Without this, the seq keeps
+    // emitting note-ons through the swap and you get a brief patch of
+    // wrong-instrument sound before the new song mounts.
+    if (wasPlaying) {
+      seq.pause();
+      isPlaying = false;
+    }
     const id = `${loaded.songId}-${Date.now()}`;
     const loadedP = awaitSongLoaded(seq, id);
     const buf = new ArrayBuffer(bytes.byteLength);
@@ -458,7 +472,10 @@
     duration = seq.duration;
     if (restoreTime > 0) seq.currentTime = Math.min(restoreTime, seq.duration);
     seqLoadedFor = loaded.songId;
-    if (wasPlaying) {
+    // Auto-resume only if the user didn't pause during the load. The
+    // `pauseLatch` flag is set by an explicit pause() click and cleared by
+    // play(), so it's a reliable read of the user's last-expressed intent.
+    if (wasPlaying && !pauseLatch) {
       seq.play();
       isPlaying = true;
     }
@@ -569,6 +586,7 @@
     if (engineState !== 'ready') await initEngine();
     if (!ctx || !seq) return;
     if (ctx.state === 'suspended') await ctx.resume();
+    pauseLatch = false;
     if (seqLoadedFor !== loaded.songId) await loadIntoSequencer();
     seq.play();
     isPlaying = true;
@@ -576,6 +594,7 @@
   function pause(): void {
     seq?.pause();
     isPlaying = false;
+    pauseLatch = true;
   }
   function togglePlay(): void {
     if (isPlaying) pause();
