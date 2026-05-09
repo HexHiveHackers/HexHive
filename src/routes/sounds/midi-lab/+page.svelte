@@ -39,6 +39,11 @@
       url: 'https://cdn.hexhive.app/soundfonts/Pokemon-Emerald-Actual.sf2',
     },
     {
+      id: 'gmgsx-zeak',
+      label: 'GMGSx (Pokémon Essentials / zeak6464)',
+      url: 'https://cdn.hexhive.app/soundfonts/GMGSx-zeak-Fire-Red.sf2',
+    },
+    {
       id: 'gus',
       label: 'GeneralUser GS',
       url: 'https://cdn.hexhive.app/soundfonts/GeneralUser-GS.sf2',
@@ -52,12 +57,17 @@
     songId: string;
     label: string;
     midiBytes: ArrayBuffer;
-    incText: string;
-    voicegroup: ParsedVoicegroup;
+    voicegroup: ParsedVoicegroup; // synthetic stub for GM-mode fixtures
     vgHash: string;
-    mp3Url: string | null;
+    refUrl: string | null;
+    refKind: 'mp3' | 'ogg' | null;
     usedSlots: ReadonlySet<number>;
     usedChannels: ReadonlySet<number>;
+    // 'sappy' fixtures get their MIDI rewritten through the voicegroup map.
+    // 'gm' fixtures are GM-format and play through whichever soundfont is
+    // selected — no remap, no mapping table.
+    kind: 'sappy' | 'gm';
+    referenceSoundfont: string | null; // for gm: which dropdown id was used to render the OGG
   };
 
   let loaded = $state<Loaded | null>(null);
@@ -215,27 +225,33 @@
   async function loadIntoSequencer(restoreTime = 0): Promise<void> {
     if (!seq || !loaded) return;
     seqLoadedFor = null;
-    const ps = presets;
-    const merged = buildMappings(loaded.voicegroup, overrides, ps);
-    const muted = mutedSlots;
-    const resolver = (slot: number, _ch: number) => merged[slot];
-    const rewritten = rewriteProgramChanges(
-      loaded.midiBytes,
-      resolver,
-      muted.size > 0 ? (slot) => muted.has(slot) : undefined,
-    );
-    // Drum kits live at SF2 bank 128 — a value MIDI's 7-bit CC0 can't
-    // transmit. Tell the synth which channels should be drum-mode so the
-    // program-change selects the kit instead of a melodic preset.
-    const drumChannels = detectDrumChannels(loaded.midiBytes, resolver);
-    if (synth) {
-      for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannels.has(ch));
+    let bytes: Uint8Array;
+    if (loaded.kind === 'sappy') {
+      const ps = presets;
+      const merged = buildMappings(loaded.voicegroup, overrides, ps);
+      const muted = mutedSlots;
+      const resolver = (slot: number, _ch: number) => merged[slot];
+      bytes = rewriteProgramChanges(loaded.midiBytes, resolver, muted.size > 0 ? (slot) => muted.has(slot) : undefined);
+      // Drum kits live at SF2 bank 128 — a value MIDI's 7-bit CC0 can't
+      // transmit. Tell the synth which channels should be drum-mode so the
+      // program-change selects the kit instead of a melodic preset.
+      const drumChannels = detectDrumChannels(loaded.midiBytes, resolver);
+      if (synth) {
+        for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannels.has(ch));
+      }
+    } else {
+      // GM fixture — pass the MIDI through verbatim. Reset every channel
+      // back to non-drum so a previous Sappy fixture's drum-mode flags
+      // don't leak; spessasynth will detect channel 9 as drums on its own
+      // per the GM spec.
+      bytes = new Uint8Array(loaded.midiBytes);
+      if (synth) for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, false);
     }
     const wasPlaying = isPlaying;
     const id = `${loaded.songId}-${Date.now()}`;
     const loadedP = awaitSongLoaded(seq, id);
-    const buf = new ArrayBuffer(rewritten.byteLength);
-    new Uint8Array(buf).set(rewritten);
+    const buf = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(buf).set(bytes);
     seq.loadNewSongList([{ binary: buf, fileName: id }]);
     await loadedP;
     seq.loopCount = loopOn ? Number.POSITIVE_INFINITY : 0;
@@ -255,13 +271,26 @@
   }
 
   async function loadFixture(f: (typeof data.fixtures)[number]): Promise<void> {
-    const [midiBuf, incText] = await Promise.all([
-      fetch(f.midiUrl).then((r) => r.arrayBuffer()),
-      fetch(f.voicegroupUrl).then((r) => r.text()),
-    ]);
-    await ingest(f.id, f.label, midiBuf, incText, f.mp3Url);
-    // Sync the URL so reload + share land on the same fixture without
-    // adding history entries on every flip.
+    const midiBuf = await fetch(f.midiUrl).then((r) => r.arrayBuffer());
+    if (f.kind === 'sappy') {
+      const incText = await fetch(f.voicegroupUrl).then((r) => r.text());
+      await ingest({ id: f.id, label: f.label, kind: 'sappy', midiBytes: midiBuf, incText, refUrl: f.refUrl });
+      // Sappy fixtures don't auto-switch the soundfont; the user picked it.
+    } else {
+      // GM fixture: the OGG was rendered through a known soundfont, so flip
+      // the dropdown to that one for a faithful baseline. The user can swap
+      // afterwards to compare other banks.
+      const target = SOUNDFONTS.find((s) => s.id === f.referenceSoundfont);
+      if (target && soundfont.id !== target.id) soundfont = target;
+      await ingest({
+        id: f.id,
+        label: f.label,
+        kind: 'gm',
+        midiBytes: midiBuf,
+        refUrl: f.refUrl,
+        referenceSoundfont: f.referenceSoundfont,
+      });
+    }
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       if (url.searchParams.get('song') !== f.id) {
@@ -271,27 +300,40 @@
     }
   }
 
-  async function ingest(
-    id: string,
-    label: string,
-    midiBytes: ArrayBuffer,
-    incText: string,
-    mp3Url: string | null,
-  ): Promise<void> {
-    const vg = parseVoicegroup(incText);
-    const vgHash = hashVoicegroup(vg);
-    const used = usedSlotsOf(midiBytes);
-    const usedCh = usedChannelsOf(midiBytes);
+  type IngestArgs =
+    | { id: string; label: string; kind: 'sappy'; midiBytes: ArrayBuffer; incText: string; refUrl: string | null }
+    | {
+        id: string;
+        label: string;
+        kind: 'gm';
+        midiBytes: ArrayBuffer;
+        refUrl: string | null;
+        referenceSoundfont: string;
+      };
+
+  async function ingest(args: IngestArgs): Promise<void> {
+    // GM-mode fixtures don't have a voicegroup; build a synthetic stub so
+    // the rest of the page (mute strip, scrub bar, etc.) keeps working.
+    const vg =
+      args.kind === 'sappy'
+        ? parseVoicegroup(args.incText)
+        : { name: 'gm', entries: [], warnings: [] satisfies string[] };
+    const vgHash = args.kind === 'sappy' ? hashVoicegroup(vg) : `gm:${args.id}`;
+    const used = args.kind === 'sappy' ? usedSlotsOf(args.midiBytes) : new Set<number>();
+    const usedCh = usedChannelsOf(args.midiBytes);
+    const refKind = args.refUrl?.endsWith('.ogg') ? 'ogg' : args.refUrl ? 'mp3' : null;
     loaded = {
-      songId: id,
-      label,
-      midiBytes,
-      incText,
-      voicegroup: vg,
+      songId: args.id,
+      label: args.label,
+      midiBytes: args.midiBytes,
+      voicegroup: vg as ParsedVoicegroup,
       vgHash,
-      mp3Url,
+      refUrl: args.refUrl,
+      refKind,
       usedSlots: used,
       usedChannels: usedCh,
+      kind: args.kind,
+      referenceSoundfont: args.kind === 'gm' ? args.referenceSoundfont : null,
     };
     // Reset mutes when switching songs and unmute on the synth (the previous
     // song may have left some channels muted on this synth instance).
@@ -439,7 +481,14 @@
     }
     const [midiBytes, incText] = await Promise.all([midi.arrayBuffer(), inc.text()]);
     const url = mp3 ? URL.createObjectURL(mp3) : null;
-    await ingest(midi.name.replace(/\.[^.]+$/, ''), midi.name, midiBytes, incText, url);
+    await ingest({
+      id: midi.name.replace(/\.[^.]+$/, ''),
+      label: midi.name,
+      kind: 'sappy',
+      midiBytes,
+      incText,
+      refUrl: url,
+    });
   }
 
   function fmtTime(t: number): string {
@@ -580,7 +629,12 @@
         <div class="text-sm text-muted-foreground">Now loaded</div>
         <div class="font-medium">{loaded.label}</div>
         <div class="text-xs text-muted-foreground font-mono">
-          voicegroup: {loaded.voicegroup.name} · {loaded.usedSlots.size} slots used · vgHash {loaded.vgHash}
+          {#if loaded.kind === 'sappy'}
+            voicegroup: {loaded.voicegroup.name} · {loaded.usedSlots.size} slots used · vgHash {loaded.vgHash}
+          {:else}
+            GM mode · no voicegroup remap · reference rendered through
+            <span class="text-foreground">{SOUNDFONTS.find((s) => s.id === loaded?.referenceSoundfont)?.label ?? loaded.referenceSoundfont}</span>
+          {/if}
         </div>
       </div>
 
@@ -695,7 +749,7 @@
       </div>
 
       <!-- ── TAPE PANEL ──────────────────────────────────────────── -->
-      {#if loaded.mp3Url}
+      {#if loaded.refUrl}
         <div
           class="relative rounded-2xl border-2 border-amber-500/30 bg-gradient-to-b from-amber-950/40 via-stone-950/60 to-stone-950/40 p-4 shadow-[inset_0_1px_0_rgba(245,158,11,0.15)]"
         >
@@ -708,13 +762,13 @@
           <!-- header chip -->
           <div class="relative mb-3 flex items-center justify-between gap-3">
             <span class="font-display text-[0.6rem] tracking-[0.25em] text-amber-300">
-              <span class="sr-only">Reference recording (vanilla MP3)</span>
-              <span aria-hidden="true">▷ FINAL · MP3 ◁</span>
+              <span class="sr-only">Reference recording ({loaded.refKind === 'ogg' ? 'GMGSx OGG render' : 'vanilla MP3'})</span>
+              <span aria-hidden="true">▷ FINAL · {loaded.refKind === 'ogg' ? 'OGG' : 'MP3'} ◁</span>
             </span>
             <span
               class="font-display text-[0.5rem] tracking-[0.3em] text-amber-600/70 rounded border border-amber-500/30 px-1.5 py-0.5"
             >
-              side a
+              {loaded.kind === 'gm' ? 'gm render' : 'side a'}
             </span>
           </div>
 
@@ -747,7 +801,7 @@
                 class="flex-1 sepia-[0.25] saturate-[0.85] contrast-[0.95]"
                 loop={loopOn}
               >
-                <source src={loaded.mp3Url} />
+                <source src={loaded.refUrl} />
                 <track kind="captions" />
               </audio>
             {/key}
@@ -786,6 +840,7 @@
       {/if}
     </section>
 
+    {#if loaded.kind === 'sappy'}
     <section class="border rounded-lg overflow-hidden">
       <header class="px-4 py-2 border-b flex items-center justify-between gap-3">
         <div class="text-xs uppercase tracking-wider text-muted-foreground">
@@ -858,6 +913,7 @@
         </ul>
       {/if}
     </section>
+    {/if}
   {:else}
     <div class="text-sm text-muted-foreground">
       Pick a fixture above or drop your own files to start. The synth uses the FRLG VGK SF2 self-hosted on

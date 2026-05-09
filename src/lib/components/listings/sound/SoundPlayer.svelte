@@ -56,6 +56,11 @@
       url: 'https://cdn.hexhive.app/soundfonts/Pokemon-Emerald-Actual.sf2',
     },
     {
+      id: 'gmgsx-zeak',
+      label: 'GMGSx (Pokémon Essentials / zeak6464)',
+      url: 'https://cdn.hexhive.app/soundfonts/GMGSx-zeak-Fire-Red.sf2',
+    },
+    {
       id: 'gus',
       label: 'GeneralUser GS',
       url: 'https://cdn.hexhive.app/soundfonts/GeneralUser-GS.sf2',
