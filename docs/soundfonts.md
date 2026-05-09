@@ -1,8 +1,8 @@
 # Soundfonts
 
-Inventory of every SF2 referenced by HexHive's MIDI playback — production `/sounds/[slug]` (`SoundPlayer.svelte`) and the `/sounds/midi-lab` page. SF2 binaries are **not** checked into the repo; they live in the Cloudflare R2 bucket served at `cdn.hexhive.app/soundfonts/`.
+Inventory of every SF2 referenced by HexHive's MIDI playback — production `/sounds/[slug]` (`SoundPlayer.svelte`) and the `/sounds/midi-lab` page. SF2 binaries are **not** checked into the repo; they live in the Cloudflare R2 bucket `hexhive-prod` under the `soundfonts/` prefix, served at `https://cdn.hexhive.app/soundfonts/<file>` via the bucket's custom domain mapping.
 
-Hashes are recorded so we can detect duplicates across mirrors, verify uploads, and identify a soundfont when a third-party redistributes it under a different filename.
+Hashes are recorded so we can detect duplicates across mirrors, verify uploads, and identify a soundfont when a third-party redistributes it under a different filename. Originally-distributed filenames are preserved here even when the R2 key was renamed for URL hygiene.
 
 ## Hosted on `cdn.hexhive.app/soundfonts/`
 
@@ -33,70 +33,60 @@ Hashes are recorded so we can detect duplicates across mirrors, verify uploads, 
 - **sha256**: `c278464b823daf9c52106c0957f752817da0e52964817ff682fe3a8d2f8446ce`
 - **md5**: `1cc160a92fadb6a43eb1695563524982`
 
-## Pending upload (in `~/Downloads/`)
-
-**Discovery chain**: Reddit thread → musical-artifacts.com → YouTube → Mediafire.
-
-- Reddit OP that surfaced all three: https://www.reddit.com/r/PokemonRMXP/comments/14dctyr/i_want_to_compose_music_for_my_game_using_the_gen/
-- Catalogue page: https://musical-artifacts.com/artifacts/579 (links the YouTube video under "More Info", which carries Mediafire URLs)
-- YouTube video (description has the up-to-date Mediafire link): https://www.youtube.com/watch?v=USc2yLnBuRo
-
-### Pokemon Emerald Soundfont (Updated August 29, 2025).sf2 — 59,574,844 bytes (57 MB)
-- **Proposed R2 key**: `soundfonts/Pokemon-Emerald-Updated-2025-08-29.sf2`
-- **Original filename (as downloaded)**: `Pokemon Emerald Soundfont (Updated August 29, 2025).sf2`
-- **Direct download**: https://www.mediafire.com/file/ysbtegcf4tc6uxd/Pokemon_Emerald_Soundfont_%28Updated_April_20%2C_2021%29.sf2/file
-- **Note**: Mediafire URL slug still says "April 20, 2021" but the file behind it was rotated; the YouTube description was updated 2026-08-29 (per `Last-Modified` on the local copy: 2026-05-09). Re-check by hash if re-fetched from Mediafire.
+### Pokemon-Emerald-Updated-2025-08-29.sf2 — 59,574,844 bytes (57 MB)
+- **R2 key**: `soundfonts/Pokemon-Emerald-Updated-2025-08-29.sf2`
+- **Original filename**: `Pokemon Emerald Soundfont (Updated August 29, 2025).sf2`
+- **Source URL**: https://www.mediafire.com/file/ysbtegcf4tc6uxd/Pokemon_Emerald_Soundfont_%28Updated_April_20%2C_2021%29.sf2/file
+- **Note**: Mediafire URL slug still says "April 20, 2021" but the file behind it was rotated. Always re-check the hash if re-fetched.
+- **Discovery**: Reddit https://www.reddit.com/r/PokemonRMXP/comments/14dctyr/ → musical-artifacts.com #579 → YouTube https://www.youtube.com/watch?v=USc2yLnBuRo (description carries the Mediafire link).
 - **sha256**: `cee9f4507a7ac3ad13947442177c9da9d37bae3aa5924049f02c892e36466ae5`
 - **md5**: `ae6e9105a9f72652da581d37a2b06b40`
 
-### Pokemon_RSE_v2.0__Unofficial_Update_.sf2 — 37,144,280 bytes (36 MB)
-- **Proposed R2 key**: `soundfonts/Pokemon-RSE-v2.0-unofficial.sf2`
-- **Original filename (as downloaded)**: `Pokemon_RSE_v2.0__Unofficial_Update_.sf2`
-- **Direct download**: https://musical-artifacts.com/artifacts/579/Pokemon_RSE_v2.0__Unofficial_Update_.sf2
+### Pokemon-RSE-v2.0-unofficial.sf2 — 37,144,280 bytes (35.4 MB)
+- **R2 key**: `soundfonts/Pokemon-RSE-v2.0-unofficial.sf2`
+- **Original filename**: `Pokemon_RSE_v2.0__Unofficial_Update_.sf2`
+- **Source URL**: https://musical-artifacts.com/artifacts/579/Pokemon_RSE_v2.0__Unofficial_Update_.sf2
 - **Catalogue**: https://musical-artifacts.com/artifacts/579
 - **sha256**: `f9e8c7b85f8bbd88e8c1f1c6d80356ecb81dd36e1542c999f0bee28fb2eb2ebc`
 - **md5**: `fab54240c3cabecda719c43ba02df6b3`
 
-### Pokemon Emerald Soundfont (Actual).sf2 — 25,903,042 bytes (25 MB)
-- **Proposed R2 key**: `soundfonts/Pokemon-Emerald-Actual.sf2`
-- **Original filename (as downloaded)**: `Pokemon Emerald Soundfont (Actual).sf2`
-- **Direct download**: https://www.mediafire.com/file/d94xrp62alnaai2/Pokemon+Emerald+Soundfont+%28Actual%29.sf2
-- **Catalogue**: https://musical-artifacts.com/artifacts/579 (linked under "More Info" / external).
+### Pokemon-Emerald-Actual.sf2 — 25,903,042 bytes (24.7 MB)
+- **R2 key**: `soundfonts/Pokemon-Emerald-Actual.sf2`
+- **Original filename**: `Pokemon Emerald Soundfont (Actual).sf2`
+- **Source URL**: https://www.mediafire.com/file/d94xrp62alnaai2/Pokemon+Emerald+Soundfont+%28Actual%29.sf2
+- **Catalogue**: https://musical-artifacts.com/artifacts/579 (under "More Info" / external links).
 - **sha256**: `252bb5c42cc28772c30280a8765dc3a0371601c604c56c2cb0845d195595b1c2`
 - **md5**: `a48f652eba5f77275e89690c2800ace5`
 
-## Upload commands
+## Uploading new soundfonts
 
-The R2 credentials for the public CDN bucket aren't in the local `.env` (it points to `hexhive-dev`). Run these against the CDN bucket — substitute your account id, access key, secret, and bucket name:
-
-```bash
-export AWS_ACCESS_KEY_ID=...
-export AWS_SECRET_ACCESS_KEY=...
-ENDPOINT="https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com"
-BUCKET="<cdn-bucket-name>"
-
-aws --endpoint-url "$ENDPOINT" s3 cp \
-  "$HOME/Downloads/Pokemon Emerald Soundfont (Updated August 29, 2025).sf2" \
-  "s3://$BUCKET/soundfonts/Pokemon-Emerald-Updated-2025-08-29.sf2" \
-  --content-type application/octet-stream
-
-aws --endpoint-url "$ENDPOINT" s3 cp \
-  "$HOME/Downloads/Pokemon_RSE_v2.0__Unofficial_Update_.sf2" \
-  "s3://$BUCKET/soundfonts/Pokemon-RSE-v2.0-unofficial.sf2" \
-  --content-type application/octet-stream
-
-aws --endpoint-url "$ENDPOINT" s3 cp \
-  "$HOME/Downloads/Pokemon Emerald Soundfont (Actual).sf2" \
-  "s3://$BUCKET/soundfonts/Pokemon-Emerald-Actual.sf2" \
-  --content-type application/octet-stream
-```
-
-Verify after upload:
+The CDN bucket is **`hexhive-prod`** (Cloudflare R2, custom-domain mapped to `cdn.hexhive.app`). The R2 credentials live in Railway production env vars (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ACCOUNT_ID`), which the linked `railway` CLI can read directly. R2 is S3-compatible — use the AWS CLI with `--endpoint-url` and `region=auto`:
 
 ```bash
-for f in Pokemon-Emerald-Updated-2025-08-29 Pokemon-RSE-v2.0-unofficial Pokemon-Emerald-Actual; do
-  curl -sS "https://cdn.hexhive.app/soundfonts/$f.sf2" | sha256sum
-done
+# Pull live creds from Railway production
+eval "$(railway variables --kv 2>/dev/null \
+  | awk -F= '/^R2_(ACCESS_KEY_ID|SECRET_ACCESS_KEY|ACCOUNT_ID)=/{print "export "$0}')"
+
+export AWS_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY
+export AWS_DEFAULT_REGION=auto
+ENDPOINT="https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com"
+
+# Upload
+aws --endpoint-url "$ENDPOINT" s3 cp \
+  "/path/to/local/Whatever.sf2" \
+  "s3://hexhive-prod/soundfonts/Whatever.sf2" \
+  --content-type application/octet-stream
+
+# Verify (sha256 of the served object)
+curl -sS "https://cdn.hexhive.app/soundfonts/Whatever.sf2" | sha256sum
 ```
 
-Expected sha256s match the values above.
+Then add a section to this file with the file's hashes, original filename, source URL(s), and discovery chain. If the new SF2 should appear in the in-app soundfont dropdown, edit `SOUNDFONTS` in `src/lib/components/listings/sound/SoundPlayer.svelte`.
+
+## How the bucket is wired
+
+- Cloudflare R2 bucket `hexhive-prod` (account `8221f737e4a1c585b1bccde05a0ec790`).
+- Custom domain `cdn.hexhive.app` is mapped to the bucket via Cloudflare DNS — every key under any prefix is served at `https://cdn.hexhive.app/<key>`.
+- The `soundfonts/` prefix is a convention for static, public-by-design assets; uploaded listing files (sprites, sounds, scripts, romhacks) live under `listings/<listingId>/<versionId>/<filename>` from the upload-flow code in `src/lib/storage/r2.ts`.
+- The bucket also has a `pub-…r2.dev` public-bucket URL but we don't use it; everything goes through `cdn.hexhive.app` so we keep CORS/headers control.

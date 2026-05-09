@@ -164,8 +164,20 @@ Deploy is on Railway. `railway.toml` defines `production` and `staging` environm
 
 Live resources:
 
-- **Railway project** id `2eb78a5e-b656-4826-875a-44a4c6ee5298`, service `HexHive`.
+- **Railway project** id `2eb78a5e-b656-4826-875a-44a4c6ee5298`, service `HexHive`. The local `railway` CLI is logged in and linked to this project — `railway variables` reads/writes production env vars without browser auth.
 - **Turso DBs**: `hexhive-prod` (`libsql://hexhive-prod-jmynes.aws-us-east-1.turso.io`) and `hexhive-staging` (`libsql://hexhive-staging-jmynes.aws-us-east-1.turso.io`). Run migrations with `DATABASE_URL=<url> DATABASE_AUTH_TOKEN=<token> bun run db:migrate`. Don't provision new ones — these are already wired into Railway.
+- **R2 buckets** (Cloudflare account `8221f737e4a1c585b1bccde05a0ec790`): `hexhive-prod` and `hexhive-staging`. The `wrangler` CLI is logged in. Custom domain `cdn.hexhive.app` is mapped to the `hexhive-prod` bucket — every R2 key under any prefix is served at `https://cdn.hexhive.app/<key>`. Listing files live under `listings/<listingId>/<versionId>/<filename>`; static public assets like soundfonts live under `soundfonts/<file>`. To upload from this machine without juggling secrets manually:
+
+  ```bash
+  # Pull production R2 creds (the local .env points at hexhive-dev, not the CDN bucket)
+  R2_ACCESS_KEY_ID=$(railway variables --kv | sed -n 's/^R2_ACCESS_KEY_ID=//p')
+  R2_SECRET_ACCESS_KEY=$(railway variables --kv | sed -n 's/^R2_SECRET_ACCESS_KEY=//p')
+  R2_ACCOUNT_ID=$(railway variables --kv | sed -n 's/^R2_ACCOUNT_ID=//p')
+  export AWS_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY AWS_DEFAULT_REGION=auto
+  aws --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" s3 cp <local> s3://hexhive-prod/<key>
+  ```
+
+  R2 is S3-compatible. **`AWS_DEFAULT_REGION=auto` is required** — anything else fails with `InvalidRegionName`. `wrangler r2 object get/put` also works but has no list and is slower. Full soundfont catalogue + upload recipe in [`docs/soundfonts.md`](./docs/soundfonts.md).
 - **Public URL**: `https://hexhive-production.up.railway.app` (Railway-issued); custom domain `hexhive.app` is registered in Railway and the apex CNAME is in Namecheap, but Railway is still serving its `*.up.railway.app` cert — flip `BETTER_AUTH_URL` once `CN=hexhive.app` lands.
 
 ## Environment
