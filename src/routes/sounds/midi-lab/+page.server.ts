@@ -23,6 +23,9 @@ export interface SappyFixture extends BaseFixture {
   kind: 'sappy';
   voicegroupUrl: string;
   asmUrl: string;
+  // Soundfont id that best matches the game the MIDI was ripped from.
+  // Selected automatically when the fixture is loaded.
+  preferredSoundfont: string;
 }
 
 export interface GmFixture extends BaseFixture {
@@ -45,6 +48,7 @@ const FIXTURES: Fixture[] = [
     voicegroupUrl: '/midi-lab/fixtures/pallet/voicegroup159.inc',
     refUrl: '/midi-lab/fixtures/pallet/mus_pallet.mp3',
     asmUrl: '/midi-lab/fixtures/pallet/mus_pallet.s',
+    preferredSoundfont: 'vgk-frlg',
   },
   {
     id: 'littleroot',
@@ -55,6 +59,7 @@ const FIXTURES: Fixture[] = [
     voicegroupUrl: '/midi-lab/fixtures/littleroot/littleroot.inc',
     refUrl: '/midi-lab/fixtures/littleroot/mus_littleroot.mp3',
     asmUrl: '/midi-lab/fixtures/littleroot/mus_littleroot.s',
+    preferredSoundfont: 'emerald-actual',
   },
   {
     id: 'b_dome_lobby',
@@ -65,6 +70,7 @@ const FIXTURES: Fixture[] = [
     voicegroupUrl: '/midi-lab/fixtures/b_dome_lobby/b_dome.inc',
     refUrl: '/midi-lab/fixtures/b_dome_lobby/mus_b_dome_lobby.mp3',
     asmUrl: '/midi-lab/fixtures/b_dome_lobby/mus_b_dome_lobby.s',
+    preferredSoundfont: 'emerald-actual',
   },
   // GM-mode fixtures from zeak6464/Fire-Red (Pokémon Essentials project).
   // The .ogg files were rendered by mkxp+fluidsynth through GMGSx — the

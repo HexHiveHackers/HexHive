@@ -283,9 +283,12 @@
   async function loadFixture(f: (typeof data.fixtures)[number]): Promise<void> {
     const midiBuf = await fetch(f.midiUrl).then((r) => r.arrayBuffer());
     if (f.kind === 'sappy') {
+      // Sappy fixtures pick the soundfont that matches the source game so
+      // the synth sounds right out-of-the-box. Users can swap afterwards.
+      const target = SOUNDFONTS.find((s) => s.id === f.preferredSoundfont);
+      if (target && soundfont.id !== target.id) soundfont = target;
       const incText = await fetch(f.voicegroupUrl).then((r) => r.text());
       await ingest({ id: f.id, label: f.label, kind: 'sappy', midiBytes: midiBuf, incText, refUrl: f.refUrl });
-      // Sappy fixtures don't auto-switch the soundfont; the user picked it.
     } else {
       // GM fixture: the OGG was rendered through a known soundfont, so flip
       // the dropdown to that one for a faithful baseline. The user can swap
