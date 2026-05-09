@@ -250,10 +250,11 @@
   let mutedSlots = $state<Set<number>>(new Set());
   let loopOn = $state(true);
   let soundfont = $state<Soundfont>(SOUNDFONTS[0]);
-  let activeBankId = '';
-  // Per-bank ready state. A bank is "ready" once the worklet has parsed it
-  // and it can be activated via a pure priorityOrder swap (no parse delay).
-  let bankReady = $state<Record<string, boolean>>({});
+  let activeBankId = $state('');
+  // The id of the bank we're currently switching to (or null when idle).
+  // Drives the amber-pulse LED on the target chip and the "swapping…"
+  // indicator in the rack header.
+  let swappingTo = $state<string | null>(null);
   // Cache the byte payload of every soundbank we've fetched so that
   // hot-swapping back to a previous one doesn't re-download.
   const sfBytesCache = new Map<string, Promise<ArrayBuffer>>();
@@ -295,16 +296,6 @@
     if (!libPromise) libPromise = import('spessasynth_lib');
   }
 
-  // Add a bank to the worklet (parses the SF2) and mark it ready. Idempotent.
-  async function ensureBankLoaded(s: WorkletSynthesizer, sf: Soundfont): Promise<void> {
-    if (bankReady[sf.id]) return;
-    const buf = await fetchSoundfont(sf);
-    if (!s.soundBankManager.priorityOrder.includes(sf.id)) {
-      await s.soundBankManager.addSoundBank(buf, sf.id);
-    }
-    bankReady = { ...bankReady, [sf.id]: true };
-  }
-
   async function initEngine(): Promise<void> {
     if (engineState === 'ready' || engineState === 'loading') return;
     engineState = 'loading';
@@ -315,10 +306,8 @@
       const lib = await (libPromise as Promise<typeof import('spessasynth_lib')>);
       const s = new lib.WorkletSynthesizer(audioCtx);
       s.connect(audioCtx.destination);
-      // Block readiness on the user-selected bank only. The rest pre-warm
-      // in the background so subsequent swaps are pure priorityOrder
-      // changes (no parse latency).
-      await ensureBankLoaded(s, soundfont);
+      const sf = await fetchSoundfont(soundfont);
+      await s.soundBankManager.addSoundBank(sf, soundfont.id);
       activeBankId = soundfont.id;
       await s.isReady;
       const sq = new lib.Sequencer(s);
@@ -330,48 +319,44 @@
       seq = sq;
       presets = listPresets(s);
       engineState = 'ready';
-      // Sequential pre-warm — the worklet is single-threaded, so parallel
-      // adds just queue up. Sequential keeps the UI responsive between
-      // banks (each completion ticks `bankReady` so chips light up).
-      void (async () => {
-        for (const other of SOUNDFONTS) {
-          if (other.id === soundfont.id) continue;
-          try {
-            await ensureBankLoaded(s, other);
-          } catch (err) {
-            console.warn('midi-lab: pre-warm failed for', other.id, err);
-          }
-        }
-        // Re-assert priority so the active bank stays on top after the
-        // background loads have shuffled the order.
-        s.soundBankManager.priorityOrder = [
-          activeBankId,
-          ...s.soundBankManager.priorityOrder.filter((id) => id !== activeBankId),
-        ];
-        presets = listPresets(s);
-      })();
     } catch (err) {
       console.error('midi-lab: engine init failed', err);
       engineState = 'error';
     }
   }
 
-  // Swap the active soundbank without touching the AudioContext or the
-  // Sequencer. With pre-warm, every bank is already loaded after init, so
-  // this is a pure priorityOrder change + MIDI rewrite. If the user clicks
-  // a chip before its pre-warm finished, we await the parse here.
+  // Swap the active soundbank. Single-active-bank model: kill all ringing
+  // voices, parse the new bank if needed, set it first in priority, then
+  // delete every other bank so synth.presetList contains only the active
+  // one — no preset-name contamination, no parallel-bank cacophony. The
+  // SF2 byte payload stays in sfBytesCache, so re-adding on a future
+  // switch skips the network fetch (parse cost is unavoidable).
   async function switchSoundbank(target: Soundfont): Promise<void> {
     if (!synth || activeBankId === target.id) return;
-    await ensureBankLoaded(synth, target);
-    synth.soundBankManager.priorityOrder = [
-      target.id,
-      ...synth.soundBankManager.priorityOrder.filter((id) => id !== target.id),
-    ];
-    activeBankId = target.id;
-    presets = listPresets(synth);
-    if (loaded) {
-      const t = seq?.currentTime ?? 0;
-      await loadIntoSequencer(t);
+    swappingTo = target.id;
+    try {
+      // Force-stop all active voices BEFORE tearing down the bank;
+      // sustained notes on the old preset would otherwise keep ringing
+      // through the swap and pile up against the new bank's note-ons.
+      synth.stopAll(true);
+      if (!synth.soundBankManager.priorityOrder.includes(target.id)) {
+        const buf = await fetchSoundfont(target);
+        await synth.soundBankManager.addSoundBank(buf, target.id);
+      }
+      synth.soundBankManager.priorityOrder = [
+        target.id,
+        ...synth.soundBankManager.priorityOrder.filter((id) => id !== target.id),
+      ];
+      const others = synth.soundBankManager.priorityOrder.filter((id) => id !== target.id);
+      for (const id of others) await synth.soundBankManager.deleteSoundBank(id);
+      activeBankId = target.id;
+      presets = listPresets(synth);
+      if (loaded) {
+        const t = seq?.currentTime ?? 0;
+        await loadIntoSequencer(t);
+      }
+    } finally {
+      swappingTo = null;
     }
   }
 
@@ -824,17 +809,11 @@
           </span>
         </span>
       </div>
-      {#if engineState !== 'idle'}
-        {@const total = SOUNDFONTS.length}
-        {@const ready = SOUNDFONTS.filter((s) => bankReady[s.id]).length}
-        <span class="font-mono text-xs tabular-nums text-muted-foreground inline-flex items-center gap-1.5">
-          {#if ready < total}
-            <Loader2 class="size-3.5 animate-spin text-zinc-400" />
-            <span>warming {ready}/{total}…</span>
-          {:else}
-            <span class="size-2 rounded-full bg-zinc-300 shadow-[0_0_6px_1px_rgba(228,228,231,0.6)]"></span>
-            <span class="text-foreground">all {total} banks armed · swap is instant</span>
-          {/if}
+      {#if swappingTo}
+        {@const target = SOUNDFONTS.find((s) => s.id === swappingTo)}
+        <span class="font-mono text-xs text-muted-foreground inline-flex items-center gap-1.5">
+          <Loader2 class="size-3.5 animate-spin text-zinc-300" />
+          <span>swapping → <span class="text-foreground">{target?.title ?? swappingTo}</span>…</span>
         </span>
       {/if}
     </div>
@@ -880,17 +859,18 @@
       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
     >
       {#each SOUNDFONTS.filter((sf) => GROUPS.find((g) => g.id === activeTab)?.eras.includes(sf.era)) as sf (sf.id)}
-        {@const isActive = soundfont.id === sf.id}
-        {@const isReady = bankReady[sf.id] === true}
-        {@const isParsing = engineState !== 'idle' && !isReady}
+        {@const isActive = activeBankId === sf.id}
+        {@const isParsing = swappingTo === sf.id}
+        {@const isLocked = swappingTo !== null && !isParsing}
         <button
           type="button"
           onclick={() => {
             soundfont = sf;
           }}
+          disabled={isLocked}
           aria-pressed={isActive}
           aria-label="{sf.label}{sf.context ? ` — ${sf.context}` : ''}"
-          class="group relative overflow-hidden rounded-md border bg-slate-950/70 p-4 text-left transition-all
+          class="group relative overflow-hidden rounded-md border bg-slate-950/70 p-4 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50
             {isActive
               ? TONE_RING[sf.tone]
               : 'border-border/70 hover:border-foreground/40 hover:bg-slate-900/70'}"
@@ -904,15 +884,14 @@
             class="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:linear-gradient(to_right,#94a3b8_1px,transparent_1px),linear-gradient(to_bottom,#94a3b8_1px,transparent_1px)] [background-size:8px_8px]"
           ></span>
 
-          <!-- LED — tone-coloured when ready, brighter+pulsing when active,
-               neutral amber pulse while the worklet is parsing the bank. -->
+          <!-- LED — only one bank is loaded at a time. Active = tone glow,
+               parsing = neutral amber pulse on the chip we're switching to,
+               otherwise dim. -->
           <span aria-hidden="true" class="absolute top-2.5 right-2.5 flex size-3 items-center justify-center">
             {#if isActive}
               <span class="size-2.5 rounded-full {TONE_LED_ACTIVE[sf.tone]} animate-pulse"></span>
             {:else if isParsing}
-              <span class="size-2.5 rounded-full bg-zinc-400 shadow-[0_0_8px_2px_rgba(161,161,170,0.6)] animate-pulse"></span>
-            {:else if isReady}
-              <span class="size-2 rounded-full {TONE_LED_READY[sf.tone]}"></span>
+              <span class="size-2.5 rounded-full bg-zinc-300 shadow-[0_0_8px_2px_rgba(228,228,231,0.7)] animate-pulse"></span>
             {:else}
               <span class="size-2 rounded-full bg-slate-700"></span>
             {/if}
