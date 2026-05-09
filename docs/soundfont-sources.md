@@ -78,7 +78,7 @@ ICOP: Nintendo
 ISFT: Polyphone
 ```
 
-→ identifies **Braedon Mills** as the author (matches the existing "Pokémon GBA (Mills)" label in `SoundPlayer.svelte`). Single SF2 covers all four GBA Pokémon games. Source URL still TBD; created 2025-11-29 so it's quite recent.
+→ identifies **Braedon Mills** as the author (matches the existing "Pokémon GBA (Mills)" label in `SoundPlayer.svelte`). Single SF2 covers all four GBA Pokémon games. Source: musical-artifacts #7166 (see below); ICRD `2025-11-29T00:54:12Z` is the SF2's original creation date, which the author preserves across re-saves — the bytes-on-disk may have been edited after that.
 
 ---
 
@@ -194,8 +194,8 @@ ISFT: Polyphone
 
 The file at #7166 has been re-saved by the author at least once. The 2026-05-09 update swapped program 62 ("Synth Brass" in the prior revision) for program 84 ("Charang"). Both revisions are 924,998 bytes. Hashes seen so far:
 
-- 2025-11-29 .. ≤2026-05-08 → sha256 `3f865e4c…`, md5 `575c2279…`
-- 2026-05-09 → sha256 `059acfa8…` (current on R2)
+- prior revision (downloaded by us before 2026-05-09; unknown how long it had been the page's published bytes): sha256 `3f865e4c…`, md5 `575c2279…`
+- after the page's 2026-05-09 update: sha256 `059acfa8…`, md5 `54df8bc2…` — current on R2
 
 If the page's "last updated" advances again, fetch + re-hash + re-upload to R2 and append the new sha256 here.
 
