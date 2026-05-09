@@ -11,11 +11,15 @@
   import { hashVoicegroup, type ParsedVoicegroup, parseVoicegroup, type VoiceEntry } from '$lib/midi-lab/voicegroup';
   import type { PageData } from './$types';
 
-  // Each soundfont is rendered as a "BANK CHIP" — generation/era drives the
-  // colour stripe + LED, games and platform appear as small mono pills, and
-  // engine-specific banks (Pokémon Essentials) get their own ENGINE tag.
+  // Each soundfont is rendered as a "BANK CHIP". `era` drives the tab
+  // grouping (Gen III / Gen I·II / Engine / Universal); `tone` drives the
+  // per-card colour identity (FRLG=orange, Emerald=emerald, RSE=indigo,
+  // Mills multi-game=violet, Gen I=red, Gen II=amber/gold, GMGSx=fuchsia,
+  // GeneralUser GS=sky). Tabs themselves are neutral so the eye reads the
+  // card colours, not the chrome.
   type Era = 'gen1' | 'gen2' | 'gen1-2' | 'gen3' | 'engine' | 'gm';
   type Platform = 'GB' | 'GBA' | 'Engine' | 'Universal';
+  type Tone = 'orange' | 'emerald' | 'violet' | 'fuchsia' | 'red' | 'amber' | 'sky' | 'indigo';
   type Soundfont = {
     id: string;
     url: string;
@@ -23,6 +27,7 @@
     label: string; // long label for accessible-name + dropdowns
     byline: string; // creator / source line
     era: Era;
+    tone: Tone;
     platform: Platform;
     games: readonly string[]; // short codes: "FR/LG", "R/S/E", "Em.", "R/B/Y", "G/S/C"
     context?: string; // for engine banks: which engine this targets
@@ -35,6 +40,7 @@
       label: 'FireRed/LeafGreen (VGK)',
       byline: 'VGK rip',
       era: 'gen3',
+      tone: 'orange',
       platform: 'GBA',
       games: ['FR/LG'],
     },
@@ -45,6 +51,7 @@
       label: 'Pokémon GBA (Mills)',
       byline: 'Mills · multi-game',
       era: 'gen3',
+      tone: 'violet',
       platform: 'GBA',
       games: ['R/S/E', 'FR/LG'],
     },
@@ -55,6 +62,7 @@
       label: 'Pokémon Emerald (updated 2025-08-29)',
       byline: 'community · 2025-08-29',
       era: 'gen3',
+      tone: 'emerald',
       platform: 'GBA',
       games: ['Em.'],
     },
@@ -65,6 +73,7 @@
       label: 'Pokémon RSE v2.0 (unofficial)',
       byline: 'unofficial · v2.0',
       era: 'gen3',
+      tone: 'indigo',
       platform: 'GBA',
       games: ['R/S/E'],
     },
@@ -75,6 +84,7 @@
       label: 'Pokémon Emerald (Actual)',
       byline: 'verbatim ROM rip',
       era: 'gen3',
+      tone: 'emerald',
       platform: 'GBA',
       games: ['Em.'],
     },
@@ -85,6 +95,7 @@
       label: 'GMGSx (Pokémon Essentials / zeak6464)',
       byline: 'zeak6464 · GM-style',
       era: 'engine',
+      tone: 'fuchsia',
       platform: 'Engine',
       games: [],
       context: 'Pokémon Essentials',
@@ -96,6 +107,7 @@
       label: 'Game Boy GM — Pokémon Gen 1+2 (CynthiaCelestic)',
       byline: 'CynthiaCelestic',
       era: 'gen1-2',
+      tone: 'red',
       platform: 'GB',
       games: ['R/B/Y', 'G/S/C'],
     },
@@ -106,6 +118,7 @@
       label: 'Game Boy GM — Pokémon Gen 1+2 (stgiga fixed)',
       byline: 'stgiga · re-tuned',
       era: 'gen1-2',
+      tone: 'amber',
       platform: 'GB',
       games: ['R/B/Y', 'G/S/C'],
     },
@@ -116,14 +129,16 @@
       label: 'GeneralUser GS',
       byline: 'S. Christian Collins',
       era: 'gm',
+      tone: 'sky',
       platform: 'Universal',
       games: [],
       context: 'universal GM bank',
     },
   ];
 
-  // Display metadata per era. Tailwind classes are written out in full so
-  // the JIT picks them up — no string interpolation in class= attributes.
+  // Era labels for the small tag at the top of each chip. Tailwind classes
+  // are written out in full so the JIT picks them up — no string
+  // interpolation in class= attributes anywhere below.
   const ERA_LABEL: Record<Era, string> = {
     gen1: 'GEN I',
     gen2: 'GEN II',
@@ -132,29 +147,57 @@
     engine: 'ENGINE',
     gm: 'GM',
   };
-  const ERA_STRIPE: Record<Era, string> = {
-    gen1: 'bg-red-500/70',
-    gen2: 'bg-amber-500/70',
-    'gen1-2': 'bg-gradient-to-r from-red-500/70 via-amber-500/70 to-amber-400/70',
-    gen3: 'bg-emerald-500/70',
-    engine: 'bg-fuchsia-500/70',
-    gm: 'bg-sky-400/70',
+  const TONE_STRIPE: Record<Tone, string> = {
+    orange: 'bg-orange-500/80',
+    emerald: 'bg-emerald-500/80',
+    violet: 'bg-violet-500/80',
+    fuchsia: 'bg-fuchsia-500/80',
+    red: 'bg-red-500/80',
+    amber: 'bg-amber-500/80',
+    sky: 'bg-sky-400/80',
+    indigo: 'bg-indigo-500/80',
   };
-  const ERA_LED_READY: Record<Era, string> = {
-    gen1: 'bg-red-400/80 shadow-[0_0_4px_1px_rgba(248,113,113,0.5)]',
-    gen2: 'bg-amber-400/80 shadow-[0_0_4px_1px_rgba(251,191,36,0.5)]',
-    'gen1-2': 'bg-amber-300/80 shadow-[0_0_4px_1px_rgba(252,211,77,0.5)]',
-    gen3: 'bg-emerald-400/80 shadow-[0_0_4px_1px_rgba(52,211,153,0.5)]',
-    engine: 'bg-fuchsia-400/80 shadow-[0_0_4px_1px_rgba(232,121,249,0.5)]',
-    gm: 'bg-sky-300/80 shadow-[0_0_4px_1px_rgba(125,211,252,0.5)]',
+  const TONE_LED_READY: Record<Tone, string> = {
+    orange: 'bg-orange-400 shadow-[0_0_5px_1px_rgba(251,146,60,0.6)]',
+    emerald: 'bg-emerald-400 shadow-[0_0_5px_1px_rgba(52,211,153,0.6)]',
+    violet: 'bg-violet-400 shadow-[0_0_5px_1px_rgba(167,139,250,0.6)]',
+    fuchsia: 'bg-fuchsia-400 shadow-[0_0_5px_1px_rgba(232,121,249,0.6)]',
+    red: 'bg-red-400 shadow-[0_0_5px_1px_rgba(248,113,113,0.6)]',
+    amber: 'bg-amber-400 shadow-[0_0_5px_1px_rgba(251,191,36,0.6)]',
+    sky: 'bg-sky-300 shadow-[0_0_5px_1px_rgba(125,211,252,0.6)]',
+    indigo: 'bg-indigo-400 shadow-[0_0_5px_1px_rgba(129,140,248,0.6)]',
   };
-  const ERA_TEXT: Record<Era, string> = {
-    gen1: 'text-red-300',
-    gen2: 'text-amber-300',
-    'gen1-2': 'text-amber-200',
-    gen3: 'text-emerald-300',
-    engine: 'text-fuchsia-300',
-    gm: 'text-sky-200',
+  const TONE_LED_ACTIVE: Record<Tone, string> = {
+    orange: 'bg-orange-300 shadow-[0_0_12px_3px_rgba(251,146,60,0.9)]',
+    emerald: 'bg-emerald-300 shadow-[0_0_12px_3px_rgba(52,211,153,0.9)]',
+    violet: 'bg-violet-300 shadow-[0_0_12px_3px_rgba(167,139,250,0.9)]',
+    fuchsia: 'bg-fuchsia-300 shadow-[0_0_12px_3px_rgba(232,121,249,0.9)]',
+    red: 'bg-red-300 shadow-[0_0_12px_3px_rgba(248,113,113,0.9)]',
+    amber: 'bg-amber-300 shadow-[0_0_12px_3px_rgba(251,191,36,0.9)]',
+    sky: 'bg-sky-200 shadow-[0_0_12px_3px_rgba(125,211,252,0.9)]',
+    indigo: 'bg-indigo-300 shadow-[0_0_12px_3px_rgba(129,140,248,0.9)]',
+  };
+  const TONE_TEXT: Record<Tone, string> = {
+    orange: 'text-orange-300',
+    emerald: 'text-emerald-300',
+    violet: 'text-violet-300',
+    fuchsia: 'text-fuchsia-300',
+    red: 'text-red-300',
+    amber: 'text-amber-300',
+    sky: 'text-sky-200',
+    indigo: 'text-indigo-300',
+  };
+  // Active card glow ring per tone — matches the LED's colour family so
+  // the whole chip feels like one lit unit.
+  const TONE_RING: Record<Tone, string> = {
+    orange: 'border-orange-500/70 shadow-[0_0_0_1px_rgba(249,115,22,0.3),0_0_24px_-6px_rgba(249,115,22,0.75)]',
+    emerald: 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.3),0_0_24px_-6px_rgba(16,185,129,0.75)]',
+    violet: 'border-violet-500/70 shadow-[0_0_0_1px_rgba(139,92,246,0.3),0_0_24px_-6px_rgba(139,92,246,0.75)]',
+    fuchsia: 'border-fuchsia-500/70 shadow-[0_0_0_1px_rgba(217,70,239,0.3),0_0_24px_-6px_rgba(217,70,239,0.75)]',
+    red: 'border-red-500/70 shadow-[0_0_0_1px_rgba(239,68,68,0.3),0_0_24px_-6px_rgba(239,68,68,0.75)]',
+    amber: 'border-amber-500/70 shadow-[0_0_0_1px_rgba(245,158,11,0.3),0_0_24px_-6px_rgba(245,158,11,0.75)]',
+    sky: 'border-sky-400/70 shadow-[0_0_0_1px_rgba(56,189,248,0.3),0_0_24px_-6px_rgba(56,189,248,0.75)]',
+    indigo: 'border-indigo-500/70 shadow-[0_0_0_1px_rgba(99,102,241,0.3),0_0_24px_-6px_rgba(99,102,241,0.75)]',
   };
 
   // Bank rack tabs — group by era so the user picks family first, chip
@@ -757,7 +800,7 @@
         <span class="text-xs text-muted-foreground">
           active:
           <span class="font-mono text-foreground">{soundfont.title}</span>
-          <span class="font-display text-[0.6rem] tracking-[0.2em] {ERA_TEXT[soundfont.era]} ml-1">
+          <span class="font-display text-[0.6rem] tracking-[0.2em] {TONE_TEXT[soundfont.tone]} ml-1">
             {ERA_LABEL[soundfont.era]}
           </span>
         </span>
@@ -767,17 +810,19 @@
         {@const ready = SOUNDFONTS.filter((s) => bankReady[s.id]).length}
         <span class="font-mono text-xs tabular-nums text-muted-foreground inline-flex items-center gap-1.5">
           {#if ready < total}
-            <Loader2 class="size-3.5 animate-spin text-amber-400" />
+            <Loader2 class="size-3.5 animate-spin text-zinc-400" />
             <span>warming {ready}/{total}…</span>
           {:else}
-            <span class="size-2 rounded-full bg-emerald-400 shadow-[0_0_6px_1px_rgba(16,185,129,0.7)]"></span>
-            <span class="text-emerald-300">all {total} banks armed · swap is instant</span>
+            <span class="size-2 rounded-full bg-zinc-300 shadow-[0_0_6px_1px_rgba(228,228,231,0.6)]"></span>
+            <span class="text-foreground">all {total} banks armed · swap is instant</span>
           {/if}
         </span>
       {/if}
     </div>
 
-    <!-- tab strip -->
+    <!-- tab strip — neutral chrome; the only colour is the small pip showing
+         which group contains the currently-active bank (uses that bank's
+         tone so you can scan back to it from anywhere). -->
     <div role="tablist" aria-label="Soundfont families" class="flex flex-wrap gap-1 border-b border-border/60">
       {#each GROUPS as g (g.id)}
         {@const count = SOUNDFONTS.filter((sf) => g.eras.includes(sf.era)).length}
@@ -791,22 +836,19 @@
           }}
           class="relative -mb-px flex items-center gap-2 px-3 py-2 text-sm transition-colors
             {activeTab === g.id
-              ? 'border-b-2 border-emerald-400 text-foreground'
+              ? 'border-b-2 border-foreground text-foreground'
               : 'border-b-2 border-transparent text-muted-foreground hover:text-foreground'}"
         >
           <span class="font-display text-[0.65rem] tracking-[0.2em]">{g.label}</span>
-          <span class="text-xs text-muted-foreground/70 font-mono hidden md:inline">{g.sub}</span>
+          <span class="text-xs text-muted-foreground/80 font-mono hidden md:inline">{g.sub}</span>
           <span
             class="rounded-full px-1.5 py-0.5 font-mono text-[0.6rem] tabular-nums
-              {activeTab === g.id ? 'bg-emerald-500/15 text-emerald-200' : 'bg-muted/40 text-muted-foreground'}"
+              {activeTab === g.id ? 'bg-foreground/10 text-foreground' : 'bg-muted/40 text-muted-foreground'}"
           >
             {count}
           </span>
           {#if containsActive}
-            <span
-              aria-hidden="true"
-              class="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_1px_rgba(16,185,129,0.7)]"
-            ></span>
+            <span aria-hidden="true" class="size-1.5 rounded-full {TONE_LED_READY[soundfont.tone]}"></span>
           {/if}
         </button>
       {/each}
@@ -831,11 +873,11 @@
           aria-label="{sf.label}{sf.context ? ` — ${sf.context}` : ''}"
           class="group relative overflow-hidden rounded-md border bg-slate-950/70 p-4 text-left transition-all
             {isActive
-              ? 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.3),0_0_24px_-6px_rgba(16,185,129,0.75)]'
+              ? TONE_RING[sf.tone]
               : 'border-border/70 hover:border-foreground/40 hover:bg-slate-900/70'}"
         >
-          <!-- era stripe -->
-          <span aria-hidden="true" class="absolute inset-x-0 top-0 h-[3px] {ERA_STRIPE[sf.era]}"></span>
+          <!-- tone stripe -->
+          <span aria-hidden="true" class="absolute inset-x-0 top-0 h-[3px] {TONE_STRIPE[sf.tone]}"></span>
 
           <!-- circuit-grid texture -->
           <span
@@ -843,14 +885,15 @@
             class="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:linear-gradient(to_right,#94a3b8_1px,transparent_1px),linear-gradient(to_bottom,#94a3b8_1px,transparent_1px)] [background-size:8px_8px]"
           ></span>
 
-          <!-- LED -->
+          <!-- LED — tone-coloured when ready, brighter+pulsing when active,
+               neutral amber pulse while the worklet is parsing the bank. -->
           <span aria-hidden="true" class="absolute top-2.5 right-2.5 flex size-3 items-center justify-center">
             {#if isActive}
-              <span class="size-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_3px_rgba(16,185,129,0.85)] animate-pulse"></span>
+              <span class="size-2.5 rounded-full {TONE_LED_ACTIVE[sf.tone]} animate-pulse"></span>
             {:else if isParsing}
-              <span class="size-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.7)] animate-pulse"></span>
+              <span class="size-2.5 rounded-full bg-zinc-400 shadow-[0_0_8px_2px_rgba(161,161,170,0.6)] animate-pulse"></span>
             {:else if isReady}
-              <span class="size-2 rounded-full {ERA_LED_READY[sf.era]}"></span>
+              <span class="size-2 rounded-full {TONE_LED_READY[sf.tone]}"></span>
             {:else}
               <span class="size-2 rounded-full bg-slate-700"></span>
             {/if}
@@ -858,7 +901,7 @@
 
           <!-- era tag + platform -->
           <div class="relative mb-2 flex items-center gap-2">
-            <span class="font-display text-[0.6rem] tracking-[0.25em] {ERA_TEXT[sf.era]}">
+            <span class="font-display text-[0.6rem] tracking-[0.25em] {TONE_TEXT[sf.tone]}">
               {ERA_LABEL[sf.era]}
             </span>
             <span class="text-[0.65rem] uppercase tracking-wider text-muted-foreground font-mono">
