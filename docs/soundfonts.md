@@ -22,7 +22,7 @@ Hashes are recorded so we can detect duplicates across mirrors, verify uploads, 
 - **Source URL**: _unknown — TODO_ (likely musical-artifacts.com; verify and back-fill).
 - **sha256**: `3f865e4c9261a2464cb4529b364e2ab84ccf208900d17ef7cd5d62750e00a1d3`
 - **md5**: `575c22794ef35c55287949e1758cbc21`
-- **Aliases by hash**: `~/Downloads/Pok_mon_GBA.sf2` is byte-identical (same file).
+- **Aliases by hash**: a local copy under `~/Downloads/PokeSoundfonts/` (the personal sort folder for unfetched downloads) is byte-identical (same file).
 
 ### GeneralUser-GS.sf2 — 32,322,864 bytes (30.8 MB)
 - **R2 key**: `soundfonts/GeneralUser-GS.sf2`

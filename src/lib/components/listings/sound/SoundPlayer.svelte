@@ -41,6 +41,21 @@
       url: 'https://cdn.hexhive.app/soundfonts/Pok_mon_GBA.sf2',
     },
     {
+      id: 'emerald-updated',
+      label: 'Pokémon Emerald (updated 2025-08-29)',
+      url: 'https://cdn.hexhive.app/soundfonts/Pokemon-Emerald-Updated-2025-08-29.sf2',
+    },
+    {
+      id: 'rse-v2',
+      label: 'Pokémon RSE v2.0 (unofficial)',
+      url: 'https://cdn.hexhive.app/soundfonts/Pokemon-RSE-v2.0-unofficial.sf2',
+    },
+    {
+      id: 'emerald-actual',
+      label: 'Pokémon Emerald (Actual)',
+      url: 'https://cdn.hexhive.app/soundfonts/Pokemon-Emerald-Actual.sf2',
+    },
+    {
       id: 'gus',
       label: 'GeneralUser GS',
       url: 'https://cdn.hexhive.app/soundfonts/GeneralUser-GS.sf2',

@@ -11,7 +11,39 @@
   import { hashVoicegroup, type ParsedVoicegroup, parseVoicegroup, type VoiceEntry } from '$lib/midi-lab/voicegroup';
   import type { PageData } from './$types';
 
-  const SF2_URL = 'https://cdn.hexhive.app/soundfonts/Pokemon-FireRed-LeafGreen-VGK.sf2';
+  type Soundfont = { id: string; label: string; url: string };
+  const SOUNDFONTS: Soundfont[] = [
+    {
+      id: 'vgk-frlg',
+      label: 'FireRed/LeafGreen (VGK)',
+      url: 'https://cdn.hexhive.app/soundfonts/Pokemon-FireRed-LeafGreen-VGK.sf2',
+    },
+    {
+      id: 'pkmn-gba',
+      label: 'Pokémon GBA (Mills)',
+      url: 'https://cdn.hexhive.app/soundfonts/Pok_mon_GBA.sf2',
+    },
+    {
+      id: 'emerald-updated',
+      label: 'Pokémon Emerald (updated 2025-08-29)',
+      url: 'https://cdn.hexhive.app/soundfonts/Pokemon-Emerald-Updated-2025-08-29.sf2',
+    },
+    {
+      id: 'rse-v2',
+      label: 'Pokémon RSE v2.0 (unofficial)',
+      url: 'https://cdn.hexhive.app/soundfonts/Pokemon-RSE-v2.0-unofficial.sf2',
+    },
+    {
+      id: 'emerald-actual',
+      label: 'Pokémon Emerald (Actual)',
+      url: 'https://cdn.hexhive.app/soundfonts/Pokemon-Emerald-Actual.sf2',
+    },
+    {
+      id: 'gus',
+      label: 'GeneralUser GS',
+      url: 'https://cdn.hexhive.app/soundfonts/GeneralUser-GS.sf2',
+    },
+  ];
   const WORKLET_URL = '/spessasynth_processor.min.js';
 
   let { data }: { data: PageData } = $props();
@@ -35,6 +67,11 @@
   let mutedChannels = $state<Set<number>>(new Set());
   let mutedSlots = $state<Set<number>>(new Set());
   let loopOn = $state(true);
+  let soundfont = $state<Soundfont>(SOUNDFONTS[0]);
+  let activeBankId = '';
+  // Cache the byte payload of every soundbank we've fetched so that
+  // hot-swapping back to a previous one doesn't re-download.
+  const sfBytesCache = new Map<string, Promise<ArrayBuffer>>();
   let mp3El = $state<HTMLAudioElement | null>(null);
   // Track which song the Sequencer currently has loaded so we don't
   // re-process the MIDI on every override/mute change unnecessarily, and
@@ -51,12 +88,20 @@
   let seq: Sequencer | null = null;
   let rafId = 0;
 
-  let sfBytesPromise: Promise<ArrayBuffer> | null = null;
   let libPromise: Promise<typeof import('spessasynth_lib')> | null = null;
+
+  function fetchSoundfont(sf: Soundfont): Promise<ArrayBuffer> {
+    let p = sfBytesCache.get(sf.id);
+    if (!p) {
+      p = fetch(sf.url).then((r) => r.arrayBuffer());
+      sfBytesCache.set(sf.id, p);
+    }
+    return p;
+  }
 
   function prewarm(): void {
     if (typeof window === 'undefined') return;
-    if (!sfBytesPromise) sfBytesPromise = fetch(SF2_URL).then((r) => r.arrayBuffer());
+    void fetchSoundfont(soundfont);
     if (!libPromise) libPromise = import('spessasynth_lib');
   }
 
@@ -70,8 +115,9 @@
       const lib = await (libPromise as Promise<typeof import('spessasynth_lib')>);
       const s = new lib.WorkletSynthesizer(audioCtx);
       s.connect(audioCtx.destination);
-      const sf = await (sfBytesPromise as Promise<ArrayBuffer>);
-      await s.soundBankManager.addSoundBank(sf, 'vgk-frlg');
+      const sf = await fetchSoundfont(soundfont);
+      await s.soundBankManager.addSoundBank(sf, soundfont.id);
+      activeBankId = soundfont.id;
       await s.isReady;
       const sq = new lib.Sequencer(s);
       sq.eventHandler.addEvent('songEnded', 'midilab-end', () => {
@@ -87,6 +133,36 @@
       engineState = 'error';
     }
   }
+
+  // Swap the active soundbank without touching the AudioContext or the
+  // Sequencer. Loaded banks stay resident; priorityOrder puts the chosen
+  // one first so it overrides the rest. Mirrors SoundPlayer.svelte.
+  async function switchSoundbank(target: Soundfont): Promise<void> {
+    if (!synth || activeBankId === target.id) return;
+    const buf = await fetchSoundfont(target);
+    if (!synth.soundBankManager.priorityOrder.includes(target.id)) {
+      await synth.soundBankManager.addSoundBank(buf, target.id);
+    }
+    synth.soundBankManager.priorityOrder = [
+      target.id,
+      ...synth.soundBankManager.priorityOrder.filter((id) => id !== target.id),
+    ];
+    activeBankId = target.id;
+    // Refresh the preset list so the mapping table dropdowns reflect the
+    // new bank, and re-rewrite the MIDI so program-changes target the
+    // newly-active presets at the same playhead position.
+    presets = listPresets(synth);
+    if (loaded) {
+      const t = seq?.currentTime ?? 0;
+      await loadIntoSequencer(t);
+    }
+  }
+
+  $effect(() => {
+    const target = soundfont;
+    void fetchSoundfont(target);
+    if (engineState === 'ready') void switchSoundbank(target);
+  });
 
   function awaitSongLoaded(s: Sequencer, id: string): Promise<void> {
     return new Promise((resolve) => {
@@ -455,6 +531,25 @@
         <span class="text-muted-foreground font-mono text-xs">[{f.game}]</span>
       </Button>
     {/each}
+  </div>
+
+  <div class="flex flex-wrap items-center gap-2">
+    <label for="midi-lab-soundfont" class="text-xs uppercase tracking-wider text-muted-foreground mr-2">
+      Soundfont:
+    </label>
+    <select
+      id="midi-lab-soundfont"
+      class="bg-background border rounded px-2 py-1 text-xs font-mono"
+      value={soundfont.id}
+      onchange={(e) => {
+        const next = SOUNDFONTS.find((s) => s.id === (e.currentTarget as HTMLSelectElement).value);
+        if (next) soundfont = next;
+      }}
+    >
+      {#each SOUNDFONTS as s (s.id)}
+        <option value={s.id}>{s.label}</option>
+      {/each}
+    </select>
   </div>
 
   <div
