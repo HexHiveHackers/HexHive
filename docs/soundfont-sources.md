@@ -1,0 +1,191 @@
+# Soundfont source records
+
+Verbatim copies of the upstream pages we sourced our soundfonts from, captured 2026-05-09. Kept separately from `soundfonts.md` so the catalogue stays scannable while still preserving the original author's words. When the upstream page rotates a Mediafire URL, changes the description, or disappears, this file is the fallback record.
+
+---
+
+## musical-artifacts.com / artifact #8297
+
+> **Source of**: R2 `Pokemon-FireRed-LeafGreen-VGK.sf2` (zip also contains a `(0 ADSR)` variant we keep locally only).
+
+- **URL**: https://musical-artifacts.com/artifacts/8297
+- **Direct download**: https://musical-artifacts.com/artifacts/8297/Pokemon_FireRed_and_LeafGreen_Soundfont.zip (15 MB zip → unzips to two 7 MB SF2s + a status PNG)
+- **Title**: Pokémon FireRed and LeafGreen Soundfont (VGM & Pokémon Sound Sources Checked) (UPDATE 4/30/26)
+- **Author**: VideoGameKid
+- **Uploaded**: Apr 07, 2026 (last updated May 01, 2026)
+- **License**: CC-BY 3.0/4.0 (Creative Commons Attribution; per the linked footer)
+- **Tags**: gameboy advance, gamefreak, pokemon, nintendo, soundfont
+- **Likes**: 2 ("This is cool!"), Downloads: 1,037 at fetch time
+
+### Description (verbatim)
+
+> (UPDATE 4/30/26):
+> Made a zip file for the SF2 but with extra adds.
+> Made a 0 ADSR version where the ADSR for every single instrument is 0 (that way you can guys can have as much creative freedom with using it in a DAW) Ofc, there's still the regular SF2 if you want to use it.
+>
+> This was originally supposed to be my first ever compiled soundfont when I first started learning how to compile soundfonts but I ended up getting super lazy with it but here we are.... Anyways, as the title suggests, this is the fully compiled soundfont for one of my first pirate games back from elementary school, Pokémon FireRed and LeafGreen! Ripped using GBAMusRipper, everything is fully labeled accordingly and 100% checked via the VGM and Pokémon Sound Sources which MASSIVE credits to that! Ultimately the main reason why I made this compiled soundfont was because I noticed that a lot of Pokémon GBA soundfonts aren't that accurate when it comes to instrument labels (I saw one rip that labeled the Nylon Guitar as Steel Guitar which is flat out wrong) and also, MANY didn't include any of the unused instruments or tend to forgot some (One rip didn't even include one of the Distortion Guitars which was a massive no-no to me ☠️). Overall, you could say I wanted to make a definitive version for this soundfont rip or make one that's extremely accurate in terms instrument labeling and making sure everything is included. But getting back to the main point, I want to clarify some things here which are:
+>
+> - As I mentioned, everything (all wave samples and instruments) is fully labeled and 100% double checked via the Pokémon and VGM Sound Sources (All credit to them ofc).
+> - Since many instruments like the French Horn or Grand Piano would have extra unnecessary samples attached to them, I would remove them and only keep the main instrument samples that is used. This only also includes the Drumkits as well.
+> - Included all of the unused instruments that were never used in the OST for FireRed and LeafGreen. They're part of their own bank.
+> - Included all of the SFXs found from the ripped soundfont. Not every single SFX was labeled from the Sound Sources since most of it is related to the general gameplay, so I made some education guesses on many that I knew was the best label for. For the ones that I wasn't too sure with, I simply labeled as "FRLG SFX #" which "#" is the corresponding number (I'll be sure to update the labels once I know what they are).
+> - Include all of the related GB presents (Metallic Noise, Normal Noise, and Waves). I know Metallic Noise is mainly for sound effects but felt the need to include it anyways
+> - Made a small edit on Drumkits 2, 3, and 5 where you can hear the same root key for the Kotsuzumi sample (note 85 for kit 2 and 3, note 114 for kit 5).
+>
+> Finally, here are the banks:
+>
+> - Bank 0 - General instruments (plus GB related presents)
+> - Bank 1 - Extra instruments (Just the Closed Hi Hat)
+> - Bank 2 - SFX
+> - Bank 3 - Unused instruments.
+> - Bank 128 - Drumkits
+>
+> PS: As always, I do plan to compose something original using this soundfont. I'll be sure to link it once that happens and hope I didn't disappoint with this rip!
+>
+> Another PS: I do plan to compile Ruby/Sapphire's and Emerald's soundfont when I can since it's nice to have all of them fully ripped and see how slightly different they are via the instrument differences. Also, Emerald did add a few more instruments for its exclusive OST so even more reason. Tho it'll take a bit since I'll have to handle the unique voice clips that is found within its music files (it's not found in FRLG's files).
+
+---
+
+## musical-artifacts.com / artifact #1150
+
+> **Source of**: local `~/Downloads/PokeSoundfonts/PKMN FRLG/` instrument-pack + 60 FRLG MIDIs (the same MIDIs we use for `Pallet Town` and `Battle Dome Lobby`-equivalent FRLG fixtures).
+
+- **URL**: https://musical-artifacts.com/artifacts/1150
+- **Direct download**: https://musical-artifacts.com/artifacts/1150/PKMN_FRLG.zip (76 MB)
+- **Mirror**: https://mega.nz/folder/7aBD1QDS#PoPWD9AM_HwQGKjl4CUi5Q
+- **Title**: Pokemon: Firered/Leafgreen [GBA]
+- **Author**: Exabyte U
+- **Uploaded**: Apr 24, 2020
+- **License**: "Licensing Gray Area" / Non-free; Pokemon © Nintendo, Game Freak, The Pokémon Company, 4kids Entertainment (formerly), TV Tokyo
+- **Tags**: gba soundfont, pokemon, midi, zip
+
+### Description (verbatim)
+
+> Soundfont and midi ripped straight from the video game using GBAMusRiper. Able to be used with any DAW that plays soundfonts.
+
+### Bundled `Read Me!.txt`
+
+> [Pokemon FireRed & LeafGreen] Midi & Soundfont
+>
+> Ripped & Sorted By Exabyte U
+> Midi names are courtesy of various YT Channels and sites [(I forgot, I'm sorry)]
+>
+> No credit is needed, just don't claim as your own.
+> Thank you!
+
+---
+
+## musical-artifacts.com / artifact #1151 (companion)
+
+> Not yet downloaded. Listed here because it's the RSE/Emerald sibling to #1150 by the same uploader, and the canonical source for the `Battle Dome Lobby.mid` and `Littleroot Town.mid` fixture MIDIs we already use.
+
+- **URL**: https://musical-artifacts.com/artifacts/1151
+- **Direct download**: https://musical-artifacts.com/artifacts/1151/PKMN_RSE.zip
+- **Mirror**: https://mega.nz/folder/zOZxlAoZ#SYrUrYjVuVEHQGtlcX9Xjg
+- **Title**: Pokemon: Ruby/Sapphire/Emerald [GBA]
+- **Author**: Exabyte U
+- **Uploaded**: Apr 24, 2020
+- **License**: Licensing Gray Area / Non-free
+- **Tags**: gba soundfont, pokemon, midi, zip
+
+### Description (verbatim)
+
+> Soundfont and midi ripped straight from the video game using GBAMusRiper. Able to be used with any DAW that plays soundfonts.
+
+---
+
+## musical-artifacts.com / artifact #579
+
+> **Source of**: R2 `Pokemon-RSE-v2.0-unofficial.sf2` (the `musical-artifacts.com` mirror) **and** R2 `Pokemon-Emerald-Actual.sf2` (the Mediafire mirror linked from this same page).
+
+- **URL**: https://musical-artifacts.com/artifacts/579
+- **Direct download**: https://musical-artifacts.com/artifacts/579/Pokemon_RSE_v2.0__Unofficial_Update_.sf2
+- **External mirror**: http://www.mediafire.com/file/d94xrp62alnaai2/Pokemon+Emerald+Soundfont+%28Actual%29.sf2
+- **More info**: https://www.youtube.com/watch?v=USc2yLnBuRo  ("Pokémon Emerald Soundfont Download" by **MezmerKaiser** — channel `https://www.youtube.com/@MezmerKaiser725`)
+- **Title**: Pokemon GBA Soundfont
+- **Author** (original SF2 creator): MezmerKaiser
+- **Uploader** (re-poster on musical-artifacts): unknown — disclaimer below
+- **Uploaded**: May 21, 2018 (last updated May 19, 2024)
+- **License**: "Licensing Gray Area" / Non-free; Pokemon © Nintendo, Game Freak, The Pokémon Company, 4kids Entertainment (formerly), TV Tokyo
+- **Tags**: qsynth, fantasia, qsampler, linuxsampler, fluidsynth, video game, nintendo, gba, pokemon, sf2
+
+### Description (verbatim)
+
+> DISCLAIMER: I do not own this soundfont, because, only I'm Sharing for this web site.
+>
+> The Pokemon Ruby/Sapphire/Emerald/FireRed and LeafGreen soundfont is not posted in Musical Artifacts. Thanks to MezmerKaiser for make this Excellent Soundfont of he made it.
+>
+> Here's the Unofficial update and Corrected presets, because, Drum Kit, is wrong on the melodic presets, so, i moved in Percussive in the bank "128"
+
+### File-content listing for `Pokemon_RSE_v2.0__Unofficial_Update_.sf2` (first 30, copied from the page)
+
+```
+000 - Acoustic Piano
+000 - Drum Kit
+001 - Bright Piano
+003 - Bright Piano 2
+004 - Electric Piano 1
+005 - Electric Piano 2
+006 - Harpsichord
+007 - Clavinet
+009 - Glockenspiel
+010 - Music Box
+012 - Marimba
+013 - Xylophone
+014 - Tubular Bell
+015 - Dulcimer
+017 - Percussive Organ
+018 - Percussive Organ 2
+019 - Pipe Organ
+020 - Pipe Organ 2
+021 - Accordion
+024 - Nylon String Guitar
+025 - Nylon Guitar 2
+026 - Electric Jazz Guitar
+028 - Muted Bass 1
+028 - Muted Bass 2
+029 - Overdriven Guitar
+030 - Distortion Guitar
+031 - Guitar Harmonics
+032 - Acoustic Bass
+033 - Electric Finger Bass
+034 - Electric Picked Bass
+…
+```
+
+Full listing on the upstream page; ~80 presets in total.
+
+---
+
+## YouTube — `USc2yLnBuRo` ("Pokémon Emerald Soundfont Download" by MezmerKaiser)
+
+> **Source of (via description)**: R2 `Pokemon-Emerald-Updated-2025-08-29.sf2` and R2 `Pokemon-Emerald-Actual.sf2` (both linked from artifact #579's "More info").
+
+- **URL**: https://www.youtube.com/watch?v=USc2yLnBuRo
+- **Title**: Pokémon Emerald Soundfont Download
+- **Channel**: MezmerKaiser — https://www.youtube.com/@MezmerKaiser725
+- **Source for metadata**: YouTube oEmbed endpoint (the full description requires JavaScript to render and could not be captured server-side; rerun with `yt-dlp --skip-download --print description` to back-fill if needed).
+
+The description carries the rotating Mediafire URLs the user follows to download the SF2s. We've recorded the two Mediafire URLs we know about in `soundfonts.md`. If the YouTube description is updated again with a new file revision, fetch the new file and re-hash before swapping in the R2 bucket.
+
+---
+
+## schristiancollins.com — GeneralUser GS
+
+> **Source of**: R2 `GeneralUser-GS.sf2`.
+
+- **URL**: https://schristiancollins.com/generaluser.php
+- **Author**: Christian Collins
+- **License**: GeneralUser GS license (free for any use, including commercial; redistribution permitted with notice — see upstream).
+- **Description**: GeneralUser GS is a widely-used GM/GS-compatible SoundFont with 256 instrument presets, designed to fit common DAW workflows.
+
+---
+
+## Still missing source URLs
+
+After the round-trip on 2026-05-09:
+
+1. **`Pok_mon_GBA.sf2`** (R2; 904 KB; 44 GM-named presets including "Steel String Guitar"). Filename style is consistent with a musical-artifacts.com export but no entry was found by exact-name search nor by browsing the first three pages of `?q=Pokemon`. The most plausible candidates based on size/preset shape — and worth probing next:
+   - `#2322` General Game Boy Advance Soundfont 2.0 — direct file `General_Game_Boy_Advance_Soundfont.sf2`, 904 KB region.
+   - `#891` "Nesfont advance".
+   - A non-musical-artifacts source (a forum post, a personal site).

@@ -8,30 +8,31 @@ Hashes (sha256 + md5) are recorded so we can detect duplicates across mirrors, v
 
 | R2 file | Original filename | Source URL recorded? |
 |---|---|---|
-| `Pokemon-FireRed-LeafGreen-VGK.sf2` | `Pokemon FireRed and LeafGreen.sf2` | ❌ — see "Missing source URLs" |
+| `Pokemon-FireRed-LeafGreen-VGK.sf2` | `Pokemon FireRed and LeafGreen.sf2` | ✅ — musical-artifacts #8297 by VideoGameKid |
 | `Pok_mon_GBA.sf2` | `Pok_mon_GBA.sf2` | ❌ — see "Missing source URLs" |
 | `GeneralUser-GS.sf2` | `GeneralUser GS v<version>.sf2` | ✅ |
 | `Pokemon-Emerald-Updated-2025-08-29.sf2` | `Pokemon Emerald Soundfont (Updated August 29, 2025).sf2` | ✅ |
 | `Pokemon-RSE-v2.0-unofficial.sf2` | `Pokemon_RSE_v2.0__Unofficial_Update_.sf2` | ✅ |
 | `Pokemon-Emerald-Actual.sf2` | `Pokemon Emerald Soundfont (Actual).sf2` | ✅ |
-| _(local-only)_ `(0 ADSR) Pokemon FireRed and LeafGreen.sf2` | same | ❌ — bundled with VGK source archive |
-| _(local-only sample pack)_ `PKMN FRLG/` (315 single-instrument SF2s + 60 MIDIs) | `PKMN_FRLG.zip` | ❌ — by "Exabyte U", origin unknown |
+| _(local-only)_ `(0 ADSR) Pokemon FireRed and LeafGreen.sf2` | same | ✅ — bundled with VGK in #8297 |
+| _(local-only sample pack)_ `PKMN FRLG/` (315 single-instrument SF2s + 60 MIDIs) | `PKMN_FRLG.zip` | ✅ — musical-artifacts #1150 by Exabyte U |
+
+Full upstream descriptions (verbatim) live in [`soundfont-sources.md`](./soundfont-sources.md).
 
 ## Missing source URLs
 
-These three need their origin tracked down so we can credit + re-fetch:
+Only one item still without a confirmed origin URL:
 
-1. **`Pokemon FireRed and LeafGreen.sf2`** — the file behind R2 `Pokemon-FireRed-LeafGreen-VGK.sf2`. The local source archive is `Pokemon_FireRed_and_LeafGreen_Soundfont.zip` (sha256 `a256…`); we don't know which YouTube/Mediafire/musical-artifacts page hosts that zip. Filename style + the bundled `(0 ADSR)` variant suggest a single uploader rather than musical-artifacts. The directory also contains `General Completed SF2 Rips In Order (6).png` — a status PNG that looks like it's from a YouTube channel or Discord tracking SF2 rip progress.
-2. **`Pok_mon_GBA.sf2`** — Latin-1-mangled filename style (the `_` is where "é" got stripped) is characteristic of musical-artifacts.com URLs. Likely candidate: a "Pokémon GBA" / "Mills" entry on musical-artifacts.com — check.
-3. **`PKMN FRLG/`** instrument pack — readme says **"Ripped & Sorted By Exabyte U"**. 315 single-instrument SF2s (each named after the canonical instrument + the track it was extracted from, e.g. `Trumpet (Battle! Trainer).sf2`) plus 60 MIDIs in `[PKMN FRLG]/`. Source archive `PKMN_FRLG.zip` (sha256 `6347…`). Likely on Exabyte U's YouTube channel or Discord.
+1. **`Pok_mon_GBA.sf2`** (904 KB, 44 GM-named presets including "Steel String Guitar"). Latin-1-mangled filename (`_` = stripped "é") is musical-artifacts-export style, but it didn't surface on a `?q=Pokemon` browse and it doesn't match #2322 by hash. Not yet found. Probably worth checking other community indexes (VGM rips, GM-flat SF2 collections, Mills's site if reachable).
 
 ## Hosted on `cdn.hexhive.app/soundfonts/`
 
 ### Pokemon-FireRed-LeafGreen-VGK.sf2 — 7,329,446 bytes (7.0 MB)
 - **R2 key**: `soundfonts/Pokemon-FireRed-LeafGreen-VGK.sf2`
 - **Used by**: midi-lab default; SoundPlayer dropdown "FireRed/LeafGreen (VGK)" (default).
-- **Original filename**: `Pokemon FireRed and LeafGreen.sf2` (`-VGK` suffix and `Pokemon-FireRed-LeafGreen-` prefix were our renames). The "VGK" labelling was a hopeful guess that turned out to be wrong — keep the R2 key for stability but the canonical filename is the one in the source archive.
-- **Source URL**: _unknown — TODO_. Found via Google "fire red soundfont gba". Bundled in `Pokemon_FireRed_and_LeafGreen_Soundfont.zip` (sha256 `a256746323254edef4c1584a784449e78c3df791392f6995bc5024bf1367be4a`) alongside `(0 ADSR) Pokemon FireRed and LeafGreen.sf2`.
+- **Original filename**: `Pokemon FireRed and LeafGreen.sf2` (the `-VGK` suffix and `Pokemon-FireRed-LeafGreen-` prefix were our renames; "VGK" was a guess that turned out wrong). Keep the R2 key for stability — the canonical filename is the one in the source archive.
+- **Author**: VideoGameKid.
+- **Source URL**: https://musical-artifacts.com/artifacts/8297 (direct archive: https://musical-artifacts.com/artifacts/8297/Pokemon_FireRed_and_LeafGreen_Soundfont.zip). Released as a 15 MB zip containing the 7 MB SF2, the 7 MB `(0 ADSR)` variant, and a status PNG. Ripped using GBAMusRipper, double-checked against the VGM and Pokémon Sound Sources. Banks: 0=general+GB presets, 1=closed hi-hat, 2=SFX, 3=unused, 128=drumkits. License: CC-BY (per the page footer link). Full description in [`soundfont-sources.md`](./soundfont-sources.md).
 - **sha256**: `c9430711e41a0a96293b64d0ef76061d77ca3d695d8d092ef705d023c3715ac1`
 - **md5**: `c86d3bb9d008d963766ca6c6aa9a8afb`
 - **Aliases by hash**: `~/Downloads/PokeSoundfonts/Pokemon_FireRed_and_LeafGreen_Soundfont/Pokemon FireRed and LeafGreen.sf2` (byte-identical).
@@ -66,16 +67,20 @@ These three need their origin tracked down so we can credit + re-fetch:
 ### Pokemon-RSE-v2.0-unofficial.sf2 — 37,144,280 bytes (35.4 MB)
 - **R2 key**: `soundfonts/Pokemon-RSE-v2.0-unofficial.sf2`
 - **Original filename**: `Pokemon_RSE_v2.0__Unofficial_Update_.sf2`
+- **Original SF2 author**: MezmerKaiser. Re-uploaded to musical-artifacts (with the drum-kit preset moved to bank 128) by an unknown user, May 21 2018, last updated May 19 2024.
 - **Source URL**: https://musical-artifacts.com/artifacts/579/Pokemon_RSE_v2.0__Unofficial_Update_.sf2
 - **Catalogue**: https://musical-artifacts.com/artifacts/579
+- **License**: Licensing Gray Area / Non-free.
 - **sha256**: `f9e8c7b85f8bbd88e8c1f1c6d80356ecb81dd36e1542c999f0bee28fb2eb2ebc`
 - **md5**: `fab54240c3cabecda719c43ba02df6b3`
 
 ### Pokemon-Emerald-Actual.sf2 — 25,903,042 bytes (24.7 MB)
 - **R2 key**: `soundfonts/Pokemon-Emerald-Actual.sf2`
 - **Original filename**: `Pokemon Emerald Soundfont (Actual).sf2`
-- **Source URL**: https://www.mediafire.com/file/d94xrp62alnaai2/Pokemon+Emerald+Soundfont+%28Actual%29.sf2
-- **Catalogue**: https://musical-artifacts.com/artifacts/579 (under "More Info" / external links).
+- **Original SF2 author**: MezmerKaiser (channel https://www.youtube.com/@MezmerKaiser725, video https://www.youtube.com/watch?v=USc2yLnBuRo "Pokémon Emerald Soundfont Download").
+- **Source URL**: https://www.mediafire.com/file/d94xrp62alnaai2/Pokemon+Emerald+Soundfont+%28Actual%29.sf2 (linked as a "Mirror" from musical-artifacts #579).
+- **Catalogue**: https://musical-artifacts.com/artifacts/579 (under "Mirrors" / "More info").
+- **License**: same gray-area as #579.
 - **sha256**: `252bb5c42cc28772c30280a8765dc3a0371601c604c56c2cb0845d195595b1c2`
 - **md5**: `a48f652eba5f77275e89690c2800ace5`
 
@@ -86,8 +91,8 @@ These are kept locally — either variants of an existing R2 file we haven't dec
 ### (0 ADSR) Pokemon FireRed and LeafGreen.sf2 — 7,327,300 bytes (7.0 MB)
 - **Local path**: `~/Downloads/PokeSoundfonts/Pokemon_FireRed_and_LeafGreen_Soundfont/(0 ADSR) Pokemon FireRed and LeafGreen.sf2`
 - **Original filename**: same.
-- **Provenance**: bundled in `Pokemon_FireRed_and_LeafGreen_Soundfont.zip` next to the regular VGK file. The "0 ADSR" variant zeros the envelope — instruments cut off cleanly with no attack/decay/sustain/release curve, useful for sample-accurate playback of GBA samples.
-- **Source URL**: _unknown — same archive as VGK (TODO)_.
+- **Author**: VideoGameKid (same as the regular VGK).
+- **Source URL**: https://musical-artifacts.com/artifacts/8297 — bundled with the regular file in `Pokemon_FireRed_and_LeafGreen_Soundfont.zip`. Per the page: "Made a 0 ADSR version where the ADSR for every single instrument is 0 (that way you can guys can have as much creative freedom with using it in a DAW)".
 - **sha256**: `72a782006de17a531198331149a02967e834b5b6184454f4112ee3aea1b210b3`
 - **md5**: `aaa4b06017e202a976b152885e787fe2`
 
@@ -96,12 +101,9 @@ These are kept locally — either variants of an existing R2 file we haven't dec
 - **Source archive**: `PKMN_FRLG.zip` (76,235,922 bytes).
   - **sha256**: `6347fbe5693312882530e3af528db16c5074a83352dbb1e04f52044e7059b6cc`
   - **md5**: `8af7e7d2fed9ec94b0f3f4754b0ff821`
-- **Contents**: 315 small SF2s, each containing a single instrument extracted from a specific FRLG track (named like `Trumpet (Battle! Trainer).sf2`, `Tuba (The S.S. Anne).sf2`). Sorted into folders: Bass, Brass, Choirs & Hits, Chrom. Perc, Guitars, Organs & Pianos, Percussion, SFX+, Strings, Synths+, Woodwinds. Plus a 60-MIDI subfolder `[PKMN FRLG]/` with the FRLG soundtrack as standard MIDI files.
-- **Credits** (from `Read Me!.txt`):
-  > Ripped & Sorted By Exabyte U.
-  > Midi names are courtesy of various YT Channels and sites.
-  > No credit is needed, just don't claim as your own.
-- **Source URL**: _unknown — TODO_. Likely Exabyte U's YouTube channel or a Mediafire link in a video description.
+- **Contents**: 315 small SF2s, each containing a single instrument extracted from a specific FRLG track (named like `Trumpet (Battle! Trainer).sf2`, `Tuba (The S.S. Anne).sf2`). Sorted into folders: Bass, Brass, Choirs & Hits, Chrom. Perc, Guitars, Organs & Pianos, Percussion, SFX+, Strings, Synths+, Woodwinds. Plus a 60-MIDI subfolder `[PKMN FRLG]/` with the FRLG soundtrack as standard MIDI files (the source for our `mus_pallet.mid` and other Pallet/FRLG fixtures).
+- **Author**: Exabyte U (per `Read Me!.txt`: _"Ripped & Sorted By Exabyte U. Midi names are courtesy of various YT Channels and sites. No credit is needed, just don't claim as your own."_).
+- **Source URL**: https://musical-artifacts.com/artifacts/1150 (direct: https://musical-artifacts.com/artifacts/1150/PKMN_FRLG.zip; mirror: https://mega.nz/folder/7aBD1QDS#PoPWD9AM_HwQGKjl4CUi5Q). Sibling artifact #1151 covers Ruby/Sapphire/Emerald and is the source for our `mus_littleroot.mid` and `mus_b_dome_lobby.mid` fixtures.
 - **Use case**: not loaded by the synth (per-instrument SF2s aren't SoundFont banks in the GM sense). Useful as ground-truth sample isolations for A/B-testing what each FRLG instrument actually sounds like, and as MIDI source material for the lab.
 
 ## Uploading new soundfonts
