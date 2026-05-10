@@ -373,12 +373,11 @@
       sq.eventHandler.addEvent('timeChange', 'midilab-drums-time', () => {
         queueMicrotask(reapplyDrums);
       });
-      sq.eventHandler.addEvent('loopCountChange', 'midilab-drums-loop', () => {
-        queueMicrotask(reapplyDrums);
-      });
       sq.eventHandler.addEvent('songChange', 'midilab-drums-song', () => {
         queueMicrotask(reapplyDrums);
       });
+      // No loopCountChange in spessasynth_lib's surface — looping seeks
+      // to the loop start, which fires timeChange, so it's covered.
       ctx = audioCtx;
       synth = s;
       seq = sq;
