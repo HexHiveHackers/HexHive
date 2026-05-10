@@ -14,7 +14,7 @@ export type LinkHost =
   | 'serebii'
   | 'whackahack'
   | 'smogon'
-  | 'bulbapedia'
+  | 'bulbagarden'
   | 'hackdex'
   // Chat / forums
   | 'discord'
@@ -60,8 +60,9 @@ const HOST_RULES: { match: RegExp; host: LinkHost }[] = [
   { match: /(^|\.)serebii\.net$/, host: 'serebii' },
   { match: /(^|\.)whackahack\.com$/, host: 'whackahack' },
   { match: /(^|\.)smogon\.com$/, host: 'smogon' },
-  { match: /(^|\.)bulbagarden\.net$/, host: 'bulbapedia' },
-  { match: /(^|\.)hackdex\.cc$/, host: 'hackdex' },
+  { match: /(^|\.)bulbagarden\.net$/, host: 'bulbagarden' },
+  { match: /(^|\.)bulbagardenforums\.com$/, host: 'bulbagarden' },
+  { match: /(^|\.)hackdex\.app$/, host: 'hackdex' },
 
   { match: /(^|\.)discord\.(gg|com)$/, host: 'discord' },
   { match: /(^|\.)reddit\.com$/, host: 'reddit' },
@@ -131,7 +132,7 @@ export function hostLabel(host: LinkHost): string {
       return 'WhackAHack';
     case 'smogon':
       return 'Smogon';
-    case 'bulbapedia':
+    case 'bulbagarden':
       return 'Bulbagarden';
     case 'hackdex':
       return 'Hackdex';

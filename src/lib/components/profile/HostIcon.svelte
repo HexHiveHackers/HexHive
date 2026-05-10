@@ -48,7 +48,7 @@
     serebii: { text: 'S', classes: 'bg-emerald-500/15 text-emerald-300' },
     whackahack: { text: 'WA', classes: 'bg-rose-500/15 text-rose-300' },
     smogon: { text: 'SM', classes: 'bg-violet-500/15 text-violet-300' },
-    bulbapedia: { text: 'B', classes: 'bg-lime-500/15 text-lime-300' },
+    bulbagarden: { text: 'B', classes: 'bg-lime-500/15 text-lime-300' },
     hackdex: { text: 'HD', classes: 'bg-fuchsia-500/15 text-fuchsia-300' },
   };
 
