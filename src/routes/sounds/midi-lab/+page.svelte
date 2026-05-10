@@ -1314,7 +1314,7 @@
             </span>
             <input
               type="range"
-              class="flex-1 accent-amber-400"
+              class="flex-1 accent-emerald-400"
               min="0"
               max={mp3Duration || 1}
               step="0.01"
