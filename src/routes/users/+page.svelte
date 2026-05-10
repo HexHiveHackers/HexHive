@@ -83,10 +83,13 @@
     <p class="text-sm text-muted-foreground">Everyone with a HexHive account, sorted by most recent activity.</p>
   </header>
 
-  <div class="grid gap-3">
-    <h2 class="font-display text-sm uppercase tracking-[0.14em] text-muted-foreground">
-      Members <span class="text-foreground/60">· {claimed.length}</span>
-    </h2>
+  <details open class="group/users grid gap-3">
+    <summary class="flex items-center gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+      <ChevronDown class="size-4 text-muted-foreground transition-transform group-[&:not([open])]/users:-rotate-90" />
+      <h2 class="font-display text-sm uppercase tracking-[0.14em] text-muted-foreground">
+        Members <span class="text-foreground/60">· {claimed.length}</span>
+      </h2>
+    </summary>
     {#if claimed.length === 0}
       <p class="text-sm text-muted-foreground">No members yet.</p>
     {:else}
@@ -94,37 +97,43 @@
         {#each claimed as u (u.username)}{@render card(u)}{/each}
       </ul>
     {/if}
-  </div>
+  </details>
 
   {#if unclaimedContributors.length > 0}
-    <div class="grid gap-3">
-      <div class="grid gap-1">
-        <h2 class="font-display text-sm uppercase tracking-[0.14em] text-amber-300">
-          Unclaimed contributors <span class="text-amber-300/60">· {unclaimedContributors.length}</span>
-        </h2>
-        <p class="text-xs text-muted-foreground">
-          Profiles HexHive created on behalf of original asset creators. If one is yours, sign in with the matching provider to claim it.
-        </p>
-      </div>
+    <details class="group/contrib grid gap-3">
+      <summary class="flex items-start gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+        <ChevronDown class="size-4 mt-0.5 text-amber-300 transition-transform group-[&:not([open])]/contrib:-rotate-90" />
+        <div class="grid gap-1">
+          <h2 class="font-display text-sm uppercase tracking-[0.14em] text-amber-300">
+            Unclaimed contributors <span class="text-amber-300/60">· {unclaimedContributors.length}</span>
+          </h2>
+          <p class="text-xs text-muted-foreground">
+            Profiles HexHive created on behalf of original asset creators. If one is yours, sign in with the matching provider to claim it.
+          </p>
+        </div>
+      </summary>
       <ul class="grid gap-2 sm:grid-cols-2">
         {#each unclaimedContributors as u (u.username)}{@render card(u)}{/each}
       </ul>
-    </div>
+    </details>
   {/if}
 
   {#if unclaimedUsers.length > 0}
-    <div class="grid gap-3">
-      <div class="grid gap-1">
-        <h2 class="font-display text-sm uppercase tracking-[0.14em] text-sky-300">
-          Unclaimed users <span class="text-sky-300/60">· {unclaimedUsers.length}</span>
-        </h2>
-        <p class="text-xs text-muted-foreground">
-          People we wanted to credit or track but who don't have any assets attached yet. Tool developers, community figures, etc.
-        </p>
-      </div>
+    <details class="group/users2 grid gap-3">
+      <summary class="flex items-start gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+        <ChevronDown class="size-4 mt-0.5 text-sky-300 transition-transform group-[&:not([open])]/users2:-rotate-90" />
+        <div class="grid gap-1">
+          <h2 class="font-display text-sm uppercase tracking-[0.14em] text-sky-300">
+            Unclaimed users <span class="text-sky-300/60">· {unclaimedUsers.length}</span>
+          </h2>
+          <p class="text-xs text-muted-foreground">
+            People we wanted to credit or track but who don't have any assets attached yet. Tool developers, community figures, etc.
+          </p>
+        </div>
+      </summary>
       <ul class="grid gap-2 sm:grid-cols-2">
         {#each unclaimedUsers as u (u.username)}{@render card(u)}{/each}
       </ul>
-    </div>
+    </details>
   {/if}
 </section>
