@@ -1,5 +1,18 @@
 <script lang="ts">
-  import { FlaskConical, Loader2, Music, Pause, Play, RefreshCw, Repeat, Upload } from '@lucide/svelte';
+  import {
+    Cpu,
+    FlaskConical,
+    Gamepad,
+    Gamepad2,
+    Globe,
+    Loader2,
+    Music,
+    Pause,
+    Play,
+    RefreshCw,
+    Repeat,
+    Upload,
+  } from '@lucide/svelte';
   import type { Sequencer, WorkletSynthesizer } from 'spessasynth_lib';
   import { onMount } from 'svelte';
   import { replaceState } from '$app/navigation';
@@ -248,11 +261,12 @@
   // Bank rack tabs — group by era so the user picks family first, chip
   // second. Order matters: Gen III is the most-used and goes first.
   type GroupId = 'gen3' | 'gen1-2' | 'engine' | 'gm';
-  const GROUPS: { id: GroupId; label: string; sub: string; eras: readonly Era[] }[] = [
-    { id: 'gen3', label: 'Gen III', sub: 'Game Boy Advance', eras: ['gen3'] },
-    { id: 'gen1-2', label: 'Gen I · II', sub: 'Game Boy / Color', eras: ['gen1', 'gen2', 'gen1-2'] },
-    { id: 'engine', label: 'Engines', sub: 'Pokémon Essentials et al.', eras: ['engine'] },
-    { id: 'gm', label: 'Universal', sub: 'GM fallback', eras: ['gm'] },
+  type IconCmp = typeof Music;
+  const GROUPS: { id: GroupId; label: string; sub: string; eras: readonly Era[]; icon: IconCmp }[] = [
+    { id: 'gen3', label: 'Gen III', sub: 'Game Boy Advance', eras: ['gen3'], icon: Gamepad2 },
+    { id: 'gen1-2', label: 'Gen I · II', sub: 'Game Boy / Color', eras: ['gen1', 'gen2', 'gen1-2'], icon: Gamepad },
+    { id: 'engine', label: 'Engines', sub: 'Pokémon Essentials et al.', eras: ['engine'], icon: Cpu },
+    { id: 'gm', label: 'Universal', sub: 'GM fallback', eras: ['gm'], icon: Globe },
   ];
   function groupOf(era: Era): GroupId {
     return GROUPS.find((g) => g.eras.includes(era))?.id ?? 'gen3';
@@ -269,9 +283,15 @@
   // Pokémon Essentials GM bundle are conceptually different sources so
   // they get their own tabs; otherwise the bar would be a long scroll.
   type FixtureTabId = 'sappy' | 'gm';
-  const FIXTURE_TABS: { id: FixtureTabId; label: string; sub: string; kind: 'sappy' | 'gm' }[] = [
-    { id: 'sappy', label: 'GBA rips', sub: 'Sappy engine · .mid + voicegroup', kind: 'sappy' },
-    { id: 'gm', label: 'Pokémon Essentials', sub: 'GM render · zeak6464/Fire-Red', kind: 'gm' },
+  const FIXTURE_TABS: {
+    id: FixtureTabId;
+    label: string;
+    sub: string;
+    kind: 'sappy' | 'gm';
+    icon: IconCmp;
+  }[] = [
+    { id: 'sappy', label: 'GBA rips', sub: 'Sappy engine · .mid + voicegroup', kind: 'sappy', icon: Gamepad2 },
+    { id: 'gm', label: 'Pokémon Essentials', sub: 'GM render · zeak6464/Fire-Red', kind: 'gm', icon: Cpu },
   ];
   let activeFixtureTab = $state<FixtureTabId>('sappy');
   $effect(() => {
@@ -1057,6 +1077,7 @@
               ? 'border-b-2 border-foreground text-foreground'
               : 'border-b-2 border-transparent text-zinc-300 hover:text-foreground'}"
         >
+          <t.icon class="size-4 shrink-0" aria-hidden="true" />
           <span class="font-display text-[0.8rem] tracking-[0.2em]">{t.label}</span>
           <span class="text-sm text-zinc-300 font-mono hidden md:inline">{t.sub}</span>
           <span
@@ -1147,6 +1168,7 @@
               ? 'border-b-2 border-foreground text-foreground'
               : 'border-b-2 border-transparent text-zinc-300 hover:text-foreground'}"
         >
+          <g.icon class="size-4 shrink-0" aria-hidden="true" />
           <span class="font-display text-[0.8rem] tracking-[0.2em]">{g.label}</span>
           <span class="text-xs text-zinc-400 font-mono hidden md:inline">{g.sub}</span>
           <span
