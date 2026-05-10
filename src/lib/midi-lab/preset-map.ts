@@ -18,6 +18,11 @@ export interface MappingChoice {
   bankMSB: number;
   bankLSB: number;
   program: number;
+  // SF2 marks drum kits via the preset header's "drum" bit (surfaced by
+  // spessasynth as isAnyDrums) — NOT necessarily by bankMSB ≥ 128. So the
+  // resolver has to carry isDrum explicitly; every "is this a drum?"
+  // check in the rewriter and detectDrumChannels reads this, not bankMSB.
+  isDrum: boolean;
   label: string;
   reason: string;
 }
@@ -92,6 +97,7 @@ function asChoice(p: SfPreset, reason: string): MappingChoice {
     bankMSB: p.bankMSB,
     bankLSB: p.bankLSB,
     program: p.program,
+    isDrum: p.isAnyDrums,
     label: `${fmtPresetCoord(p.bankMSB, p.bankLSB, p.program)} ${p.name}`,
     reason,
   };
@@ -103,7 +109,7 @@ function asChoice(p: SfPreset, reason: string): MappingChoice {
 function defaultMelodic(presets: readonly SfPreset[], reason: string): MappingChoice {
   const first = presets.find((p) => !p.isAnyDrums);
   if (first) return asChoice(first, reason);
-  return { bankMSB: 0, bankLSB: 0, program: 0, label: '0:0 (none)', reason };
+  return { bankMSB: 0, bankLSB: 0, program: 0, isDrum: false, label: '0:0 (none)', reason };
 }
 
 // Pull a name hint out of a Sappy keysplit subgroup name. e.g.
@@ -161,6 +167,7 @@ export function autoMap(entry: VoiceEntry, _slot: number, presets: readonly SfPr
         bankMSB: 128,
         bankLSB: 0,
         program: 0,
+        isDrum: true,
         label: '128:0 (drum)',
         reason: `drum fallback ${entry.subgroupName}`,
       };

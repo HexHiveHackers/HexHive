@@ -38,6 +38,7 @@ describe('rewriteProgramChanges', () => {
       bankMSB: 7,
       bankLSB: 0,
       program: slot,
+      isDrum: false,
       label: 'noop',
       reason: 'test',
     }));
@@ -51,6 +52,7 @@ describe('rewriteProgramChanges', () => {
       bankMSB: 42,
       bankLSB: 0,
       program: 17,
+      isDrum: false,
       label: 'pinned',
       reason: 'test',
     }));
@@ -90,7 +92,7 @@ describe('rewriteProgramChanges', () => {
     // Mute every slot — no audible NoteOn should remain.
     const rewritten = rewriteProgramChanges(
       orig,
-      (slot) => ({ bankMSB: 0, bankLSB: 0, program: slot, label: '', reason: '' }),
+      (slot) => ({ bankMSB: 0, bankLSB: 0, program: slot, isDrum: false, label: '', reason: '' }),
       () => true,
     );
     const smf = parseSmf(rewritten);
@@ -107,7 +109,7 @@ describe('rewriteProgramChanges', () => {
     const orig = readMidi('pallet/mus_pallet.mid');
     const rewritten = rewriteProgramChanges(
       orig,
-      (slot) => ({ bankMSB: 0, bankLSB: 0, program: slot, label: '', reason: '' }),
+      (slot) => ({ bankMSB: 0, bankLSB: 0, program: slot, isDrum: false, label: '', reason: '' }),
       () => false,
     );
     const smf = parseSmf(rewritten);
@@ -131,6 +133,7 @@ describe('rewriteProgramChanges', () => {
         bankMSB: 0,
         bankLSB: 0,
         program: slot,
+        isDrum: false,
         label: '',
         reason: '',
       }));

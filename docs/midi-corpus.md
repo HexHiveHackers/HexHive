@@ -2,6 +2,16 @@
 
 Companion to [`soundfonts.md`](./soundfonts.md) and [`soundfont-sources.md`](./soundfont-sources.md). Where soundfonts are the sample banks, this file catalogues the **MIDI corpora** we draw from for fixtures + demos in `/sounds/midi-lab` and the production `/sounds/[slug]` page.
 
+## fireglow03 (Discord DMs) — the Sappy fixture trio
+
+The `pallet`, `littleroot`, and `b_dome_lobby` fixtures wired into `/sounds/midi-lab` (Pallet Town, Littleroot Town, Battle Dome Lobby) — each a `.mid` + `.s` + voicegroup `.inc` + reference `.mp3` set — came from **fireglow03** via Discord DM. **All three were ripped from Pokémon FireRed**, not Emerald.
+
+This matters because Emerald carries the FRLG soundtrack inside its ROM data (the audio engine indexes into both song tables), so the same songs exist in both games but the rip used here is the FireRed version. Per fireglow:
+
+> _"I should note that all the Pallet Town files I sent are from FireRed, not Emerald. I felt I should specify since Emerald has all the FRLG songs in its data."_
+
+So the lab's preferred soundfont for all three is **`vgk-frlg`** (musical-artifacts #8297, the dedicated FRLG bank), not the Emerald banks. The `game:` field in the fixture manifest is `FireRed` for all three.
+
 ## Nintendo MIDI Music (lequietriot) — `audio-pack-nmm-lequietriot`
 
 The HexHive listing `audio-pack-nmm-lequietriot` (visible at https://hexhive.app/sounds/audio-pack-nmm-lequietriot) is sourced from this channel/community. **NMM = Nintendo MIDI Music**.

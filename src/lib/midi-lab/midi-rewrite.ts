@@ -8,6 +8,7 @@ export interface MappingChoice {
   bankMSB: number;
   bankLSB: number;
   program: number;
+  isDrum: boolean;
   label: string;
   reason: string;
 }
@@ -196,12 +197,12 @@ export function rewriteProgramChanges(
         const program = e.data[0];
         channelProgram[channel] = program;
         const choice = resolve(program, channel);
-        if (choice.bankMSB >= 128) {
-          // Drum-bank presets can't be addressed by CC0 (7-bit). Emitting
-          // CC0=127 here would actually fight `synth.setDrums(ch, true)` —
-          // spessasynth interprets the bank-select and toggles the channel
-          // back out of drum mode. Skip the CC0 entirely; setDrums + the
-          // raw program-change is enough to reach the drum kit.
+        if (choice.isDrum) {
+          // Drum-bank presets are addressed via synth.setDrums(ch, true)
+          // (see detectDrumChannels). Emitting CC0/CC32 here would fight
+          // that — spessasynth interprets the bank-select and toggles
+          // the channel back out of drum mode. Skip both bank-select CCs;
+          // setDrums + the raw program-change reaches the drum kit.
           out.push({
             delta: e.delta,
             kind: 'midi',
@@ -265,7 +266,7 @@ export function detectDrumChannels(midi: ArrayBuffer | Uint8Array, resolve: Reso
       if (e.kind === 'midi' && (e.status & 0xf0) === 0xc0) {
         const ch = e.channel ?? e.status & 0x0f;
         const slot = e.data[0];
-        if (resolve(slot, ch).bankMSB >= 128) channels.add(ch);
+        if (resolve(slot, ch).isDrum) channels.add(ch);
       }
     }
   }

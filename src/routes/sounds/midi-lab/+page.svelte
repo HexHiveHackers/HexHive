@@ -834,6 +834,7 @@
       bankMSB: hit.bankMSB,
       bankLSB: hit.bankLSB,
       program: hit.program,
+      isDrum: hit.isAnyDrums,
       label: `${fmtCoord(hit.bankMSB, hit.bankLSB, hit.program)} ${hit.name}`,
       reason: 'manual override',
     });

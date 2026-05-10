@@ -53,24 +53,28 @@ const FIXTURES: Fixture[] = [
   {
     id: 'littleroot',
     label: 'Littleroot Town',
-    game: 'Ruby/Sapphire/Emerald',
+    // Per fireglow03 (Discord DM): all three .mid/.s/.mp3 fixture sets were
+    // ripped from Pokémon FireRed, not Emerald. Emerald carries the full
+    // FRLG soundtrack in its ROM data so any "this is in Emerald" assumption
+    // misled the prior labelling.
+    game: 'FireRed',
     kind: 'sappy',
     midiUrl: '/midi-lab/fixtures/littleroot/mus_littleroot.mid',
     voicegroupUrl: '/midi-lab/fixtures/littleroot/littleroot.inc',
     refUrl: '/midi-lab/fixtures/littleroot/mus_littleroot.mp3',
     asmUrl: '/midi-lab/fixtures/littleroot/mus_littleroot.s',
-    preferredSoundfont: 'emerald-actual',
+    preferredSoundfont: 'vgk-frlg',
   },
   {
     id: 'b_dome_lobby',
     label: 'Battle Dome Lobby',
-    game: 'Emerald',
+    game: 'FireRed',
     kind: 'sappy',
     midiUrl: '/midi-lab/fixtures/b_dome_lobby/mus_b_dome_lobby.mid',
     voicegroupUrl: '/midi-lab/fixtures/b_dome_lobby/b_dome.inc',
     refUrl: '/midi-lab/fixtures/b_dome_lobby/mus_b_dome_lobby.mp3',
     asmUrl: '/midi-lab/fixtures/b_dome_lobby/mus_b_dome_lobby.s',
-    preferredSoundfont: 'emerald-actual',
+    preferredSoundfont: 'vgk-frlg',
   },
   // GM-mode fixtures from zeak6464/Fire-Red (Pokémon Essentials project).
   // The .ogg files were rendered by mkxp+fluidsynth through GMGSx — the
