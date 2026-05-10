@@ -826,6 +826,14 @@
   }
 
   onMount(() => {
+    // Pre-warm the heavy stuff that doesn't need a user gesture:
+    // - import spessasynth_lib (lazy ESM chunk, ~hundreds of KB)
+    // - fetch the active soundfont's SF2 bytes into the Blob cache
+    // AudioContext + worklet still wait for the first Play click (per
+    // browser policy), but by the time the user clicks, the lib is
+    // parsed and the SF2 bytes are already in memory — first Play is
+    // worklet-add + sequencer-create only, not a multi-second wait.
+    prewarm();
     // Auto-load on first visit. Honour ?song=<id> if present, fall back
     // to the first fixture so the page is never empty for new visitors.
     const requested = page.url.searchParams.get('song');
