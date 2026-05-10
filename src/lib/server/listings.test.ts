@@ -21,7 +21,12 @@ beforeAll(async () => {
   const client = createClient({ url: 'file::memory:?cache=shared' });
   db = drizzle(client, { schema });
   await migrate(db, { migrationsFolder: './drizzle' });
-  await db.insert(schema.user).values({ id: 'u1', name: 'Author', email: 'a@x.com' });
+  await db.insert(schema.user).values({ id: 'u1', name: 'Author', email: 'a@x.com', isPlaceholder: true });
+  await db.insert(schema.profile).values({
+    userId: 'u1',
+    username: 'alice',
+    homepageUrl: 'https://example.com/me',
+  });
 });
 
 const sampleInput = (): RomhackCreateInput => ({
@@ -58,6 +63,9 @@ describe('Romhack listing CRUD', () => {
     expect(got?.listing.status).toBe('published');
     expect(got?.files).toHaveLength(1);
     expect(got?.meta.baseRom).toBe('Emerald');
+    expect(got?.authorUsername).toBe('alice');
+    expect(got?.authorIsPlaceholder).toBe(true);
+    expect(got?.authorHomepageUrl).toBe('https://example.com/me');
   });
 
   it('lists only published romhacks', async () => {
@@ -183,5 +191,8 @@ describe('asset-hive list/detail', () => {
     const detail = await getAssetHiveBySlug(db, 'sound', draft.slug);
     expect(detail?.meta.kind).toBe('sound');
     if (detail?.meta.kind === 'sound') expect(detail.meta.data.category).toBe('SFX');
+    expect(detail?.authorUsername).toBe('alice');
+    expect(detail?.authorIsPlaceholder).toBe(true);
+    expect(detail?.authorHomepageUrl).toBe('https://example.com/me');
   });
 });

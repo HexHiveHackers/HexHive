@@ -180,6 +180,9 @@ export interface RomhackDetail {
   files: (typeof schema.listingFile.$inferSelect)[];
   versions: (typeof schema.listingVersion.$inferSelect)[];
   authorName: string;
+  authorUsername: string | null;
+  authorIsPlaceholder: boolean;
+  authorHomepageUrl: string | null;
 }
 
 export async function getRomhackBySlug(db: DB, slug: string): Promise<RomhackDetail | null> {
@@ -208,8 +211,14 @@ export async function getRomhackBySlug(db: DB, slug: string): Promise<RomhackDet
     .from(schema.listingFile)
     .where(eq(schema.listingFile.versionId, versionRows[0].id));
   const authorRows = await db
-    .select({ name: schema.user.name })
+    .select({
+      name: schema.user.name,
+      isPlaceholder: schema.user.isPlaceholder,
+      username: schema.profile.username,
+      homepageUrl: schema.profile.homepageUrl,
+    })
     .from(schema.user)
+    .leftJoin(schema.profile, eq(schema.profile.userId, schema.user.id))
     .where(eq(schema.user.id, listing.authorId))
     .limit(1);
 
@@ -222,6 +231,9 @@ export async function getRomhackBySlug(db: DB, slug: string): Promise<RomhackDet
     files: fileRows,
     versions,
     authorName: authorRows[0]?.name ?? 'unknown',
+    authorUsername: authorRows[0]?.username ?? null,
+    authorIsPlaceholder: authorRows[0]?.isPlaceholder ?? false,
+    authorHomepageUrl: authorRows[0]?.homepageUrl ?? null,
   };
 }
 
@@ -324,6 +336,9 @@ export interface AssetHiveDetail {
   files: (typeof schema.listingFile.$inferSelect)[];
   versions: (typeof schema.listingVersion.$inferSelect)[];
   authorName: string;
+  authorUsername: string | null;
+  authorIsPlaceholder: boolean;
+  authorHomepageUrl: string | null;
 }
 
 export async function getAssetHiveBySlug(
@@ -374,12 +389,33 @@ export async function getAssetHiveBySlug(
 
   const files = await db.select().from(schema.listingFile).where(eq(schema.listingFile.versionId, version.id));
   const author = (
-    await db.select({ name: schema.user.name }).from(schema.user).where(eq(schema.user.id, listing.authorId)).limit(1)
+    await db
+      .select({
+        name: schema.user.name,
+        isPlaceholder: schema.user.isPlaceholder,
+        username: schema.profile.username,
+        homepageUrl: schema.profile.homepageUrl,
+      })
+      .from(schema.user)
+      .leftJoin(schema.profile, eq(schema.profile.userId, schema.user.id))
+      .where(eq(schema.user.id, listing.authorId))
+      .limit(1)
   )[0];
 
   const versions = await listVersionsForListing(db, listing.id);
 
-  return { listing, base, meta, version, files, versions, authorName: author?.name ?? 'unknown' };
+  return {
+    listing,
+    base,
+    meta,
+    version,
+    files,
+    versions,
+    authorName: author?.name ?? 'unknown',
+    authorUsername: author?.username ?? null,
+    authorIsPlaceholder: author?.isPlaceholder ?? false,
+    authorHomepageUrl: author?.homepageUrl ?? null,
+  };
 }
 
 export async function incrementDownloads(db: DB, listingId: string): Promise<void> {
