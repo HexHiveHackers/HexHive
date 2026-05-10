@@ -1322,7 +1322,7 @@
             </span>
             <input
               type="range"
-              class="flex-1 accent-emerald-400"
+              class="flex-1 accent-amber-400"
               min="0"
               max={mp3Duration || 1}
               step="0.01"
@@ -1534,3 +1534,19 @@
     </div>
   {/if}
 </section>
+
+<style>
+  /* Both transport sliders share a uniform unfilled track look (dim
+     zinc) so the only colour difference between the synth and tape
+     panels is the accent on the filled portion + thumb. */
+  input[type="range"]::-webkit-slider-runnable-track {
+    background: rgba(63, 63, 70, 0.55);
+    height: 0.4rem;
+    border-radius: 9999px;
+  }
+  input[type="range"]::-moz-range-track {
+    background: rgba(63, 63, 70, 0.55);
+    height: 0.4rem;
+    border-radius: 9999px;
+  }
+</style>
