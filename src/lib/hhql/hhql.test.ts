@@ -1,5 +1,6 @@
 // src/lib/hhql/hhql.test.ts
 import { describe, expect, it } from 'vitest';
+import { parse } from './parser';
 import { tokenize } from './tokens';
 
 describe('tokenize', () => {
@@ -57,5 +58,87 @@ describe('tokenize', () => {
       { kind: 'ident', value: '-' },
       { kind: 'ident', value: 'b' },
     ]);
+  });
+});
+
+describe('parse', () => {
+  it('parses a single compare', () => {
+    const r = parse('downloads >= 100');
+    expect(r.ok).toBe(true);
+    expect(r.ast).toMatchObject({
+      kind: 'compare',
+      field: 'downloads',
+      op: '>=',
+      value: { kind: 'number', value: 100 },
+    });
+  });
+
+  it('parses IN list with negation', () => {
+    const r = parse('creates NOT IN (sprite, sound)');
+    expect(r.ok).toBe(true);
+    expect(r.ast).toMatchObject({
+      kind: 'in',
+      field: 'creates',
+      negated: true,
+      values: [
+        { kind: 'string', value: 'sprite' },
+        { kind: 'string', value: 'sound' },
+      ],
+    });
+  });
+
+  it('parses IS NOT EMPTY', () => {
+    const r = parse('alias IS NOT EMPTY');
+    expect(r.ok).toBe(true);
+    expect(r.ast).toMatchObject({ kind: 'empty', field: 'alias', negated: true });
+  });
+
+  it('parses bare boolean keywords', () => {
+    const r = parse('hasBio');
+    expect(r.ok).toBe(true);
+    expect(r.ast).toMatchObject({ kind: 'bare', field: 'hasBio', negated: false });
+  });
+
+  it('treats NOT hasBio as negated bare', () => {
+    const r = parse('NOT hasBio');
+    expect(r.ok).toBe(true);
+    expect(r.ast).toMatchObject({ kind: 'not', inner: { kind: 'bare', field: 'hasBio' } });
+  });
+
+  it('treats adjacent clauses as implicit AND', () => {
+    const r = parse('hasBio active > -7d');
+    expect(r.ok).toBe(true);
+    expect(r.ast?.kind).toBe('and');
+  });
+
+  it('respects OR < AND precedence', () => {
+    const r = parse('a = 1 OR b = 2 AND c = 3');
+    expect(r.ok).toBe(true);
+    // expect: or(a=1, and(b=2, c=3))
+    expect(r.ast).toMatchObject({ kind: 'or', right: { kind: 'and' } });
+  });
+
+  it('parses parenthesized groups', () => {
+    const r = parse('(a = 1 OR b = 2) AND c = 3');
+    expect(r.ok).toBe(true);
+    expect(r.ast).toMatchObject({ kind: 'and', left: { kind: 'group' } });
+  });
+
+  it('returns ok with null ast on empty input', () => {
+    const r = parse('   ');
+    expect(r.ok).toBe(true);
+    expect(r.ast).toBeNull();
+  });
+
+  it('returns errors with positions on unbalanced paren', () => {
+    const r = parse('(a = 1');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.message).toMatch(/paren/i);
+  });
+
+  it('is lenient: trailing AND yields a partial ast and an error', () => {
+    const r = parse('hasBio AND');
+    expect(r.ok).toBe(false);
+    expect(r.ast).not.toBeNull(); // we got at least the left side
   });
 });
