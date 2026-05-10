@@ -55,19 +55,7 @@
       </p>
     </div>
   {/if}
-  <ProfileSummary profile={data.profile} />
-  {#if data.aliases.length > 0}
-    <div>
-      <h2 class="font-display text-xl mb-3">Also known as</h2>
-      <ul class="flex flex-wrap gap-2">
-        {#each data.aliases as a (a.id)}
-          <li>
-            <span class="rounded-full border bg-card/40 px-3 py-1 text-xs text-muted-foreground">{a.value}</span>
-          </li>
-        {/each}
-      </ul>
-    </div>
-  {/if}
+  <ProfileSummary profile={data.profile} aliases={data.aliases} />
   {#if data.links.length > 0}
     <div>
       <h2 class="font-display text-xl mb-3">Links</h2>
