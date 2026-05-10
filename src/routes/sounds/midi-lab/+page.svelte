@@ -223,7 +223,7 @@
   // Active card glow ring per tone — matches the LED's colour family so
   // the whole chip feels like one lit unit.
   const TONE_RING: Record<Tone, string> = {
-    orange: 'border-orange-500/70 shadow-[0_0_0_1px_rgba(249,115,22,0.3),0_0_24px_-6px_rgba(249,115,22,0.75)]',
+    orange: 'border-transparent midilab-grad-ring shadow-[0_0_24px_-6px_rgba(249,115,22,0.6)]',
     emerald: 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.3),0_0_24px_-6px_rgba(16,185,129,0.75)]',
     violet: 'border-violet-500/70 shadow-[0_0_0_1px_rgba(139,92,246,0.3),0_0_24px_-6px_rgba(139,92,246,0.75)]',
     fuchsia: 'border-fuchsia-500/70 shadow-[0_0_0_1px_rgba(217,70,239,0.3),0_0_24px_-6px_rgba(217,70,239,0.75)]',
@@ -231,9 +231,18 @@
     amber: 'border-amber-500/70 shadow-[0_0_0_1px_rgba(245,158,11,0.3),0_0_24px_-6px_rgba(245,158,11,0.75)]',
     sky: 'border-sky-400/70 shadow-[0_0_0_1px_rgba(56,189,248,0.3),0_0_24px_-6px_rgba(56,189,248,0.75)]',
     indigo: 'border-indigo-500/70 shadow-[0_0_0_1px_rgba(99,102,241,0.3),0_0_24px_-6px_rgba(99,102,241,0.75)]',
-    gen12: 'border-amber-400/70 shadow-[0_0_0_1px_rgba(251,191,36,0.3),0_0_24px_-6px_rgba(251,191,36,0.75)]',
-    rse: 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.3),0_0_24px_-6px_rgba(16,185,129,0.75)]',
+    gen12: 'border-transparent midilab-grad-ring shadow-[0_0_24px_-6px_rgba(251,191,36,0.6)]',
+    rse: 'border-transparent midilab-grad-ring shadow-[0_0_24px_-6px_rgba(16,185,129,0.6)]',
     white: 'border-zinc-200/70 shadow-[0_0_0_1px_rgba(244,244,245,0.3),0_0_24px_-6px_rgba(244,244,245,0.75)]',
+  };
+  // For tones whose ring is a multi-stop gradient (the dual-bg + mask
+  // trick on .midilab-grad-ring needs a CSS variable supplying the
+  // gradient). Solid-tone chips don't set this and the pseudo-element
+  // is invisible (--grad-ring defaults to none).
+  const TONE_GRAD_RING_CSS: Partial<Record<Tone, string>> = {
+    orange: 'linear-gradient(to right, rgba(239,68,68,0.95), rgba(249,115,22,0.95), rgba(251,191,36,0.95))',
+    gen12: 'linear-gradient(to right, rgba(239,68,68,0.95), rgba(251,191,36,0.95))',
+    rse: 'linear-gradient(to right, rgba(239,68,68,0.95), rgba(56,189,248,0.95), rgba(16,185,129,0.95))',
   };
 
   // Bank rack tabs — group by era so the user picks family first, chip
@@ -1170,6 +1179,7 @@
           }}
           aria-pressed={isSelected}
           aria-label="{sf.label}{sf.context ? ` — ${sf.context}` : ''}"
+          style={isSelected && TONE_GRAD_RING_CSS[sf.tone] ? `--grad-ring: ${TONE_GRAD_RING_CSS[sf.tone]}` : ''}
           class="group relative overflow-hidden rounded-md border bg-slate-950/70 p-4 text-left transition-all
             {isSelected
               ? TONE_RING[sf.tone]
@@ -1362,9 +1372,9 @@
             <button
               type="button"
               onclick={toggleLoop}
-              class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] flex items-center gap-1 {loopOn
-                ? 'bg-amber-500/15 border-amber-500/60 text-amber-300'
-                : 'border-border hover:border-foreground/40'}"
+              class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] flex items-center gap-1 transition-colors {loopOn
+                ? 'bg-amber-500/15 border-amber-500/60 text-amber-300 hover:bg-amber-500/25 hover:border-amber-400 hover:text-amber-200'
+                : 'border-border text-muted-foreground hover:bg-amber-500/10 hover:border-amber-500/50 hover:text-amber-300'}"
               aria-pressed={loopOn}
               title="Loop"
             >
@@ -1439,9 +1449,9 @@
           <button
             type="button"
             onclick={toggleLoop}
-            class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] flex items-center gap-1 {loopOn
-              ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-400'
-              : 'border-border hover:border-foreground/40'}"
+            class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] flex items-center gap-1 transition-colors {loopOn
+              ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-400 hover:text-emerald-300'
+              : 'border-border text-muted-foreground hover:bg-emerald-500/10 hover:border-emerald-500/50 hover:text-emerald-300'}"
             aria-pressed={loopOn}
             title="Loop"
           >
@@ -1578,5 +1588,87 @@
     );
     height: 0.4rem;
     border-radius: 9999px;
+  }
+
+  /* Thumb (the draggable knob). Browsers ship inert defaults; give it the
+     player's accent colour, a halo that grows on hover/focus, and a slight
+     scale on active so dragging feels tactile. `accent-color` alone doesn't
+     paint hover variants. */
+  .midilab-scrub {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+  .midilab-scrub::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1rem;
+    height: 1rem;
+    margin-top: -0.3rem;
+    border-radius: 9999px;
+    background: var(--track-fill, #34d399);
+    border: 2px solid rgba(9, 9, 11, 0.85);
+    box-shadow: 0 0 0 0 transparent;
+    transition:
+      transform 120ms ease,
+      box-shadow 160ms ease,
+      filter 120ms ease;
+  }
+  .midilab-scrub::-moz-range-thumb {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    background: var(--track-fill, #34d399);
+    border: 2px solid rgba(9, 9, 11, 0.85);
+    box-shadow: 0 0 0 0 transparent;
+    transition:
+      transform 120ms ease,
+      box-shadow 160ms ease,
+      filter 120ms ease;
+  }
+  .midilab-scrub:hover::-webkit-slider-thumb,
+  .midilab-scrub:focus-visible::-webkit-slider-thumb {
+    filter: brightness(1.15);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--track-fill, #34d399) 28%, transparent);
+  }
+  .midilab-scrub:hover::-moz-range-thumb,
+  .midilab-scrub:focus-visible::-moz-range-thumb {
+    filter: brightness(1.15);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--track-fill, #34d399) 28%, transparent);
+  }
+  .midilab-scrub:active::-webkit-slider-thumb {
+    transform: scale(1.1);
+  }
+  .midilab-scrub:active::-moz-range-thumb {
+    transform: scale(1.1);
+  }
+
+  /* Gradient ring for chips whose tone is a multi-stop gradient (FRLG
+     orange flame, Gen I+II red→amber, RSE red→blue→green). Painted as
+     a ::before pseudo-element with mask-composite so the gradient
+     follows the chip's rounded corners — border-image flattens corners
+     and box-shadow can only render solid colours. The chip itself
+     keeps its inactive bg + zero border; the active glow is the gradient
+     ring + a soft outer haze applied as a normal box-shadow. */
+  .midilab-grad-ring {
+    position: relative;
+  }
+  .midilab-grad-ring::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: var(--grad-ring, none);
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
   }
 </style>
