@@ -5,7 +5,12 @@
   import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
   import { Button } from '$lib/components/ui/button';
-  import { detectDrumChannels, parseSmf, rewriteProgramChanges } from '$lib/midi-lab/midi-rewrite';
+  import {
+    detectDrumChannels,
+    firstDrumProgramPerChannel,
+    parseSmf,
+    rewriteProgramChanges,
+  } from '$lib/midi-lab/midi-rewrite';
   import { loadOverrides, saveOverride } from '$lib/midi-lab/overrides';
   import { autoMap, listPresets, type MappingChoice, type SfPreset } from '$lib/midi-lab/preset-map';
   import { hashVoicegroup, type ParsedVoicegroup, parseVoicegroup, type VoiceEntry } from '$lib/midi-lab/voicegroup';
@@ -515,6 +520,7 @@
     seqLoadedFor = null;
     let bytes: Uint8Array;
     let drumChannels: Set<number>;
+    let firstDrumProgram = new Map<number, number>();
     if (loaded.kind === 'sappy') {
       const ps = presets;
       const merged = buildMappings(loaded.voicegroup, overrides, ps);
@@ -522,6 +528,7 @@
       const resolver = (slot: number, _ch: number) => merged[slot];
       bytes = rewriteProgramChanges(loaded.midiBytes, resolver, muted.size > 0 ? (slot) => muted.has(slot) : undefined);
       drumChannels = detectDrumChannels(loaded.midiBytes, resolver);
+      firstDrumProgram = firstDrumProgramPerChannel(loaded.midiBytes, resolver);
     } else {
       // GM fixture — pass the MIDI through verbatim. Channel 9 is drums
       // by GM convention; spessasynth handles that on its own.
@@ -557,12 +564,26 @@
     // synth resolves the program-change to whatever melodic preset
     // lives at the same (bank, program) coordinates — exactly the
     // mute/unmute = back to piano regression.
-    // Defence-in-depth: also apply directly. The seq listeners will fire
-    // for the load's songChange/timeChange anyway, but doing it here too
-    // means a fresh load with restoreTime=0 (no seek) doesn't depend on
-    // the worklet's event ordering to get the first drum frame right.
+    // Lock drum-channel presets so the loop's resetAllControllers can't
+    // flip them back to melodic before the synth's first post-loop
+    // note-on. Sequence:
+    //   1. Unlock every channel (clears any previous fixture's locks).
+    //   2. Apply drum mode where needed; pre-execute the chosen drum-kit
+    //      programChange so the kit is right BEFORE we lock.
+    //   3. Lock the preset on each drum channel — setDrumFlag,
+    //      setBankMSB/LSB, programChange all return early when locked,
+    //      so the loop's reset is a no-op for these channels.
+    // Trade-off: locked drum channels also ignore the song's PC events
+    // (we already pre-applied the chosen kit), but Sappy MIDIs only set
+    // drum program once, so this isn't a practical loss.
     if (synth) {
+      for (let ch = 0; ch < 16; ch++) synth.lockController(ch, -1, false);
       for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannels.has(ch));
+      for (const ch of drumChannels) {
+        const program = firstDrumProgram.get(ch);
+        if (program !== undefined) synth.programChange(ch, program);
+        synth.lockController(ch, -1, true);
+      }
     }
     seqLoadedFor = loaded.songId;
     // Auto-resume only if the user didn't pause during the load. The

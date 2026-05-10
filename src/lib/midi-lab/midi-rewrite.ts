@@ -273,6 +273,27 @@ export function detectDrumChannels(midi: ArrayBuffer | Uint8Array, resolve: Reso
   return channels;
 }
 
+// For each drum channel, find the first program-change slot that
+// resolves to a drum preset and return the resolver's chosen drum-kit
+// program. Used to pre-seed the channel's program so we can lock the
+// preset before the loop's reset can change it.
+export function firstDrumProgramPerChannel(midi: ArrayBuffer | Uint8Array, resolve: Resolver): Map<number, number> {
+  const out = new Map<number, number>();
+  const smf = parseSmf(midi);
+  for (const track of smf.tracks) {
+    for (const e of track) {
+      if (e.kind === 'midi' && (e.status & 0xf0) === 0xc0) {
+        const ch = e.channel ?? e.status & 0x0f;
+        if (out.has(ch)) continue;
+        const slot = e.data[0];
+        const choice = resolve(slot, ch);
+        if (choice.isDrum) out.set(ch, choice.program);
+      }
+    }
+  }
+  return out;
+}
+
 // Useful for tests: counts program-change events per track.
 export function countProgramChanges(midi: ArrayBuffer | Uint8Array): number {
   const smf = parseSmf(midi);
