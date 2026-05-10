@@ -5,6 +5,7 @@
   import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
   import VersionTimeline from '$lib/components/listings/VersionTimeline.svelte';
   import ReportButton from '$lib/components/moderation/ReportButton.svelte';
+  import HostIcon from '$lib/components/profile/HostIcon.svelte';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
   import { linkifySegments } from '$lib/utils/linkify';
@@ -83,6 +84,35 @@
         </div>
       </div>
     {/if}
+    {#if meta.discordUrl || meta.sourceUrl}
+      <div class="border rounded-lg p-4 sm:col-span-2">
+        <h2 class="text-sm font-medium mb-2">Community &amp; source</h2>
+        <div class="flex flex-wrap gap-2">
+          {#if meta.discordUrl}
+            <a
+              href={meta.discordUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 rounded-full border bg-card/40 px-3 py-1 text-xs hover:border-primary/50 hover:bg-card hover:text-primary transition-colors"
+            >
+              <HostIcon url={meta.discordUrl} size={12} />
+              <span>Discord</span>
+            </a>
+          {/if}
+          {#if meta.sourceUrl}
+            <a
+              href={meta.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 rounded-full border bg-card/40 px-3 py-1 text-xs hover:border-primary/50 hover:bg-card hover:text-primary transition-colors"
+            >
+              <HostIcon url={meta.sourceUrl} size={12} />
+              <span>Source</span>
+            </a>
+          {/if}
+        </div>
+      </div>
+    {/if}
   </section>
 
   <section class="border rounded-lg p-4">
@@ -111,6 +141,8 @@
         </a>
       {/if}
     </div>
-    <VersionTimeline {versions} />
+    <div class="max-h-96 overflow-y-auto rounded-lg border bg-card/30 p-3 [scrollbar-gutter:stable]">
+      <VersionTimeline {versions} />
+    </div>
   </section>
 </article>
