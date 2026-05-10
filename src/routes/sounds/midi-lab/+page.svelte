@@ -293,6 +293,11 @@
   // so we know whether the first Play click needs to do the initial load.
   let seqLoadedFor = $state<string | null>(null);
 
+  // Channels currently in drum mode for the loaded fixture. Recomputed on
+  // every loadIntoSequencer; consulted by seek() to re-apply setDrums
+  // after spessasynth's seek-time controller reset wipes them.
+  let drumChannelsCurrent = $state<ReadonlySet<number>>(new Set());
+
   // Engine state mirrors SoundPlayer.svelte's lifecycle.
   let engineState = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
   let isPlaying = $state(false);
@@ -508,6 +513,7 @@
     // synth resolves the program-change to whatever melodic preset
     // lives at the same (bank, program) coordinates — exactly the
     // mute/unmute = back to piano regression.
+    drumChannelsCurrent = drumChannels;
     if (synth) {
       for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannels.has(ch));
     }
@@ -652,6 +658,13 @@
     if (!seq) return;
     seq.currentTime = t;
     currentTime = t;
+    // The seek triggers spessasynth's sendMIDIAllOff, which resets
+    // per-channel drum mode. Re-apply our flags so a scrub doesn't
+    // silently demote a drum kit back to the melodic preset that lives
+    // at the same (bank, program) coords.
+    if (synth) {
+      for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannelsCurrent.has(ch));
+    }
   }
 
   async function toggleSlotMute(slot: number): Promise<void> {
