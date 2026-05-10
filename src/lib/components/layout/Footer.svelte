@@ -17,7 +17,7 @@
           class="inline-flex items-center gap-1.5 transition-colors hover:text-[#5865F2]"
           aria-label="Join HexHive on Discord"
         >
-          <SiDiscord size={14} />
+          <SiDiscord size={14} title="Join HexHive on Discord" />
           Discord
         </a>
         <a href="/privacy" class="hover:text-foreground hover:underline">Privacy</a>

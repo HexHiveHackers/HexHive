@@ -1003,18 +1003,6 @@
        source family, cards inside to pick a specific song. Active fixture
        gets a subtle ring; the tab containing it shows a small white pip. -->
   <div class="space-y-3">
-    <div class="flex flex-wrap items-baseline justify-between gap-3">
-      <div class="flex items-baseline gap-3">
-        {#if loaded}
-          <span class="text-sm text-zinc-200">
-            Song: <span class="font-mono text-foreground">{loaded.label}</span>
-          </span>
-        {:else}
-          <span class="text-sm uppercase tracking-[0.25em] text-foreground font-display">Fixtures</span>
-        {/if}
-      </div>
-    </div>
-
     <div role="tablist" aria-label="Fixture sources" class="flex flex-wrap gap-1 border-b border-border/60">
       {#each FIXTURE_TABS as t (t.id)}
         {@const count = data.fixtures.filter((f) => f.kind === t.kind).length}
@@ -1092,24 +1080,15 @@
        = worklet still parsing, era-coloured dot = ready, dim = not loaded
        yet. The header summarises what's currently driving the synth. -->
   <div class="space-y-3">
-    <div class="flex flex-wrap items-baseline justify-between gap-3">
-      <div class="flex items-baseline gap-3">
-        <span class="text-sm text-zinc-200">
-          Soundfont:
-          <span class="font-mono text-foreground">{soundfont.title}</span>
-          <span class="font-display text-[0.75rem] tracking-[0.2em] {TONE_TEXT[soundfont.tone]} ml-1">
-            {ERA_LABEL[soundfont.era]}
-          </span>
-        </span>
-      </div>
-      {#if swappingTo}
-        {@const target = SOUNDFONTS.find((s) => s.id === swappingTo)}
+    {#if swappingTo}
+      {@const target = SOUNDFONTS.find((s) => s.id === swappingTo)}
+      <div class="flex justify-end">
         <span class="font-mono text-sm text-zinc-200 inline-flex items-center gap-1.5">
           <Loader2 class="size-3.5 animate-spin text-zinc-300" />
           <span>loading <span class="text-foreground">{target?.title ?? swappingTo}</span>…</span>
         </span>
-      {/if}
-    </div>
+      </div>
+    {/if}
 
     <!-- tab strip — neutral chrome; the only colour is the small pip showing
          which group contains the currently-active bank (uses that bank's

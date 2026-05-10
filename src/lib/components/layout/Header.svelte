@@ -50,12 +50,17 @@
     }
   });
 
-  type NavLink = { href: string; label: string; type: 'romhack' | 'sprite' | 'sound' | 'script' };
+  type NavLink = {
+    href: string;
+    label: string;
+    type: 'romhack' | 'sprite' | 'sound' | 'script' | 'tool';
+  };
   const navLinks: NavLink[] = [
     { href: '/sprites', label: 'Sprites', type: 'sprite' },
     { href: '/sounds', label: 'Sounds', type: 'sound' },
     { href: '/scripts', label: 'Scripts', type: 'script' },
     { href: '/romhacks', label: 'Romhacks', type: 'romhack' },
+    { href: '/tools', label: 'Tools', type: 'tool' },
   ];
 
   // Highlight a nav entry when the current path is the section root or any
@@ -104,9 +109,9 @@
         class="midi-lab-link inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors {midiLabActive
           ? 'bg-emerald-500/15 text-emerald-300'
           : 'text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-300'}"
-        aria-label="Open MIDI lab"
+        aria-label="MIDI lab demo (WIP)"
         aria-current={midiLabActive ? 'page' : undefined}
-        title="MIDI lab (beta)"
+        title="MIDI lab demo (WIP)"
       >
         <FlaskConical size={16} />
       </a>
@@ -118,7 +123,7 @@
         aria-label="Join HexHive on Discord"
         title="Join HexHive on Discord"
       >
-        <SiDiscord size={16} />
+        <SiDiscord size={16} title="Join HexHive on Discord" />
       </a>
       {#if user}
         <a href="/upload">
@@ -219,7 +224,7 @@
         class="discord-link flex min-h-12 select-none items-center justify-center gap-2 text-sm text-muted-foreground transition-colors hover:text-[#5865F2]"
         onclick={() => (mobileMenuOpen = false)}
       >
-        <SiDiscord size={16} />
+        <SiDiscord size={16} title="Join HexHive on Discord" />
         Discord
       </a>
       <div class="mt-2 border-t pt-3 flex flex-col items-stretch gap-2">
