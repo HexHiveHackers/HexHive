@@ -50,12 +50,12 @@
       </div>
     {/if}
     <div class="p-4 flex flex-col flex-1">
-      <div class="flex items-start justify-between gap-2 mb-2">
+      <div class="flex items-start justify-between gap-2 mb-2 min-h-[3rem]">
         <h3 class="font-medium line-clamp-2">{item.title}</h3>
         <TypeBadge {type} />
       </div>
       <p class="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">{item.description}</p>
-      <div class="mt-3 flex flex-wrap gap-1">
+      <div class="mt-3 flex flex-wrap gap-1 min-h-[3.5rem] content-start">
         {#each item.targetedRoms as r}<Badge variant="secondary">{r}</Badge>{/each}
         <Badge variant="outline">{item.fileCount} files</Badge>
         <Badge variant="outline">{sizeKb} KB</Badge>
