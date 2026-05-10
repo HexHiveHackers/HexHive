@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { Upload } from '@lucide/svelte';
+  import { ChevronDown, Upload } from '@lucide/svelte';
   import { page } from '$app/state';
   import CreditLine from '$lib/components/credit-line.svelte';
   import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
   import VersionTimeline from '$lib/components/listings/VersionTimeline.svelte';
-  import ReportButton from '$lib/components/moderation/ReportButton.svelte';
   import HostIcon from '$lib/components/profile/HostIcon.svelte';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
@@ -18,6 +17,11 @@
   const versions = $derived(data.detail.versions);
   const authorName = $derived(data.detail.authorName);
   const isAuthor = $derived(page.data.user?.id === listing.authorId);
+  // Versions are returned newest-first; show the head as the always-visible
+  // summary and tuck the rest behind an expand button.
+  const currentVersion = $derived(versions[0]);
+  const olderVersions = $derived(versions.slice(1));
+  let showAllVersions = $state(false);
 </script>
 
 <svelte:head>
@@ -127,9 +131,6 @@
         </li>
       {/each}
     </ul>
-    <div class="mt-4 flex justify-end">
-      <ReportButton listingId={listing.id} />
-    </div>
   </section>
 
   <section class="border rounded-lg p-4 mt-6">
@@ -141,8 +142,24 @@
         </a>
       {/if}
     </div>
-    <div class="max-h-96 overflow-y-auto rounded-lg border bg-card/30 p-3 [scrollbar-gutter:stable]">
-      <VersionTimeline {versions} />
-    </div>
+    {#if currentVersion}
+      <VersionTimeline versions={[currentVersion]} />
+      {#if olderVersions.length > 0}
+        <button
+          type="button"
+          onclick={() => (showAllVersions = !showAllVersions)}
+          class="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          aria-expanded={showAllVersions}
+        >
+          <ChevronDown size={14} class="transition-transform {showAllVersions ? 'rotate-180' : ''}" />
+          {showAllVersions ? 'Hide' : 'Show'} {olderVersions.length} previous version{olderVersions.length === 1 ? '' : 's'}
+        </button>
+        {#if showAllVersions}
+          <div class="mt-3 max-h-96 overflow-y-auto rounded-lg border bg-card/30 p-3 [scrollbar-gutter:stable]">
+            <VersionTimeline versions={olderVersions} />
+          </div>
+        {/if}
+      {/if}
+    {/if}
   </section>
 </article>

@@ -5,7 +5,6 @@
   import SpriteGallery from '$lib/components/listings/sprite/SpriteGallery.svelte';
   import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
   import VersionTimeline from '$lib/components/listings/VersionTimeline.svelte';
-  import ReportButton from '$lib/components/moderation/ReportButton.svelte';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
 
@@ -92,7 +91,4 @@
     <VersionTimeline {versions} />
   </section>
 
-  <div class="flex justify-end">
-    <ReportButton listingId={listing.id} />
-  </div>
 </article>

@@ -4,7 +4,6 @@
   import CreditLine from '$lib/components/credit-line.svelte';
   import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
   import VersionTimeline from '$lib/components/listings/VersionTimeline.svelte';
-  import ReportButton from '$lib/components/moderation/ReportButton.svelte';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
 
@@ -98,9 +97,6 @@
         </li>
       {/each}
     </ul>
-    <div class="mt-4 flex justify-end">
-      <ReportButton listingId={listing.id} />
-    </div>
   </section>
 
   <section class="border rounded-lg p-4 mt-6">
