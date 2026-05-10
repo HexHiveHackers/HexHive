@@ -283,6 +283,11 @@
   // returns a brand-new buffer the worklet is free to detach.
   const sfBlobCache = new Map<string, Promise<Blob>>();
   let mp3El = $state<HTMLAudioElement | null>(null);
+  // MP3 player state — driven by audio element events so the custom
+  // play/pause/scrub UI mirrors what the underlying <audio> is doing.
+  let mp3IsPlaying = $state(false);
+  let mp3CurrentTime = $state(0);
+  let mp3Duration = $state(0);
   // Track which song the Sequencer currently has loaded so we don't
   // re-process the MIDI on every override/mute change unnecessarily, and
   // so we know whether the first Play click needs to do the initial load.
@@ -752,6 +757,17 @@
     });
   }
 
+  function mp3TogglePlay(): void {
+    if (!mp3El) return;
+    if (mp3El.paused) void mp3El.play();
+    else mp3El.pause();
+  }
+  function mp3Seek(t: number): void {
+    if (!mp3El) return;
+    mp3El.currentTime = t;
+    mp3CurrentTime = t;
+  }
+
   function fmtTime(t: number): string {
     if (!Number.isFinite(t) || t < 0) return '0:00';
     const m = Math.floor(t / 60);
@@ -1118,6 +1134,97 @@
         </div>
       </div>
 
+      <!-- ── TAPE PANEL (reference MP3/OGG) ──────────────────────── -->
+      {#if loaded.refUrl}
+        <div
+          class="relative rounded-2xl border-2 border-amber-500/30 bg-gradient-to-b from-amber-950/40 via-stone-950/60 to-stone-950/40 p-4 shadow-[inset_0_1px_0_rgba(245,158,11,0.15)]"
+        >
+          <!-- magnetic tape striations -->
+          <div
+            aria-hidden="true"
+            class="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.08] [background-image:repeating-linear-gradient(0deg,#f59e0b_0_1px,transparent_1px_4px)]"
+          ></div>
+
+          <!-- header chip -->
+          <div class="relative mb-2 flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              class="size-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.55)]"
+            ></span>
+            <span class="font-display text-[0.6rem] tracking-[0.25em] text-amber-300">
+              <span class="sr-only">Reference recording ({loaded.refKind === 'ogg' ? 'GMGSx OGG render' : 'vanilla MP3'})</span>
+              <span aria-hidden="true">▷ FINAL · {loaded.refKind === 'ogg' ? 'OGG' : 'MP3'} ◁</span>
+            </span>
+          </div>
+
+          <!-- headless audio — events drive the custom transport below -->
+          {#key loaded.songId}
+            <audio
+              bind:this={mp3El}
+              preload="metadata"
+              loop={loopOn}
+              class="hidden"
+              onplay={() => (mp3IsPlaying = true)}
+              onpause={() => (mp3IsPlaying = false)}
+              ontimeupdate={(e) => (mp3CurrentTime = e.currentTarget.currentTime)}
+              ondurationchange={(e) => (mp3Duration = Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0)}
+              onloadedmetadata={(e) => (mp3Duration = Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0)}
+              onended={() => (mp3IsPlaying = false)}
+            >
+              <source src={loaded.refUrl} />
+              <track kind="captions" />
+            </audio>
+          {/key}
+
+          <!-- transport — mirrors the synth panel's layout in amber -->
+          <div class="relative flex items-center gap-3">
+            <Button
+              onclick={mp3TogglePlay}
+              size="sm"
+              variant="outline"
+              class="border-amber-500/50 text-amber-200 hover:bg-amber-500/10"
+            >
+              {#if mp3IsPlaying}
+                <Pause class="size-4" /> Pause
+              {:else}
+                <Play class="size-4" /> Play
+              {/if}
+            </Button>
+            <span
+              class="font-display text-[0.6rem] tabular-nums tracking-wider text-white rounded bg-amber-950/70 border border-amber-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(245,158,11,0.25)] min-w-[3.25rem] text-center"
+            >
+              {fmtTime(mp3CurrentTime)}
+            </span>
+            <input
+              type="range"
+              class="flex-1 accent-amber-400"
+              min="0"
+              max={mp3Duration || 1}
+              step="0.01"
+              value={mp3CurrentTime}
+              oninput={(e) => mp3Seek(Number.parseFloat((e.currentTarget as HTMLInputElement).value))}
+              aria-label="Reference recording scrub"
+            />
+            <span
+              class="font-display text-[0.6rem] tabular-nums tracking-wider text-white/80 rounded bg-amber-950/70 border border-amber-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(245,158,11,0.2)] min-w-[3.25rem] text-center"
+            >
+              {fmtTime(mp3Duration)}
+            </span>
+            <button
+              type="button"
+              onclick={toggleLoop}
+              class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] flex items-center gap-1 {loopOn
+                ? 'bg-amber-500/15 border-amber-500/60 text-amber-300'
+                : 'border-border hover:border-foreground/40'}"
+              aria-pressed={loopOn}
+              title="Loop"
+            >
+              <Repeat class="size-3" /> loop
+            </button>
+          </div>
+        </div>
+      {/if}
+
       <!-- ── SYNTH PANEL ─────────────────────────────────────────── -->
       <div
         class="relative rounded-md border border-emerald-500/30 bg-gradient-to-b from-emerald-950/40 via-slate-950/70 to-slate-950/40 p-4 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.06)]"
@@ -1228,57 +1335,6 @@
         </div>
       </div>
 
-      <!-- ── TAPE PANEL ──────────────────────────────────────────── -->
-      {#if loaded.refUrl}
-        <div
-          class="relative rounded-2xl border-2 border-amber-500/30 bg-gradient-to-b from-amber-950/40 via-stone-950/60 to-stone-950/40 p-4 shadow-[inset_0_1px_0_rgba(245,158,11,0.15)]"
-        >
-          <!-- magnetic tape striations -->
-          <div
-            aria-hidden="true"
-            class="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.08] [background-image:repeating-linear-gradient(0deg,#f59e0b_0_1px,transparent_1px_4px)]"
-          ></div>
-
-          <!-- header chip — mirrors the synth panel's "[ LIVE · MIDI ]" -->
-          <div class="relative mb-2 flex items-center gap-2">
-            <span
-              aria-hidden="true"
-              class="size-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.55)]"
-            ></span>
-            <span class="font-display text-[0.6rem] tracking-[0.25em] text-amber-300">
-              <span class="sr-only">Reference recording ({loaded.refKind === 'ogg' ? 'GMGSx OGG render' : 'vanilla MP3'})</span>
-              <span aria-hidden="true">▷ FINAL · {loaded.refKind === 'ogg' ? 'OGG' : 'MP3'} ◁</span>
-            </span>
-          </div>
-
-          <!-- transport: audio · loop -->
-          <div class="relative flex items-center gap-3">
-            {#key loaded.songId}
-              <audio
-                bind:this={mp3El}
-                controls
-                preload="none"
-                class="flex-1 sepia-[0.25] saturate-[0.85] contrast-[0.95]"
-                loop={loopOn}
-              >
-                <source src={loaded.refUrl} />
-                <track kind="captions" />
-              </audio>
-            {/key}
-            <button
-              type="button"
-              onclick={toggleLoop}
-              class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] flex items-center gap-1 {loopOn
-                ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-400'
-                : 'border-border hover:border-foreground/40'}"
-              aria-pressed={loopOn}
-              title="Loop"
-            >
-              <Repeat class="size-3" /> loop
-            </button>
-          </div>
-        </div>
-      {/if}
     </section>
 
     {#if loaded.kind === 'sappy'}
