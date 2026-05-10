@@ -1578,11 +1578,6 @@
       {/if}
     </section>
     {/if}
-  {:else}
-    <div class="text-base text-zinc-200 leading-relaxed">
-      Pick a fixture above or drop your own files to start. The synth uses the FRLG VGK SF2 self-hosted on
-      <code class="text-foreground">cdn.hexhive.app</code>.
-    </div>
   {/if}
 </section>
 
