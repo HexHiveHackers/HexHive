@@ -56,7 +56,9 @@
         {/if}
         <div class="mt-2 flex items-center gap-3 text-[0.7rem] text-muted-foreground">
           {#if u.isPlaceholder}
-            <span class="italic opacity-70">Awaiting creator</span>
+            <span class="italic opacity-70">
+              Awaiting {u.placeholderKind === 'user' ? 'user' : 'contributor'}
+            </span>
           {:else if u.lastActive}
             <span title={new Date(u.lastActive).toLocaleString()}>Active {relative(u.lastActive)}</span>
           {:else}
