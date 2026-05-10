@@ -1,6 +1,7 @@
 <script lang="ts">
   import { SiGithub } from '@icons-pack/svelte-simple-icons';
   import { ChevronLeft, ExternalLink, GitBranch, Wrench } from '@lucide/svelte';
+  import CreditLine from '$lib/components/credit-line.svelte';
   import { Button } from '$lib/components/ui/button';
   import { GAMES, PLATFORM_LABEL } from '$lib/data/games';
   import { TOOL_PLATFORM_LABEL, TOOL_STATUS_LABEL, TOOL_SUBTYPE_LABEL } from '$lib/data/tools';
@@ -35,15 +36,30 @@
     <h1 class="font-display text-3xl md:text-4xl text-foreground">{tool.name}</h1>
     <p class="text-base text-zinc-200 leading-relaxed">{tool.tagline}</p>
     <div class="flex flex-wrap items-center gap-3 text-sm text-zinc-300">
-      <span>by
-        {#if tool.authorUrl}
-          <a href={tool.authorUrl} target="_blank" rel="noopener noreferrer" class="text-foreground hover:text-sky-300 underline-offset-2 hover:underline">
-            {tool.author}
-          </a>
-        {:else}
-          <span class="text-foreground">{tool.author}</span>
-        {/if}
-      </span>
+      {#if data.credit}
+        <CreditLine
+          displayName={tool.author}
+          username={data.credit.username}
+          homepageUrl={data.credit.homepageUrl}
+          isPlaceholder={data.credit.isPlaceholder}
+        />
+      {:else}
+        <span class="inline-flex items-center gap-2 text-sm text-zinc-300">
+          <span>by</span>
+          {#if tool.authorUrl}
+            <a
+              href={tool.authorUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-foreground hover:text-sky-300 underline-offset-2 hover:underline"
+            >
+              {tool.author}
+            </a>
+          {:else}
+            <span class="text-foreground">{tool.author}</span>
+          {/if}
+        </span>
+      {/if}
       {#if tool.branch}
         <span class="inline-flex items-center gap-1 font-mono text-sm text-zinc-300">
           <GitBranch class="size-3.5" /> {tool.branch}
