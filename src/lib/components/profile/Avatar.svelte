@@ -15,8 +15,8 @@
        class="rounded-full object-cover bg-muted"
        loading="lazy" />
 {:else}
-  <span class="rounded-full bg-muted text-muted-foreground inline-grid place-items-center font-display"
-        style={`width: ${size}px; height: ${size}px; font-size: ${size / 2.5}px;`}>
+  <span class="bg-muted text-muted-foreground inline-grid place-items-center font-display"
+        style={`width: ${size}px; height: ${size}px; font-size: ${size / 2.5}px; clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);`}>
     {initial}
   </span>
 {/if}
