@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Upload } from '@lucide/svelte';
   import { untrack } from 'svelte';
+  import { page } from '$app/state';
   import MatureFilterToggle from '$lib/components/listings/MatureFilterToggle.svelte';
   import RomhackCard from '$lib/components/listings/RomhackCard.svelte';
   import { Button } from '$lib/components/ui/button';
@@ -11,7 +12,14 @@
   // One-time seed of the filter form from URL-derived data.
   let q = $state(untrack(() => data.filters.q ?? ''));
   let baseRom = $state(untrack(() => data.filters.baseRom ?? ''));
+  const ogImage = `${page.url.origin}/og-romhacks.jpg`;
 </script>
+
+<svelte:head>
+  <title>Romhacks · HexHive</title>
+  <meta property="og:image" content={ogImage} />
+  <meta name="twitter:image" content={ogImage} />
+</svelte:head>
 
 <section class="mx-auto max-w-6xl px-4 py-10">
   <header class="flex items-end justify-between mb-6">

@@ -8,6 +8,13 @@ export interface OgMeta {
   type: 'article';
 }
 
+const OG_IMAGE_BY_TYPE: Record<ListingType, string> = {
+  romhack: '/og-romhacks.jpg',
+  sprite: '/og-sprites.jpg',
+  sound: '/og-sounds.jpg',
+  script: '/og-scripts.jpg',
+};
+
 export function buildOgMeta(args: {
   origin: string;
   listingType: ListingType;
@@ -20,7 +27,7 @@ export function buildOgMeta(args: {
     title: `${args.title} — HexHive`,
     description: (args.description || 'Pokemon ROM hack asset on HexHive').slice(0, 280),
     url: `${args.origin}/${route}/${args.slug}`,
-    image: `${args.origin}/og-default.png`,
+    image: `${args.origin}${OG_IMAGE_BY_TYPE[args.listingType]}`,
     type: 'article',
   };
 }

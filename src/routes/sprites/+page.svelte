@@ -1,12 +1,20 @@
 <script lang="ts">
   import { Upload } from '@lucide/svelte';
+  import { page } from '$app/state';
   import AssetHiveCard from '$lib/components/listings/AssetHiveCard.svelte';
   import MatureFilterToggle from '$lib/components/listings/MatureFilterToggle.svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
 
   let { data } = $props();
+  const ogImage = `${page.url.origin}/og-sprites.jpg`;
 </script>
+
+<svelte:head>
+  <title>Sprites · HexHive</title>
+  <meta property="og:image" content={ogImage} />
+  <meta name="twitter:image" content={ogImage} />
+</svelte:head>
 
 <section class="mx-auto max-w-6xl px-4 py-10">
   <header class="flex items-end justify-between mb-6">

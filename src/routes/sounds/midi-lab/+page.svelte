@@ -1042,6 +1042,8 @@
 <svelte:head>
   <title>MIDI lab · HexHive</title>
   <link rel="preconnect" href="https://cdn.hexhive.app" crossorigin="anonymous" />
+  <meta property="og:image" content="{page.url.origin}/og-midi-lab.jpg" />
+  <meta name="twitter:image" content="{page.url.origin}/og-midi-lab.jpg" />
 </svelte:head>
 
 <section class="mx-auto max-w-5xl px-4 py-8 space-y-6">

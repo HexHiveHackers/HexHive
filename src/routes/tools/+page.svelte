@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Wrench } from '@lucide/svelte';
+  import { page } from '$app/state';
   import { TOOL_PLATFORM_LABEL, TOOL_STATUS_LABEL, TOOL_SUBTYPE_LABEL } from '$lib/data/tools';
 
   let { data } = $props();
@@ -9,10 +10,13 @@
     beta: 'bg-amber-500/15 text-amber-300 border-amber-500/40',
     archived: 'bg-zinc-500/15 text-zinc-300 border-zinc-500/40',
   };
+  const ogImage = `${page.url.origin}/og-tools.jpg`;
 </script>
 
 <svelte:head>
   <title>Tools · HexHive</title>
+  <meta property="og:image" content={ogImage} />
+  <meta name="twitter:image" content={ogImage} />
 </svelte:head>
 
 <section class="mx-auto max-w-6xl px-4 py-10 space-y-6">
