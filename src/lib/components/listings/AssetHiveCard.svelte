@@ -55,7 +55,7 @@
         <TypeBadge {type} />
       </div>
       <p class="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">{item.description}</p>
-      <div class="mt-3 flex flex-wrap gap-1 min-h-[3.5rem] content-start">
+      <div class="mt-3 flex flex-wrap gap-1">
         {#each item.targetedRoms as r}<Badge variant="secondary">{r}</Badge>{/each}
         <Badge variant="outline">{item.fileCount} files</Badge>
         <Badge variant="outline">{sizeKb} KB</Badge>
