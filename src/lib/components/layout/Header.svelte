@@ -1,7 +1,8 @@
 <script lang="ts">
   import { SiDiscord } from '@icons-pack/svelte-simple-icons';
-  import { LogOut, Settings, Upload, User as UserIcon } from '@lucide/svelte';
+  import { FlaskConical, LogOut, Settings, Upload, User as UserIcon } from '@lucide/svelte';
   import { goto } from '$app/navigation';
+  import { page } from '$app/state';
   import { authClient } from '$lib/auth-client';
   import TypeIcon from '$lib/components/listings/TypeIcon.svelte';
   import Avatar from '$lib/components/profile/Avatar.svelte';
@@ -56,6 +57,15 @@
     { href: '/scripts', label: 'Scripts', type: 'script' },
     { href: '/romhacks', label: 'Romhacks', type: 'romhack' },
   ];
+
+  // Highlight a nav entry when the current path is the section root or any
+  // child route ('/sounds' or '/sounds/anything'). Exact match for '/'.
+  const currentPath = $derived(page.url.pathname);
+  function isActive(href: string): boolean {
+    if (href === '/') return currentPath === '/';
+    return currentPath === href || currentPath.startsWith(`${href}/`);
+  }
+  const midiLabActive = $derived(currentPath.startsWith('/sounds/midi-lab'));
 </script>
 
 <header class="site-nav border-b bg-background sticky top-0 z-40">
@@ -72,9 +82,13 @@
     <!-- Desktop nav -->
     <nav class="hidden lg:flex items-center gap-1 text-sm">
       {#each navLinks as link (link.href)}
+        {@const active = isActive(link.href)}
         <a
-          class="flex items-center gap-1.5 px-3 py-1 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+          class="nav-link flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors {active
+            ? 'bg-accent text-accent-foreground font-medium'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}"
           href={link.href}
+          aria-current={active ? 'page' : undefined}
         >
           <TypeIcon type={link.type} size={14} />
           <span>{link.label}</span>
@@ -85,6 +99,17 @@
     <SearchBar />
 
     <div class="hidden lg:flex items-center gap-2 text-sm shrink-0">
+      <a
+        href="/sounds/midi-lab"
+        class="midi-lab-link inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors {midiLabActive
+          ? 'bg-emerald-500/15 text-emerald-300'
+          : 'text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-300'}"
+        aria-label="Open MIDI lab"
+        aria-current={midiLabActive ? 'page' : undefined}
+        title="MIDI lab (beta)"
+      >
+        <FlaskConical size={16} />
+      </a>
       <a
         href={DISCORD_URL}
         target="_blank"
@@ -163,15 +188,30 @@
     ></button>
     <div class="fixed left-0 right-0 top-14 z-40 border-t bg-background px-4 pb-4 lg:hidden">
       {#each navLinks as link (link.href)}
+        {@const active = isActive(link.href)}
         <a
           href={link.href}
-          class="flex min-h-12 select-none items-center justify-center gap-2 font-display text-sm tracking-wider hover:text-foreground/80"
+          class="flex min-h-12 select-none items-center justify-center gap-2 font-display text-sm tracking-wider transition-colors {active
+            ? 'text-foreground'
+            : 'text-muted-foreground hover:text-foreground/80'}"
+          aria-current={active ? 'page' : undefined}
           onclick={() => (mobileMenuOpen = false)}
         >
           <TypeIcon type={link.type} size={16} />
           {link.label}
         </a>
       {/each}
+      <a
+        href="/sounds/midi-lab"
+        class="flex min-h-12 select-none items-center justify-center gap-2 text-sm transition-colors {midiLabActive
+          ? 'text-emerald-300'
+          : 'text-muted-foreground hover:text-emerald-300'}"
+        aria-current={midiLabActive ? 'page' : undefined}
+        onclick={() => (mobileMenuOpen = false)}
+      >
+        <FlaskConical size={16} />
+        MIDI lab
+      </a>
       <a
         href={DISCORD_URL}
         target="_blank"
