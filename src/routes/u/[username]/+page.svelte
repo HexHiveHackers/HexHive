@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Pencil } from '@lucide/svelte';
   import Banner from '$lib/components/profile/Banner.svelte';
   import HostIcon from '$lib/components/profile/HostIcon.svelte';
   import ProfileSummary from '$lib/components/profile/ProfileSummary.svelte';
@@ -7,6 +8,7 @@
 
   let { data } = $props();
   const route = (t: string) => t === 'romhack' ? 'romhacks' : `${t}s`;
+  const isOwnProfile = $derived(data.user?.username === data.profile.username);
 
   type LinkRow = { id: string; url: string; label: string | null };
   function linkLabel(l: LinkRow): string {
@@ -22,7 +24,19 @@
 </script>
 
 <section class="mx-auto max-w-4xl px-4 py-10 grid gap-6">
-  <Banner bannerKey={data.profile.bannerKey} alt={`${data.profile.username}'s banner`} />
+  <div class="relative">
+    <Banner bannerKey={data.profile.bannerKey} alt={`${data.profile.username}'s banner`} />
+    {#if isOwnProfile}
+      <a
+        href="/me"
+        title="Edit profile"
+        aria-label="Edit profile"
+        class="absolute top-3 right-3 inline-flex items-center justify-center size-9 rounded-md border border-border/60 bg-background/80 text-muted-foreground backdrop-blur transition-colors hover:border-primary/50 hover:bg-background hover:text-primary"
+      >
+        <Pencil class="size-4" />
+      </a>
+    {/if}
+  </div>
   {#if data.profile.isPlaceholder}
     <div class="rounded-md border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-100">
       <span class="font-display text-[0.65rem] uppercase tracking-[0.18em] text-amber-300">Placeholder credit</span>
