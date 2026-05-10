@@ -31,7 +31,7 @@
 
 <MatureWrap mature={item.mature}>
   <a
-    class="block border rounded-lg bg-card hover:bg-accent/40 transition-colors overflow-hidden"
+    class="flex flex-col h-full border rounded-lg bg-card hover:bg-accent/40 transition-colors overflow-hidden"
     href={`/${route}/${item.slug}`}
   >
     {#if type === 'sprite'}
@@ -49,7 +49,7 @@
         {/if}
       </div>
     {/if}
-    <div class="p-4">
+    <div class="p-4 flex flex-col flex-1">
       <div class="flex items-start justify-between gap-2 mb-2">
         <h3 class="font-medium line-clamp-2">{item.title}</h3>
         <TypeBadge {type} />
@@ -60,7 +60,7 @@
         <Badge variant="outline">{item.fileCount} files</Badge>
         <Badge variant="outline">{sizeKb} KB</Badge>
       </div>
-      <div class="mt-3 text-xs text-muted-foreground flex justify-between">
+      <div class="mt-auto pt-3 text-xs text-muted-foreground flex justify-between">
         <span>by {item.authorName}</span>
         <span>{item.downloads} ↓</span>
       </div>
