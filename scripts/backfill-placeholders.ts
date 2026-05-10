@@ -13,6 +13,7 @@ import path from 'node:path';
 import { createClient } from '@libsql/client';
 import { eq, like, or } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
+import { listTools } from '../src/lib/data/tools';
 import * as schema from '../src/lib/db/schema';
 
 type DB = ReturnType<typeof drizzle<typeof schema>>;
@@ -129,6 +130,48 @@ export async function runPhaseB(db: DB, repoRoot: string): Promise<{ updated: nu
   return { updated };
 }
 
+export interface ToolAuthorInput {
+  author: string;
+  authorUrl: string | undefined;
+}
+
+export async function runPhaseC(db: DB, tools: ToolAuthorInput[]): Promise<{ created: number }> {
+  const seen = new Set<string>();
+  let created = 0;
+  for (const t of tools) {
+    const slug = slugifyContributor(t.author);
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    const id = `seed-tool-${slug}`;
+
+    const existingUser = await db.select().from(schema.user).where(eq(schema.user.id, id)).limit(1);
+    if (!existingUser[0]) {
+      await db.insert(schema.user).values({
+        id,
+        name: t.author,
+        email: `${slug}@tools.seed`,
+        emailVerified: true,
+        isPlaceholder: true,
+      });
+      created += 1;
+    } else if (!existingUser[0].isPlaceholder) {
+      await db.update(schema.user).set({ isPlaceholder: true }).where(eq(schema.user.id, id));
+    }
+
+    const existingProfile = await db.select().from(schema.profile).where(eq(schema.profile.userId, id)).limit(1);
+    if (!existingProfile[0]) {
+      await db.insert(schema.profile).values({
+        userId: id,
+        username: slug,
+        homepageUrl: t.authorUrl ?? null,
+      });
+    } else if (!existingProfile[0].homepageUrl && t.authorUrl) {
+      await db.update(schema.profile).set({ homepageUrl: t.authorUrl }).where(eq(schema.profile.userId, id));
+    }
+  }
+  return { created };
+}
+
 async function main() {
   const url = process.env.DATABASE_URL ?? 'file:./local.db';
   const authToken = process.env.DATABASE_AUTH_TOKEN;
@@ -140,6 +183,9 @@ async function main() {
   console.log(`Phase A: flagged ${a.flagged} seed users as placeholder.`);
   const b = await runPhaseB(db, repoRoot);
   console.log(`Phase B: harvested ${b.updated} homepage URLs from ${repoRoot}.`);
+  const tools = listTools().map((t) => ({ author: t.author, authorUrl: t.authorUrl }));
+  const c = await runPhaseC(db, tools);
+  console.log(`Phase C: created ${c.created} placeholder users for tool authors.`);
 }
 
 if (import.meta.main) {

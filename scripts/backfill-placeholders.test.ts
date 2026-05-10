@@ -5,7 +5,7 @@ import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeEach, describe, expect, it } from 'vitest';
 import * as schema from '../src/lib/db/schema';
-import { extractCreatorUrl, runPhaseA, slugifyContributor } from './backfill-placeholders';
+import { extractCreatorUrl, runPhaseA, runPhaseC, slugifyContributor } from './backfill-placeholders';
 
 let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -61,5 +61,35 @@ describe('slugifyContributor', () => {
     expect(slugifyContributor('Coffee Cup')).toBe('coffee_cup');
     expect(slugifyContributor('Francis III')).toBe('francis_iii');
     expect(slugifyContributor('Black Fragrant')).toBe('black_fragrant');
+  });
+});
+
+describe('runPhaseC', () => {
+  it('creates a placeholder user + profile per unique tool author', async () => {
+    const tools = [
+      { author: 'Pawkkie', authorUrl: 'https://github.com/Pawkkie' },
+      { author: 'Pawkkie', authorUrl: 'https://github.com/Pawkkie' },
+      { author: 'BinaryHero', authorUrl: undefined },
+    ];
+
+    const r = await runPhaseC(db, tools);
+
+    expect(r.created).toBe(2);
+    const pawkkie = await db.select().from(schema.user).where(eq(schema.user.id, 'seed-tool-pawkkie'));
+    expect(pawkkie[0].isPlaceholder).toBe(true);
+    expect(pawkkie[0].name).toBe('Pawkkie');
+    const pawkkieProfile = await db.select().from(schema.profile).where(eq(schema.profile.userId, 'seed-tool-pawkkie'));
+    expect(pawkkieProfile[0].username).toBe('pawkkie');
+    expect(pawkkieProfile[0].homepageUrl).toBe('https://github.com/Pawkkie');
+    const binProfile = await db.select().from(schema.profile).where(eq(schema.profile.userId, 'seed-tool-binaryhero'));
+    expect(binProfile[0].homepageUrl).toBeNull();
+  });
+
+  it('is idempotent and fills in homepage_url on a second pass', async () => {
+    await runPhaseC(db, [{ author: 'Pawkkie', authorUrl: undefined }]);
+    const r = await runPhaseC(db, [{ author: 'Pawkkie', authorUrl: 'https://github.com/Pawkkie' }]);
+    expect(r.created).toBe(0);
+    const profile = await db.select().from(schema.profile).where(eq(schema.profile.userId, 'seed-tool-pawkkie'));
+    expect(profile[0].homepageUrl).toBe('https://github.com/Pawkkie');
   });
 });
