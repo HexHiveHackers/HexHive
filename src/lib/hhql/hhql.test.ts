@@ -237,3 +237,31 @@ describe('evaluate', () => {
     expect(p(row())).toBe(false);
   });
 });
+
+import { emit } from './emit';
+
+describe('emit', () => {
+  it('round-trips a simple compare', () => {
+    const r = parse('downloads > 100');
+    if (!r.ok || !r.ast) throw new Error('parse failed');
+    expect(emit(r.ast)).toBe('downloads > 100');
+  });
+
+  it('emits IN with quoted multi-word values', () => {
+    const r = parse('affiliation IN ("team aqua", magma)');
+    if (!r.ok || !r.ast) throw new Error('parse failed');
+    expect(emit(r.ast)).toBe('affiliation IN ("team aqua", magma)');
+  });
+
+  it('omits implicit AND when no OR is present', () => {
+    const r = parse('hasBio AND active > -7d AND NOT placeholder');
+    if (!r.ok || !r.ast) throw new Error('parse failed');
+    expect(emit(r.ast)).toBe('hasBio active > -7d NOT placeholder');
+  });
+
+  it('keeps explicit AND when an OR forces precedence', () => {
+    const r = parse('a = 1 AND (b = 2 OR c = 3)');
+    if (!r.ok || !r.ast) throw new Error('parse failed');
+    expect(emit(r.ast)).toBe('a = 1 AND (b = 2 OR c = 3)');
+  });
+});
