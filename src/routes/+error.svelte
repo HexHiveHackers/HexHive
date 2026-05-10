@@ -1,18 +1,24 @@
 <script lang="ts">
+  import { FlaskConical } from '@lucide/svelte';
   import { page } from '$app/state';
+  import TypeIcon from '$lib/components/listings/TypeIcon.svelte';
 
   const status = $derived(page.status);
   const message = $derived(page.error?.message ?? 'route not found');
   const title = $derived(status === 404 ? 'wild missingno. appeared' : 'a glitch in the cartridge');
 
-  const portals = [
-    { href: '/romhacks', label: 'ROM HACKS', accent: 'emerald', glyph: 'RH' },
-    { href: '/sprites', label: 'SPRITES', accent: 'fuchsia', glyph: 'SP' },
-    { href: '/sounds', label: 'SOUNDS', accent: 'amber', glyph: 'SD' },
-    { href: '/scripts', label: 'SCRIPTS', accent: 'sky', glyph: 'SC' },
-    { href: '/tools', label: 'TOOLS', accent: 'violet', glyph: 'TL' },
-    { href: '/midi-lab', label: 'MIDI LAB', accent: 'rose', glyph: 'ML' },
-  ] as const;
+  type Portal =
+    | { href: string; label: string; accent: string; type: 'romhack' | 'sprite' | 'sound' | 'script' | 'tool' }
+    | { href: string; label: string; accent: string; type: 'midi-lab' };
+
+  const portals: Portal[] = [
+    { href: '/romhacks', label: 'ROM HACKS', accent: 'emerald', type: 'romhack' },
+    { href: '/sprites', label: 'SPRITES', accent: 'fuchsia', type: 'sprite' },
+    { href: '/sounds', label: 'SOUNDS', accent: 'amber', type: 'sound' },
+    { href: '/scripts', label: 'SCRIPTS', accent: 'sky', type: 'script' },
+    { href: '/tools', label: 'TOOLS', accent: 'violet', type: 'tool' },
+    { href: '/sounds/midi-lab', label: 'MIDI LAB', accent: 'rose', type: 'midi-lab' },
+  ];
 </script>
 
 <svelte:head>
@@ -32,15 +38,9 @@
   <div class="glitch-bar glitch-bar--c" aria-hidden="true"></div>
 
   <div class="relative z-10 mx-auto w-full max-w-3xl text-center">
-    <!-- eyebrow -->
-    <p class="font-display text-[10px] tracking-[0.4em] text-white/40 uppercase animate-fade-down" style="animation-delay: 80ms">
-      <span class="inline-block size-1.5 -translate-y-0.5 mr-2 bg-emerald-400 animate-blink"></span>
-      ENC. {String(status)} · LOG CORRUPTED
-    </p>
-
     <!-- glitch numerals -->
     <h1
-      class="glitch font-display mt-10 select-none text-[18vw] leading-[0.82] tracking-tighter text-white sm:text-[156px]"
+      class="glitch font-display select-none text-[18vw] leading-[0.82] tracking-tighter text-white sm:text-[156px]"
       data-text={String(status)}
       aria-label={String(status)}
     >
@@ -77,7 +77,13 @@
           data-accent={p.accent}
           style="animation-delay: {620 + i * 90}ms"
         >
-          <span class="portal__glyph font-display">{p.glyph}</span>
+          <span class="portal__glyph">
+            {#if p.type === 'midi-lab'}
+              <FlaskConical size={16} />
+            {:else}
+              <TypeIcon type={p.type} size={16} />
+            {/if}
+          </span>
           <span class="portal__label font-display">{p.label}</span>
           <span class="portal__hex" aria-hidden="true"></span>
         </a>
@@ -280,10 +286,11 @@
   .portal[data-accent='rose']    { --portal-color: #fb7185; }
 
   .portal__glyph {
-    font-size: 11px;
-    letter-spacing: 0.1em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--portal-color);
-    padding: 4px 6px;
+    padding: 5px;
     border: 1px solid color-mix(in oklch, var(--portal-color) 40%, transparent);
     background: color-mix(in oklch, var(--portal-color) 10%, transparent);
   }
@@ -316,7 +323,6 @@
     transform: translateY(2px);
     animation: blink 1.05s steps(2) infinite;
   }
-  .animate-blink { animation: blink 1s steps(2) infinite; }
   @keyframes blink {
     0%, 50% { opacity: 1; }
     51%, 100% { opacity: 0; }
@@ -337,7 +343,7 @@
   @media (prefers-reduced-motion: reduce) {
     .glitch::before, .glitch::after,
     .glitch-bar--a, .glitch-bar--b, .glitch-bar--c,
-    .missingno span, .hex-void, .caret, .animate-blink,
+    .missingno span, .hex-void, .caret,
     .animate-fade-down, .animate-fade-up {
       animation-duration: 0.001ms;
       animation-iteration-count: 1;
