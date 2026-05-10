@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AffiliationIcon from '$lib/components/profile/AffiliationIcon.svelte';
   import Banner from '$lib/components/profile/Banner.svelte';
   import ProfileSummary from '$lib/components/profile/ProfileSummary.svelte';
   import { Badge } from '$lib/components/ui/badge';
@@ -28,14 +29,27 @@
     </div>
   {/if}
   <ProfileSummary profile={data.profile} />
+  {#if data.aliases.length > 0}
+    <div>
+      <h2 class="font-display text-xl mb-3">Also known as</h2>
+      <ul class="flex flex-wrap gap-2">
+        {#each data.aliases as a (a.id)}
+          <li>
+            <span class="rounded-full border bg-card/40 px-3 py-1 text-xs text-muted-foreground">{a.value}</span>
+          </li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
   {#if data.affiliations.length > 0}
     <div>
       <h2 class="font-display text-xl mb-4">Affiliations</h2>
       <ul class="grid gap-2 sm:grid-cols-2">
         {#each data.affiliations as a (a.id)}
           <li class="rounded-md border bg-card/40 px-3 py-2 text-sm">
-            <div class="flex items-baseline gap-2 flex-wrap">
+            <div class="flex items-center gap-2 flex-wrap">
               {#if a.url}
+                <span class="shrink-0 text-muted-foreground"><AffiliationIcon url={a.url} /></span>
                 <a href={a.url} target="_blank" rel="noopener noreferrer" class="font-medium hover:text-primary hover:underline">{a.name}</a>
               {:else}
                 <span class="font-medium">{a.name}</span>

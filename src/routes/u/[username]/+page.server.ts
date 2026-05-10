@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '$lib/db';
 import * as schema from '$lib/db/schema';
 import { listAffiliationsForUser } from '$lib/server/affiliations';
+import { listAliasesForUser } from '$lib/server/alias-entries';
 import { getProfileByUsername, lastActiveFor, listingsByUser } from '$lib/server/profiles';
 import type { PageServerLoad } from './$types';
 
@@ -18,6 +19,7 @@ export const load: PageServerLoad = async ({ params }) => {
   const listings = await listingsByUser(db, profile.userId, { self: false });
   const lastActive = await lastActiveFor(db, profile.userId, { respectHideFlag: true });
   const affiliations = await listAffiliationsForUser(db, profile.userId);
+  const aliases = await listAliasesForUser(db, profile.userId);
   return {
     profile: {
       username: profile.username,
@@ -34,5 +36,6 @@ export const load: PageServerLoad = async ({ params }) => {
     },
     listings,
     affiliations,
+    aliases,
   };
 };

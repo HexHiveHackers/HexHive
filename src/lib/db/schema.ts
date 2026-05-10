@@ -119,6 +119,25 @@ export const affiliation = sqliteTable(
   }),
 );
 
+// "Also known as" — additional aliases beyond profile.alias (the
+// primary display name). Free-form strings, deduped per user
+// case-insensitively.
+export const aliasEntry = sqliteTable(
+  'alias_entry',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    value: text('value').notNull(),
+    createdAt: ts('created_at'),
+  },
+  (t) => ({
+    uniq: uniqueIndex('alias_entry_user_value_unique').on(t.userId, sql`lower(${t.value})`),
+    userIdx: index('alias_entry_user_idx').on(t.userId),
+  }),
+);
+
 // User's membership in a group, with an optional free-form role.
 // Composite PK prevents duplicate (user, group) pairs; both FKs cascade
 // so deleting a user or a group prunes the join rows.

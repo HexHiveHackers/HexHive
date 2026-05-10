@@ -2,6 +2,7 @@
   import { Plus, X } from '@lucide/svelte';
   import { untrack } from 'svelte';
   import { invalidateAll } from '$app/navigation';
+  import AffiliationIcon from '$lib/components/profile/AffiliationIcon.svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
   import { Label } from '$lib/components/ui/label';
@@ -61,8 +62,9 @@
       {#each items as a (a.id)}
         <li class="flex items-center justify-between gap-3 rounded-md border bg-card/40 px-3 py-2 text-sm">
           <div class="min-w-0 flex-1">
-            <div class="flex items-baseline gap-2 flex-wrap">
+            <div class="flex items-center gap-2 flex-wrap">
               {#if a.url}
+                <span class="shrink-0 text-muted-foreground"><AffiliationIcon url={a.url} /></span>
                 <a href={a.url} target="_blank" rel="noopener noreferrer" class="font-medium hover:text-primary hover:underline truncate">{a.name}</a>
               {:else}
                 <span class="font-medium truncate">{a.name}</span>
