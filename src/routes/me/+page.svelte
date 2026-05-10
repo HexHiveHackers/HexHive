@@ -9,6 +9,7 @@
   import AliasEditor from '$lib/components/profile/AliasEditor.svelte';
   import AvatarUpload from '$lib/components/profile/AvatarUpload.svelte';
   import BannerUpload from '$lib/components/profile/BannerUpload.svelte';
+  import LinksEditor from '$lib/components/profile/LinksEditor.svelte';
   import ProfileForm from '$lib/components/profile/ProfileForm.svelte';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
@@ -206,6 +207,15 @@
       Other handles or names you go by — shown as a list on your public profile, separate from your alias display name.
     </p>
     <AliasEditor initial={data.aliases} />
+  </div>
+
+  <div>
+    <h2 class="font-display text-xl mb-2">Links</h2>
+    <p class="text-sm text-muted-foreground mb-4">
+      Your other profiles around the web — PokéCommunity, Showdown, Twitch, Patreon, Linktree, whatever.
+      We auto-pick an icon based on the URL. No verification.
+    </p>
+    <LinksEditor initial={data.links} />
   </div>
 
   <div>

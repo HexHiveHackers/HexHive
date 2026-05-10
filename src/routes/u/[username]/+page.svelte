@@ -1,11 +1,24 @@
 <script lang="ts">
-  import AffiliationIcon from '$lib/components/profile/AffiliationIcon.svelte';
   import Banner from '$lib/components/profile/Banner.svelte';
+  import HostIcon from '$lib/components/profile/HostIcon.svelte';
   import ProfileSummary from '$lib/components/profile/ProfileSummary.svelte';
   import { Badge } from '$lib/components/ui/badge';
+  import { detectLinkHost, hostLabel } from '$lib/utils/link-host';
 
   let { data } = $props();
   const route = (t: string) => t === 'romhack' ? 'romhacks' : `${t}s`;
+
+  type LinkRow = { id: string; url: string; label: string | null };
+  function linkLabel(l: LinkRow): string {
+    if (l.label) return l.label;
+    const h = detectLinkHost(l.url);
+    if (h) return hostLabel(h);
+    try {
+      return new URL(l.url).hostname.replace(/^www\./, '');
+    } catch {
+      return l.url;
+    }
+  }
 </script>
 
 <section class="mx-auto max-w-4xl px-4 py-10 grid gap-6">
@@ -29,6 +42,26 @@
     </div>
   {/if}
   <ProfileSummary profile={data.profile} />
+  {#if data.links.length > 0}
+    <div>
+      <h2 class="font-display text-xl mb-3">Links</h2>
+      <ul class="flex flex-wrap gap-2">
+        {#each data.links as l (l.id)}
+          <li>
+            <a
+              href={l.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 rounded-full border bg-card/40 px-3 py-1 text-xs hover:border-primary/50 hover:bg-card hover:text-primary transition-colors"
+            >
+              <HostIcon url={l.url} size={12} />
+              <span>{linkLabel(l)}</span>
+            </a>
+          </li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
   {#if data.aliases.length > 0}
     <div>
       <h2 class="font-display text-xl mb-3">Also known as</h2>
@@ -49,7 +82,7 @@
           <li class="rounded-md border bg-card/40 px-3 py-2 text-sm">
             <div class="flex items-center gap-2 flex-wrap">
               {#if a.url}
-                <span class="shrink-0 text-muted-foreground"><AffiliationIcon url={a.url} /></span>
+                <span class="shrink-0 text-muted-foreground"><HostIcon url={a.url} /></span>
                 <a href={a.url} target="_blank" rel="noopener noreferrer" class="font-medium hover:text-primary hover:underline">{a.name}</a>
               {:else}
                 <span class="font-medium">{a.name}</span>

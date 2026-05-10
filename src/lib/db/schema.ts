@@ -119,6 +119,32 @@ export const affiliation = sqliteTable(
   }),
 );
 
+// External links a user wants on their public profile — their
+// PokéCommunity thread, Patreon, Twitch, Linktree, etc. No
+// verification; the user types in URLs and we render them with the
+// best-matching site icon. Deduped per user case-insensitively on URL.
+export const profileLink = sqliteTable(
+  'profile_link',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    url: text('url').notNull(),
+    // Optional override for the visible text. When null, the UI shows
+    // the host's friendly name (e.g. "GitHub", "PokéCommunity").
+    label: text('label'),
+    // 0-based ordering for drag-reorder later; for now we just keep
+    // insertion order.
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: ts('created_at'),
+  },
+  (t) => ({
+    uniq: uniqueIndex('profile_link_user_url_unique').on(t.userId, sql`lower(${t.url})`),
+    userIdx: index('profile_link_user_idx').on(t.userId),
+  }),
+);
+
 // "Also known as" — additional aliases beyond profile.alias (the
 // primary display name). Free-form strings, deduped per user
 // case-insensitively.
