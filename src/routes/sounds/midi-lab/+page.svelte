@@ -353,6 +353,11 @@
       await s.soundBankManager.addSoundBank(buf, soundfont.id);
       activeBankId = soundfont.id;
       await s.isReady;
+      // Lock drum mode so neither the loop's reset nor any embedded
+      // MIDI sysex/NRPN can flip our drum channels back to melodic.
+      // Our own setDrums calls (main-thread API, not MIDI events) still
+      // take effect — the lock only blocks MIDI-driven changes.
+      s.setMasterParameter('drumLock', true);
       const sq = new lib.Sequencer(s);
       sq.eventHandler.addEvent('songEnded', 'midilab-end', () => {
         isPlaying = false;
