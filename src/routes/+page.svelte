@@ -19,7 +19,6 @@
       <TypeBadge type="sprite" />
       <TypeBadge type="sound" />
       <TypeBadge type="script" />
-      <TypeBadge type="tool" />
       <TypeBadge type="romhack" />
     </div>
   </div>
