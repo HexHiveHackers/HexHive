@@ -1,4 +1,9 @@
-// src/lib/hhql/tokens.ts
+// Lenient tokenizer for HHQL (HexHive Query Language).
+// - Span ranges are half-open: [start, end). `end` is exclusive.
+// - Unknown characters are skipped silently.
+// - Unterminated strings consume to EOF (no throw; the parser surfaces span errors).
+// - A bare `-` not followed by digits+unit tokenizes as an ident, not a sign.
+//   The parser treats unexpected idents as errors.
 export type TokenKind =
   | 'ident'
   | 'kw'

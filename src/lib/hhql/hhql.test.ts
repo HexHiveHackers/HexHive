@@ -44,4 +44,18 @@ describe('tokenize', () => {
     const tokens = tokenize('joined > 2026-01-01');
     expect(tokens[2]).toEqual({ kind: 'date', value: '2026-01-01', start: 9, end: 19 });
   });
+
+  it('treats an unterminated quoted string leniently — consumes to EOF', () => {
+    const tokens = tokenize('"oops');
+    expect(tokens).toEqual([{ kind: 'string', value: 'oops', start: 0, end: 6 }]);
+  });
+
+  it('lexes a bare hyphen as an ident, not a sign', () => {
+    const tokens = tokenize('a - b');
+    expect(tokens.map((t) => ({ kind: t.kind, value: t.value }))).toEqual([
+      { kind: 'ident', value: 'a' },
+      { kind: 'ident', value: '-' },
+      { kind: 'ident', value: 'b' },
+    ]);
+  });
 });
