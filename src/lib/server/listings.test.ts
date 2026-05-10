@@ -165,6 +165,21 @@ describe('createListingDraft for asset-hive types', () => {
 });
 
 describe('asset-hive list/detail', () => {
+  beforeAll(async () => {
+    // Self-sufficient fixture: ensures the assertions below don't depend on
+    // the romhack describe block's beforeAll. Idempotent so re-running with
+    // the shared in-memory DB doesn't trip the user.email / profile.username
+    // unique constraints.
+    await db
+      .insert(schema.user)
+      .values({ id: 'u1', name: 'Author', email: 'a@x.com', isPlaceholder: true })
+      .onConflictDoNothing();
+    await db
+      .insert(schema.profile)
+      .values({ userId: 'u1', username: 'alice', homepageUrl: 'https://example.com/me' })
+      .onConflictDoNothing();
+  });
+
   it('lists and fetches a sound', async () => {
     const draft = await createListingDraft(db, {
       authorId: 'u1',

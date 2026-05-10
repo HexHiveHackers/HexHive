@@ -388,19 +388,17 @@ export async function getAssetHiveBySlug(
   if (!version) return null;
 
   const files = await db.select().from(schema.listingFile).where(eq(schema.listingFile.versionId, version.id));
-  const author = (
-    await db
-      .select({
-        name: schema.user.name,
-        isPlaceholder: schema.user.isPlaceholder,
-        username: schema.profile.username,
-        homepageUrl: schema.profile.homepageUrl,
-      })
-      .from(schema.user)
-      .leftJoin(schema.profile, eq(schema.profile.userId, schema.user.id))
-      .where(eq(schema.user.id, listing.authorId))
-      .limit(1)
-  )[0];
+  const authorRows = await db
+    .select({
+      name: schema.user.name,
+      isPlaceholder: schema.user.isPlaceholder,
+      username: schema.profile.username,
+      homepageUrl: schema.profile.homepageUrl,
+    })
+    .from(schema.user)
+    .leftJoin(schema.profile, eq(schema.profile.userId, schema.user.id))
+    .where(eq(schema.user.id, listing.authorId))
+    .limit(1);
 
   const versions = await listVersionsForListing(db, listing.id);
 
@@ -411,10 +409,10 @@ export async function getAssetHiveBySlug(
     version,
     files,
     versions,
-    authorName: author?.name ?? 'unknown',
-    authorUsername: author?.username ?? null,
-    authorIsPlaceholder: author?.isPlaceholder ?? false,
-    authorHomepageUrl: author?.homepageUrl ?? null,
+    authorName: authorRows[0]?.name ?? 'unknown',
+    authorUsername: authorRows[0]?.username ?? null,
+    authorIsPlaceholder: authorRows[0]?.isPlaceholder ?? false,
+    authorHomepageUrl: authorRows[0]?.homepageUrl ?? null,
   };
 }
 
