@@ -303,6 +303,13 @@
   // after spessasynth's seek-time controller reset wipes them.
   let drumChannelsCurrent = $state<ReadonlySet<number>>(new Set());
 
+  // Force-centre channel pan (CC 10 = 64) on every channel after each
+  // load/reset. Some banks (Mills SF2 in particular) ship presets that
+  // sit hard right; this overrides the channel-level pan so the mix
+  // sits centred. Won't fix preset-zone pan generators, but covers the
+  // common channel-CC-driven offset case. Default off.
+  let centerPan = $state(false);
+
   // Scrub state — while the user is dragging the playhead, the seq stays
   // paused (no audible glitches from a flurry of seeks). On release,
   // commit the final position and resume if it was playing before.
@@ -380,19 +387,26 @@
         if (!synth) return;
         for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannelsCurrent.has(ch));
       };
+      const reapplyCenterPan = (): void => {
+        if (!synth || !centerPan) return;
+        for (let ch = 0; ch < 16; ch++) synth.controllerChange(ch, 10, 64);
+      };
       sq.eventHandler.addEvent('timeChange', 'midilab-drums-time', () => {
         queueMicrotask(reapplyDrums);
+        queueMicrotask(reapplyCenterPan);
       });
       sq.eventHandler.addEvent('songChange', 'midilab-drums-song', () => {
         queueMicrotask(reapplyDrums);
+        queueMicrotask(reapplyCenterPan);
       });
       // The synth fires allControllerReset whenever it wipes per-channel
-      // controller state — including drum mode. This catches the loop
-      // case: spessasynth resets controllers at the loop point but
-      // doesn't necessarily fire a timeChange we can hook. Subscribe
+      // controller state — including drum mode and CC10 pan. This catches
+      // the loop case: spessasynth resets controllers at the loop point
+      // but doesn't necessarily fire a timeChange we can hook. Subscribe
       // directly to the synth's reset event for full coverage.
       s.eventHandler.addEvent('allControllerReset', 'midilab-drums-reset', () => {
         queueMicrotask(reapplyDrums);
+        queueMicrotask(reapplyCenterPan);
       });
       ctx = audioCtx;
       synth = s;
@@ -583,6 +597,9 @@
         const program = firstDrumProgram.get(ch);
         if (program !== undefined) synth.programChange(ch, program);
         synth.lockController(ch, -1, true);
+      }
+      if (centerPan) {
+        for (let ch = 0; ch < 16; ch++) synth.controllerChange(ch, 10, 64);
       }
     }
     seqLoadedFor = loaded.songId;
@@ -778,6 +795,18 @@
     const t = seq?.currentTime ?? 0;
     await loadIntoSequencer(t);
   }
+
+  // Toggling centre-pan mid-playback should apply right away. When the
+  // user turns it ON, push CC10=64 to every channel; when OFF, leave
+  // whatever the synth/song has set (we don't restore an "original" pan
+  // because we don't track it — the next loop reset will restore the
+  // bank's defaults anyway).
+  $effect(() => {
+    if (!synth) return;
+    if (centerPan) {
+      for (let ch = 0; ch < 16; ch++) synth.controllerChange(ch, 10, 64);
+    }
+  });
 
   $effect(() => {
     if (!isPlaying || synthScrubbing) return;
@@ -1422,6 +1451,19 @@
             title="Loop"
           >
             <Repeat class="size-3" /> loop
+          </button>
+          <button
+            type="button"
+            onclick={() => {
+              centerPan = !centerPan;
+            }}
+            class="font-mono text-xs px-2 py-1 rounded border min-w-[3rem] flex items-center gap-1 {centerPan
+              ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-400'
+              : 'border-border hover:border-foreground/40'}"
+            aria-pressed={centerPan}
+            title="Force every channel to centre pan (overrides bank-baked CC10 offsets like Mills)"
+          >
+            ctr pan
           </button>
         </div>
       </div>
