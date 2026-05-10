@@ -376,8 +376,14 @@
       sq.eventHandler.addEvent('songChange', 'midilab-drums-song', () => {
         queueMicrotask(reapplyDrums);
       });
-      // No loopCountChange in spessasynth_lib's surface — looping seeks
-      // to the loop start, which fires timeChange, so it's covered.
+      // The synth fires allControllerReset whenever it wipes per-channel
+      // controller state — including drum mode. This catches the loop
+      // case: spessasynth resets controllers at the loop point but
+      // doesn't necessarily fire a timeChange we can hook. Subscribe
+      // directly to the synth's reset event for full coverage.
+      s.eventHandler.addEvent('allControllerReset', 'midilab-drums-reset', () => {
+        queueMicrotask(reapplyDrums);
+      });
       ctx = audioCtx;
       synth = s;
       seq = sq;
