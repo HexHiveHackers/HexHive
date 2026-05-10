@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ params }) => {
   if (!profile) throw error(404, 'User not found');
 
   const userRows = await db
-    .select({ name: schema.user.name })
+    .select({ name: schema.user.name, isPlaceholder: schema.user.isPlaceholder })
     .from(schema.user)
     .where(eq(schema.user.id, profile.userId))
     .limit(1);
@@ -24,6 +24,8 @@ export const load: PageServerLoad = async ({ params }) => {
       avatarKey: profile.avatarKey,
       bannerKey: profile.bannerKey,
       name: userRows[0]?.name ?? '',
+      homepageUrl: profile.homepageUrl,
+      isPlaceholder: userRows[0]?.isPlaceholder ?? false,
     },
     listings,
   };

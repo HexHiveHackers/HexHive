@@ -9,6 +9,24 @@
 
 <section class="mx-auto max-w-4xl px-4 py-10 grid gap-6">
   <Banner bannerKey={data.profile.bannerKey} alt={`${data.profile.username}'s banner`} />
+  {#if data.profile.isPlaceholder}
+    <div class="rounded-md border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-100">
+      <span class="font-display text-[0.65rem] uppercase tracking-[0.18em] text-amber-300">Placeholder credit</span>
+      <p class="mt-1 leading-relaxed">
+        This account was created by HexHive on behalf of the original creator.
+        {#if data.profile.homepageUrl}
+          <a
+            href={data.profile.homepageUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-amber-200 underline-offset-2 hover:underline"
+          >
+            Visit creator
+          </a>.
+        {/if}
+      </p>
+    </div>
+  {/if}
   <ProfileSummary profile={data.profile} />
   <div>
     <h2 class="font-display text-xl mb-4">Uploads</h2>
