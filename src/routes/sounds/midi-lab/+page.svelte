@@ -1239,19 +1239,6 @@
             class="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.08] [background-image:repeating-linear-gradient(0deg,#f59e0b_0_1px,transparent_1px_4px)]"
           ></div>
 
-          <!-- header chip -->
-          <div class="relative mb-3 flex items-center justify-between gap-3">
-            <span class="font-display text-[0.6rem] tracking-[0.25em] text-amber-300">
-              <span class="sr-only">Reference recording ({loaded.refKind === 'ogg' ? 'GMGSx OGG render' : 'vanilla MP3'})</span>
-              <span aria-hidden="true">▷ FINAL · {loaded.refKind === 'ogg' ? 'OGG' : 'MP3'} ◁</span>
-            </span>
-            <span
-              class="font-display text-[0.5rem] tracking-[0.3em] text-amber-600/70 rounded border border-amber-500/30 px-1.5 py-0.5"
-            >
-              {loaded.kind === 'gm' ? 'gm render' : 'side a'}
-            </span>
-          </div>
-
           <!-- transport: audio · reel · loop -->
           <div class="relative flex items-center gap-3">
             {#key loaded.songId}
@@ -1296,6 +1283,16 @@
             >
               <Repeat class="size-3" /> loop
             </button>
+          </div>
+
+          <!-- footer chip — placed below the audio so it sits adjacent to
+               the SF2 mapping table just below; the user reads "FINAL ·
+               MP3" right next to the instruments it's the reference for. -->
+          <div class="relative mt-3 flex items-center justify-end">
+            <span class="font-display text-[0.55rem] tracking-[0.25em] text-amber-300">
+              <span class="sr-only">Reference recording ({loaded.refKind === 'ogg' ? 'GMGSx OGG render' : 'vanilla MP3'})</span>
+              <span aria-hidden="true">▷ FINAL · {loaded.refKind === 'ogg' ? 'OGG' : 'MP3'} ◁</span>
+            </span>
           </div>
         </div>
       {/if}
