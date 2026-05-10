@@ -45,7 +45,9 @@
         <span class="text-sm text-muted-foreground">{profile.pronouns}</span>
       {/if}
     </div>
-    {#if profile.name && profile.name !== profile.alias}<p class="text-sm text-muted-foreground mt-1">{profile.name}</p>{/if}
+    {#if profile.name && profile.name !== profile.alias && profile.name.toLowerCase() !== profile.username.toLowerCase()}
+      <p class="text-sm text-muted-foreground mt-1">{profile.name}</p>
+    {/if}
     {#if profile.bio}<p class="mt-3 whitespace-pre-line">{profile.bio}</p>{/if}
     {#if profile.contactEmail}
       <p class="mt-3 text-sm text-muted-foreground inline-flex items-center gap-1.5">
