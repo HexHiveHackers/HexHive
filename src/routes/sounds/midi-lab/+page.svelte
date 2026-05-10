@@ -1268,10 +1268,6 @@
 
           <!-- header chip -->
           <div class="relative mb-2 flex items-center gap-2">
-            <span
-              aria-hidden="true"
-              class="size-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.55)]"
-            ></span>
             <span class="font-display text-[0.6rem] tracking-[0.25em] text-amber-300">
               <span class="sr-only">Reference recording ({loaded.refKind === 'ogg' ? 'GMGSx OGG render' : 'vanilla MP3'})</span>
               <span aria-hidden="true">FINAL · {loaded.refKind === 'ogg' ? 'OGG' : 'MP3'}</span>

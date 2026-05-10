@@ -76,15 +76,13 @@ Six tracks have both a `.mid` and a `.ogg` of the same basename — clean A/B de
 | `Surfing` | 77,038 | 1,465,916 | `ffa1ac40…` |
 | `Title` | 8,141 | 1,446,665 | `a8ffcb0d…` |
 
-These are **GM MIDIs**, not Sappy-engine voicegroup MIDIs — they don't pair with a `.inc`. So if we add them to `/sounds/midi-lab` they'd want a different fixture-shape than the existing Pallet/Littleroot/Battle Dome Lobby trio (which carry `.inc` voicegroups). Two options:
+These are **GM MIDIs**, not Sappy-engine voicegroup MIDIs — they don't pair with a `.inc`. So they need a different fixture-shape than the Pallet/Littleroot/Battle Dome Lobby trio (which carry `.inc` voicegroups).
 
-1. **GM-mode fixtures**: extend the lab to also accept `.mid` + `.ogg` only (no `.inc`), bypass the voicegroup remapper for those, and let the user A/B the synthesised MIDI against the GMGSx-rendered OGG using whatever soundfont is selected from the dropdown. Best demo for "what does this MIDI sound like through bank X vs bank Y".
-2. **Skip in lab**: treat zeak's repo as a soundfont-only contribution — upload GMGSx as a dropdown bank, leave the MIDIs out.
+### Resolution: option (1) — GM-mode fixtures shipped
 
-### Pending
+The lab now distinguishes two fixture kinds (`sappy` and `gm`); the six zeak/Fire-Red mid+ogg pairs above are wired in as `gm` fixtures, with `gmgsx-zeak` as their `referenceSoundfont`. The fixture rack uses tabs ("GBA rips" / "Pokémon Essentials") to keep the two families separate.
 
-- Decide which of the two scopes above to take (currently flagged for the user).
-- If we proceed with (1): upload `soundfont.sf2` to R2 (proposed key `soundfonts/GMGSx-zeak-Fire-Red.sf2`) and the 6 mid+ogg pairs to a new prefix (e.g. `soundfonts/fixtures/zeak-Fire-Red/`).
+GMGSx itself is uploaded to R2 as `soundfonts/GMGSx-zeak-Fire-Red.sf2` and exposed in the bank rack under the `engine` era / fuchsia tone.
 
 ## Open questions / followups
 
