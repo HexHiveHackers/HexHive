@@ -7,9 +7,11 @@
   import ReportButton from '$lib/components/moderation/ReportButton.svelte';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
+  import { linkifySegments } from '$lib/utils/linkify';
 
   let { data } = $props();
   const listing = $derived(data.detail.listing);
+  const descriptionSegments = $derived(linkifySegments(listing.description ?? ''));
   const meta = $derived(data.detail.meta);
   const files = $derived(data.detail.files);
   const versions = $derived(data.detail.versions);
@@ -42,7 +44,22 @@
       <span>{listing.downloads} downloads</span>
     </div>
     <h1 class="font-display text-3xl mt-2">{listing.title}</h1>
-    <p class="mt-3 text-muted-foreground whitespace-pre-line">{listing.description}</p>
+    <p class="mt-3 text-muted-foreground whitespace-pre-line">
+      {#each descriptionSegments as seg, i (i)}
+        {#if seg.kind === 'link'}
+          <a
+            href={seg.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-foreground hover:text-primary underline-offset-2 hover:underline"
+          >
+            {seg.value}
+          </a>
+        {:else}
+          {seg.value}
+        {/if}
+      {/each}
+    </p>
   </header>
 
   <section class="grid sm:grid-cols-2 gap-4 mb-8">

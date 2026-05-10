@@ -1,3 +1,4 @@
+import { listTools } from '$lib/data/tools';
 import { db } from '$lib/db';
 import { listAssetHives, listRomhacks } from '$lib/server/listings';
 import type { PageServerLoad } from './$types';
@@ -9,5 +10,6 @@ export const load: PageServerLoad = async () => {
     listAssetHives(db, 'sound', { limit: 3 }),
     listAssetHives(db, 'script', { limit: 3 }),
   ]);
-  return { romhacks, sprites, sounds, scripts };
+  const tools = listTools().slice(0, 3);
+  return { romhacks, sprites, sounds, scripts, tools };
 };
