@@ -264,10 +264,15 @@
   let loopOn = $state(true);
   let soundfont = $state<Soundfont>(SOUNDFONTS[0]);
   let activeBankId = $state('');
-  // The id of the bank we're currently switching to (or null when idle).
-  // Drives the amber-pulse LED on the target chip and the "swapping…"
-  // indicator in the rack header.
+  // The id of the bank the worklet is currently parsing (or null when
+  // idle). Drives the white-pulse LED on the target chip and the
+  // "loading…" indicator in the rack header.
   let swappingTo = $state<string | null>(null);
+  // If a swap is in flight and the user clicks another chip, we stash the
+  // latest target here. When the running swap finishes, it drains pending
+  // — so rapid clicks always converge on the *last* one chosen, never on
+  // an intermediate target.
+  let switchPending: Soundfont | null = null;
   // Cache the byte payload of every soundbank we've fetched so that
   // hot-swapping back to a previous one doesn't re-download.
   const sfBytesCache = new Map<string, Promise<ArrayBuffer>>();
@@ -338,14 +343,27 @@
     }
   }
 
-  // Swap the active soundbank — strict single-bank model. Only one bank
-  // is ever resident in the worklet, so synth.presetList contains only
-  // that bank's presets and autoMap can never pick a name match from a
-  // different bank. The cost: each swap parses the new SF2 (a few hundred
-  // ms for larger banks). The byte payload stays in sfBytesCache so the
-  // network fetch is cached, but spessasynth re-parses on each addSoundBank.
+  // Swap the active soundbank — strict single-bank model. Serialised: if
+  // a swap is already in flight, the new target is stashed in
+  // `switchPending` and the running swap drains it when it finishes. So
+  // rapid clicks collapse: only the user's last selection actually
+  // executes its swap, and the chip ring + label stay coherent.
   async function switchSoundbank(target: Soundfont): Promise<void> {
     if (!synth || activeBankId === target.id) return;
+    if (swappingTo) {
+      switchPending = target;
+      return;
+    }
+    let next: Soundfont | null = target;
+    while (next && synth && activeBankId !== next.id) {
+      await runSwap(next);
+      next = switchPending;
+      switchPending = null;
+    }
+  }
+
+  async function runSwap(target: Soundfont): Promise<void> {
+    if (!synth) return;
     swappingTo = target.id;
     try {
       // Force-stop active voices so sustained notes on the old preset
@@ -947,19 +965,18 @@
       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
     >
       {#each SOUNDFONTS.filter((sf) => GROUPS.find((g) => g.id === activeTab)?.eras.includes(sf.era)) as sf (sf.id)}
-        {@const isActive = activeBankId === sf.id}
-        {@const isParsing = swappingTo === sf.id}
-        {@const isLocked = swappingTo !== null && !isParsing}
+        {@const isSelected = soundfont.id === sf.id}
+        {@const isLive = activeBankId === sf.id}
+        {@const isLoading = swappingTo === sf.id || (isSelected && !isLive)}
         <button
           type="button"
           onclick={() => {
             soundfont = sf;
           }}
-          disabled={isLocked}
-          aria-pressed={isActive}
+          aria-pressed={isSelected}
           aria-label="{sf.label}{sf.context ? ` — ${sf.context}` : ''}"
-          class="group relative overflow-hidden rounded-md border bg-slate-950/70 p-4 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50
-            {isActive
+          class="group relative overflow-hidden rounded-md border bg-slate-950/70 p-4 text-left transition-all
+            {isSelected
               ? TONE_RING[sf.tone]
               : 'border-border/70 hover:border-foreground/40 hover:bg-slate-900/70'}"
         >
@@ -972,13 +989,13 @@
             class="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:linear-gradient(to_right,#94a3b8_1px,transparent_1px),linear-gradient(to_bottom,#94a3b8_1px,transparent_1px)] [background-size:8px_8px]"
           ></span>
 
-          <!-- LED — only one bank is loaded at a time. Active = tone glow,
-               parsing = white pulse on the chip we're switching to,
+          <!-- LED — live (currently driving the synth) = tone glow,
+               loading (selected but not yet swapped in) = white pulse,
                otherwise dim. -->
           <span aria-hidden="true" class="absolute top-2.5 right-2.5 flex size-3 items-center justify-center">
-            {#if isActive}
+            {#if isLive && !isLoading}
               <span class="size-2.5 rounded-full {TONE_LED_ACTIVE[sf.tone]} animate-pulse"></span>
-            {:else if isParsing}
+            {:else if isLoading}
               <span class="size-2.5 rounded-full bg-zinc-300 shadow-[0_0_8px_2px_rgba(228,228,231,0.7)] animate-pulse"></span>
             {:else}
               <span class="size-2 rounded-full bg-slate-700"></span>
