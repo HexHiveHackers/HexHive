@@ -24,11 +24,12 @@
 
   type Row = (typeof data.users)[number];
   const claimed = $derived(data.users.filter((u) => !u.isPlaceholder));
+  const byUsername = (a: Row, b: Row) => a.username.localeCompare(b.username, undefined, { sensitivity: 'base' });
   const unclaimedContributors = $derived(
-    data.users.filter((u) => u.isPlaceholder && u.placeholderKind === 'contributor'),
+    data.users.filter((u) => u.isPlaceholder && u.placeholderKind === 'contributor').sort(byUsername),
   );
   const unclaimedUsers = $derived(
-    data.users.filter((u) => u.isPlaceholder && u.placeholderKind === 'user'),
+    data.users.filter((u) => u.isPlaceholder && u.placeholderKind === 'user').sort(byUsername),
   );
 </script>
 
