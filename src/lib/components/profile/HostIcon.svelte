@@ -49,6 +49,7 @@
     whackahack: { text: 'WA', classes: 'bg-rose-500/15 text-rose-300' },
     smogon: { text: 'SM', classes: 'bg-violet-500/15 text-violet-300' },
     bulbapedia: { text: 'B', classes: 'bg-lime-500/15 text-lime-300' },
+    hackdex: { text: 'HD', classes: 'bg-fuchsia-500/15 text-fuchsia-300' },
   };
 
   const badge = $derived(host && host in TEXT_BADGES ? TEXT_BADGES[host as keyof typeof TEXT_BADGES] : null);
