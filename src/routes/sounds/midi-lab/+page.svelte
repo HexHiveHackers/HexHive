@@ -367,6 +367,16 @@
           ...s.soundBankManager.priorityOrder.filter((id) => id !== activeBankId),
         ];
         presets = listPresets(s);
+        // If a song is already loaded into the sequencer, re-rewrite it
+        // against the now-complete preset list. Slots that fell back to
+        // defaults because the active bank lacked a matching preset
+        // (often drum kits) will pick up better matches from the wider
+        // pool — without this, the user has to mute/unmute or seek to
+        // trigger a re-rewrite manually.
+        if (loaded && seqLoadedFor === loaded.songId) {
+          const t = seq?.currentTime ?? 0;
+          await loadIntoSequencer(t);
+        }
       })();
     } catch (err) {
       console.error('midi-lab: engine init failed', err);
