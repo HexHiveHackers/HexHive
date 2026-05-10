@@ -399,6 +399,13 @@
       seq = sq;
       presets = listPresets(s);
       engineState = 'ready';
+      // If a fixture was loaded before the engine finished initialising
+      // (eager init in onMount races loadFixture), push it into the
+      // sequencer now so the mapping table + scrub bar populate without
+      // the user having to click Play first.
+      if (loaded && seqLoadedFor !== loaded.songId) {
+        await loadIntoSequencer();
+      }
     } catch (err) {
       console.error('midi-lab: engine init failed', err);
       engineState = 'error';
@@ -688,13 +695,12 @@
     currentTime = 0;
     duration = 0;
     seqLoadedFor = null;
-    // If the engine is already running (because the user has played at
-    // least once and is just switching fixtures), reload immediately so
-    // the new song is ready to play. Otherwise defer to the first Play
-    // click, when we'll have a real user gesture to resume the
-    // AudioContext — loading a song while the context is suspended makes
-    // the worklet treat it as already-ended and Play silently no-ops.
-    if (engineState === 'ready' && ctx?.state === 'running') {
+    // Push the song into the sequencer as soon as the engine is ready,
+    // even with the AudioContext still suspended. This fills in the
+    // mapping table, the scrub bar's duration, and lets the user
+    // pre-scrub before clicking Play. Audio doesn't actually play
+    // until ctx.resume() inside play() (browser gesture rule).
+    if (engineState === 'ready') {
       await loadIntoSequencer();
     }
   }
@@ -829,11 +835,16 @@
     // Pre-warm the heavy stuff that doesn't need a user gesture:
     // - import spessasynth_lib (lazy ESM chunk, ~hundreds of KB)
     // - fetch the active soundfont's SF2 bytes into the Blob cache
-    // AudioContext + worklet still wait for the first Play click (per
-    // browser policy), but by the time the user clicks, the lib is
-    // parsed and the SF2 bytes are already in memory — first Play is
-    // worklet-add + sequencer-create only, not a multi-second wait.
+    // - kick off initEngine: AudioContext is created in suspended
+    //   state (allowed without a gesture), worklet + soundfont parse,
+    //   and the first fixture loads into the sequencer. Result: the
+    //   mapping table renders straight away (no "Loading SF2 preset
+    //   list…" placeholder), the scrub bar shows duration, and the
+    //   user can drag the playhead before ever clicking Play. Audio
+    //   stays silent until play() calls ctx.resume() — that's the
+    //   only thing the gesture rule actually blocks.
     prewarm();
+    void initEngine();
     // Auto-load on first visit. Honour ?song=<id> if present, fall back
     // to the first fixture so the page is never empty for new visitors.
     const requested = page.url.searchParams.get('song');
