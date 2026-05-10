@@ -37,5 +37,15 @@
       your own legally-obtained ROM, then apply patches with the tools of your choice on your own
       device.
     </p>
+
+    <p>
+      Some hardware-glyph icons by
+      <a
+        href="https://icons8.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hover:text-foreground hover:underline"
+      >Icons8</a>.
+    </p>
   </div>
 </footer>
