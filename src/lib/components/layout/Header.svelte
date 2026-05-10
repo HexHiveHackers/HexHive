@@ -93,7 +93,7 @@
       {#each navLinks as link (link.href)}
         {@const active = isActive(link.href)}
         <a
-          class="nav-link flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors {active
+          class="nav-link relative flex items-center gap-1.5 px-3 py-1 transition-colors {active
             ? 'nav-link--active font-medium'
             : 'text-muted-foreground'}"
           style="--nav-accent: {link.accent}"
@@ -272,35 +272,84 @@
 </header>
 
 <style>
-  /* Per-type tinted nav: the link inherits its --nav-accent from the
-     inline style and uses color-mix to keep idle/hover/active subtle. */
+  /* Per-type tinted nav. Hover lifts the muted text to white with a soft
+     accent glow; active places a Pokemon-menu-style ▶ pixel cursor to the
+     left of the link in the type's accent color, label stays white. No
+     pill, no underline, no rounded background.
+
+     Selectors are ordered low→high specificity to keep biome's
+     noDescendingSpecificity happy. */
   .nav-link {
-    transition: color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
-  }
-  .nav-link:hover {
-    color: var(--nav-accent);
-    background: color-mix(in oklch, var(--nav-accent) 14%, transparent);
+    transition: color 0.18s ease, text-shadow 0.18s ease;
   }
   .nav-link--active {
     color: var(--foreground);
-    background: color-mix(in oklch, var(--nav-accent) 18%, transparent);
-    box-shadow: inset 0 -2px 0 0 var(--nav-accent);
   }
   .nav-link--active :global(svg) {
     color: var(--nav-accent);
   }
+  .nav-link--active::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 50%;
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-left: 6px solid var(--nav-accent);
+    transform: translateY(-50%);
+    filter: drop-shadow(0 0 6px color-mix(in oklch, var(--nav-accent) 70%, transparent));
+    animation: cursor-pulse 1.4s ease-in-out infinite;
+  }
+  .nav-link:hover {
+    color: var(--foreground);
+    text-shadow: 0 0 12px color-mix(in oklch, var(--nav-accent) 55%, transparent);
+  }
+  .nav-link:hover :global(svg) {
+    color: var(--nav-accent);
+  }
+  @keyframes cursor-pulse {
+    0%, 100% { transform: translate(0, -50%); opacity: 1; }
+    50% { transform: translate(2px, -50%); opacity: 0.75; }
+  }
 
   .nav-link-mobile {
     transition: color 0.18s ease;
-  }
-  .nav-link-mobile:hover {
-    color: var(--nav-accent);
+    position: relative;
   }
   .nav-link-mobile--active {
     color: var(--foreground);
   }
   .nav-link-mobile--active :global(svg) {
     color: var(--nav-accent);
+  }
+  .nav-link-mobile--active::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 7px solid var(--nav-accent);
+    transform: translateY(-50%);
+    filter: drop-shadow(0 0 6px color-mix(in oklch, var(--nav-accent) 70%, transparent));
+    animation: cursor-pulse 1.4s ease-in-out infinite;
+  }
+  .nav-link-mobile:hover {
+    color: var(--foreground);
+  }
+  .nav-link-mobile:hover :global(svg) {
+    color: var(--nav-accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-link--active::before,
+    .nav-link-mobile--active::before {
+      animation-duration: 0.001ms;
+    }
   }
 
   .hamburger-bar {
