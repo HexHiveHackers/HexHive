@@ -1005,11 +1005,12 @@
   <div class="space-y-3">
     <div class="flex flex-wrap items-baseline justify-between gap-3">
       <div class="flex items-baseline gap-3">
-        <span class="text-sm uppercase tracking-[0.25em] text-foreground font-display">Fixtures</span>
         {#if loaded}
           <span class="text-sm text-zinc-200">
-            loaded: <span class="font-mono text-foreground">{loaded.label}</span>
+            Song: <span class="font-mono text-foreground">{loaded.label}</span>
           </span>
+        {:else}
+          <span class="text-sm uppercase tracking-[0.25em] text-foreground font-display">Fixtures</span>
         {/if}
       </div>
     </div>
@@ -1093,11 +1094,8 @@
   <div class="space-y-3">
     <div class="flex flex-wrap items-baseline justify-between gap-3">
       <div class="flex items-baseline gap-3">
-        <span class="text-sm uppercase tracking-[0.25em] text-foreground font-display">
-          Bank rack
-        </span>
         <span class="text-sm text-zinc-200">
-          active:
+          Soundfont:
           <span class="font-mono text-foreground">{soundfont.title}</span>
           <span class="font-display text-[0.75rem] tracking-[0.2em] {TONE_TEXT[soundfont.tone]} ml-1">
             {ERA_LABEL[soundfont.era]}
