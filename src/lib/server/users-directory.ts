@@ -18,9 +18,12 @@ export async function enrichDirectoryUsers(db: DB): Promise<DirectoryRow[]> {
       alias: schema.profile.alias,
       bio: schema.profile.bio,
       avatarKey: schema.profile.avatarKey,
+      pronouns: schema.profile.pronouns,
       hideActivity: schema.profile.hideActivity,
       isPlaceholder: schema.user.isPlaceholder,
       isAdmin: schema.user.isAdmin,
+      placeholderKind: schema.user.placeholderKind,
+      name: schema.user.name,
       joinedAt: schema.user.createdAt,
       lastActive,
     })
@@ -106,6 +109,10 @@ export async function enrichDirectoryUsers(db: DB): Promise<DirectoryRow[]> {
       akas: ak,
       isPlaceholder: r.isPlaceholder,
       isAdmin: r.isAdmin,
+      name: r.name,
+      avatarKey: r.avatarKey,
+      pronouns: r.pronouns,
+      placeholderKind: r.placeholderKind,
     };
   });
 }

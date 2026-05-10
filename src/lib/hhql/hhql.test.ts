@@ -164,6 +164,10 @@ function row(overrides: Partial<DirectoryRow> = {}): DirectoryRow {
     akas: [],
     isPlaceholder: false,
     isAdmin: false,
+    name: 'Someone',
+    avatarKey: null,
+    pronouns: null,
+    placeholderKind: 'contributor',
     ...overrides,
   };
 }

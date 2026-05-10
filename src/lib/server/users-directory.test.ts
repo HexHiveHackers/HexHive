@@ -12,11 +12,20 @@ beforeAll(async () => {
   await migrate(db, { migrationsFolder: './drizzle' });
   await db.insert(schema.user).values([
     { id: 'u1', name: 'Alex', email: 'a@x', emailVerified: true },
-    { id: 'u2', name: 'Bea', email: 'b@x', emailVerified: true, isAdmin: true },
+    { id: 'u2', name: 'Bea', email: 'b@x', emailVerified: true, isPlaceholder: true, placeholderKind: 'user' },
+    { id: 'u3', name: 'Cal', email: 'c@x', emailVerified: true, isAdmin: true },
   ]);
   await db.insert(schema.profile).values([
-    { userId: 'u1', username: 'alex', alias: 'Alex', bio: 'spriter', avatarKey: 'avatars/u1.png' },
+    {
+      userId: 'u1',
+      username: 'alex',
+      alias: 'Alex',
+      bio: 'spriter',
+      avatarKey: 'avatars/u1.png',
+      pronouns: 'they/them',
+    },
     { userId: 'u2', username: 'bea', alias: null, bio: null },
+    { userId: 'u3', username: 'cal', alias: null, bio: null },
   ]);
   await db.insert(schema.affiliation).values([{ id: 'aff1', name: 'Team Aqua' }]);
   await db.insert(schema.profileAffiliation).values([{ userId: 'u1', affiliationId: 'aff1', role: 'lead spriter' }]);
@@ -36,6 +45,8 @@ describe('enrichDirectoryUsers', () => {
     if (!alex) throw new Error('alex not found');
     const bea = rows.find((r) => r.username === 'bea');
     if (!bea) throw new Error('bea not found');
+    const cal = rows.find((r) => r.username === 'cal');
+    if (!cal) throw new Error('cal not found');
 
     expect(alex.listingsByType).toEqual({ romhack: 1, sprite: 2, sound: 0, script: 0 });
     expect(alex.totalDownloads).toBe(155);
@@ -47,6 +58,10 @@ describe('enrichDirectoryUsers', () => {
     expect(alex.affiliations).toEqual([{ name: 'Team Aqua', role: 'lead spriter' }]);
     expect(alex.akas).toEqual(['skeetendo']);
     expect(alex.isAdmin).toBe(false);
+    expect(alex.name).toBe('Alex');
+    expect(alex.avatarKey).toBe('avatars/u1.png');
+    expect(alex.pronouns).toBe('they/them');
+    expect(alex.placeholderKind).toBe('contributor');
 
     expect(bea.listingsByType).toEqual({ romhack: 0, sprite: 0, sound: 0, script: 0 });
     expect(bea.totalDownloads).toBe(0);
@@ -54,6 +69,10 @@ describe('enrichDirectoryUsers', () => {
     expect(bea.hasAlias).toBe(false);
     expect(bea.hasLinks).toBe(false);
     expect(bea.hasAffiliations).toBe(false);
-    expect(bea.isAdmin).toBe(true);
+    expect(bea.isAdmin).toBe(false);
+    expect(bea.isPlaceholder).toBe(true);
+    expect(bea.placeholderKind).toBe('user');
+
+    expect(cal.isAdmin).toBe(true);
   });
 });

@@ -1,21 +1,12 @@
 import { db } from '$lib/db';
-import { listDirectoryUsers } from '$lib/server/profiles';
+import { enrichDirectoryUsers } from '$lib/server/users-directory';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
-  const users = await listDirectoryUsers(db);
+export const load: PageServerLoad = async ({ url }) => {
+  const users = await enrichDirectoryUsers(db);
   return {
-    users: users.map((u) => ({
-      username: u.username,
-      alias: u.alias,
-      name: u.name,
-      avatarKey: u.avatarKey,
-      pronouns: u.pronouns,
-      bio: u.bio,
-      lastActive: u.lastActive ? u.lastActive.getTime() : null,
-      joinedAt: u.joinedAt.getTime(),
-      isPlaceholder: u.isPlaceholder,
-      placeholderKind: u.placeholderKind,
-    })),
+    users,
+    q: url.searchParams.get('q') ?? '',
+    sort: url.searchParams.get('sort') ?? 'active:desc',
   };
 };

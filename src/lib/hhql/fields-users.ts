@@ -19,6 +19,11 @@ export interface DirectoryRow {
   akas: string[];
   isPlaceholder: boolean;
   isAdmin: boolean;
+  // visual-only fields (not filterable; for rendering only)
+  name: string;
+  avatarKey: string | null;
+  pronouns: string | null;
+  placeholderKind: 'contributor' | 'user';
 }
 
 export const fieldsUsers: FieldRegistry<DirectoryRow> = buildRegistry<DirectoryRow>([
