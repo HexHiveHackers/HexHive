@@ -54,13 +54,17 @@
     href: string;
     label: string;
     type: 'romhack' | 'sprite' | 'sound' | 'script' | 'tool';
+    accent: string;
   };
+  // Match the per-type accents used by the upload wizard and the 404 portal
+  // grid: emerald (romhack) / fuchsia (sprite) / amber (sound) / sky (script)
+  // / violet (tool) / rose (midi lab).
   const navLinks: NavLink[] = [
-    { href: '/sprites', label: 'Sprites', type: 'sprite' },
-    { href: '/sounds', label: 'Sounds', type: 'sound' },
-    { href: '/scripts', label: 'Scripts', type: 'script' },
-    { href: '/romhacks', label: 'Romhacks', type: 'romhack' },
-    { href: '/tools', label: 'Tools', type: 'tool' },
+    { href: '/sprites', label: 'Sprites', type: 'sprite', accent: '#d946ef' },
+    { href: '/sounds', label: 'Sounds', type: 'sound', accent: '#f59e0b' },
+    { href: '/scripts', label: 'Scripts', type: 'script', accent: '#38bdf8' },
+    { href: '/romhacks', label: 'Romhacks', type: 'romhack', accent: '#10b981' },
+    { href: '/tools', label: 'Tools', type: 'tool', accent: '#a78bfa' },
   ];
 
   // Highlight a nav entry when the current path is the section root or any
@@ -90,8 +94,9 @@
         {@const active = isActive(link.href)}
         <a
           class="nav-link flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors {active
-            ? 'bg-accent text-accent-foreground font-medium'
-            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}"
+            ? 'nav-link--active font-medium'
+            : 'text-muted-foreground'}"
+          style="--nav-accent: {link.accent}"
           href={link.href}
           aria-current={active ? 'page' : undefined}
         >
@@ -107,8 +112,8 @@
       <a
         href="/sounds/midi-lab"
         class="midi-lab-link inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors {midiLabActive
-          ? 'bg-emerald-500/15 text-emerald-300'
-          : 'text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-300'}"
+          ? 'bg-rose-400/15 text-rose-300'
+          : 'text-muted-foreground hover:bg-rose-400/10 hover:text-rose-300'}"
         aria-label="MIDI lab demo (WIP)"
         aria-current={midiLabActive ? 'page' : undefined}
         title="MIDI lab demo (WIP)"
@@ -196,9 +201,10 @@
         {@const active = isActive(link.href)}
         <a
           href={link.href}
-          class="flex min-h-12 select-none items-center justify-center gap-2 font-display text-sm tracking-wider transition-colors {active
-            ? 'text-foreground'
-            : 'text-muted-foreground hover:text-foreground/80'}"
+          class="nav-link-mobile flex min-h-12 select-none items-center justify-center gap-2 font-display text-sm tracking-wider transition-colors {active
+            ? 'nav-link-mobile--active'
+            : 'text-muted-foreground'}"
+          style="--nav-accent: {link.accent}"
           aria-current={active ? 'page' : undefined}
           onclick={() => (mobileMenuOpen = false)}
         >
@@ -209,8 +215,8 @@
       <a
         href="/sounds/midi-lab"
         class="flex min-h-12 select-none items-center justify-center gap-2 text-sm transition-colors {midiLabActive
-          ? 'text-emerald-300'
-          : 'text-muted-foreground hover:text-emerald-300'}"
+          ? 'text-rose-300'
+          : 'text-muted-foreground hover:text-rose-300'}"
         aria-current={midiLabActive ? 'page' : undefined}
         onclick={() => (mobileMenuOpen = false)}
       >
@@ -266,6 +272,37 @@
 </header>
 
 <style>
+  /* Per-type tinted nav: the link inherits its --nav-accent from the
+     inline style and uses color-mix to keep idle/hover/active subtle. */
+  .nav-link {
+    transition: color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  .nav-link:hover {
+    color: var(--nav-accent);
+    background: color-mix(in oklch, var(--nav-accent) 14%, transparent);
+  }
+  .nav-link--active {
+    color: var(--foreground);
+    background: color-mix(in oklch, var(--nav-accent) 18%, transparent);
+    box-shadow: inset 0 -2px 0 0 var(--nav-accent);
+  }
+  .nav-link--active :global(svg) {
+    color: var(--nav-accent);
+  }
+
+  .nav-link-mobile {
+    transition: color 0.18s ease;
+  }
+  .nav-link-mobile:hover {
+    color: var(--nav-accent);
+  }
+  .nav-link-mobile--active {
+    color: var(--foreground);
+  }
+  .nav-link-mobile--active :global(svg) {
+    color: var(--nav-accent);
+  }
+
   .hamburger-bar {
     width: 1.25rem;
     height: 2px;
