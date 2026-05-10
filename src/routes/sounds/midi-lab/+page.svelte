@@ -273,9 +273,15 @@
   // — so rapid clicks always converge on the *last* one chosen, never on
   // an intermediate target.
   let switchPending: Soundfont | null = null;
-  // Cache the byte payload of every soundbank we've fetched so that
-  // hot-swapping back to a previous one doesn't re-download.
-  const sfBytesCache = new Map<string, Promise<ArrayBuffer>>();
+  // Cache the SF2 bytes as a Blob so we can re-derive a fresh ArrayBuffer
+  // each call. spessasynth's addSoundBank TRANSFERS the ArrayBuffer to the
+  // worklet thread (detaches it on our side), so caching the buffer
+  // directly would mean the second fetch returns an empty/detached buffer
+  // and the worklet gets 0 bytes — producing a corrupt bank, garbled
+  // audio, and the cascade of "wrong instruments" / "site slows down"
+  // bugs we were chasing. Blobs are immutable; .arrayBuffer() always
+  // returns a brand-new buffer the worklet is free to detach.
+  const sfBlobCache = new Map<string, Promise<Blob>>();
   let mp3El = $state<HTMLAudioElement | null>(null);
   // Track which song the Sequencer currently has loaded so we don't
   // re-process the MIDI on every override/mute change unnecessarily, and
@@ -299,13 +305,14 @@
 
   let libPromise: Promise<typeof import('spessasynth_lib')> | null = null;
 
-  function fetchSoundfont(sf: Soundfont): Promise<ArrayBuffer> {
-    let p = sfBytesCache.get(sf.id);
+  async function fetchSoundfont(sf: Soundfont): Promise<ArrayBuffer> {
+    let p = sfBlobCache.get(sf.id);
     if (!p) {
-      p = fetch(sf.url).then((r) => r.arrayBuffer());
-      sfBytesCache.set(sf.id, p);
+      p = fetch(sf.url).then((r) => r.blob());
+      sfBlobCache.set(sf.id, p);
     }
-    return p;
+    const blob = await p;
+    return blob.arrayBuffer();
   }
 
   function prewarm(): void {
@@ -390,10 +397,19 @@
     }
   }
 
+  // Debounce the soundfont-changed → switchSoundbank trigger so a flurry
+  // of clicks doesn't kick off a parse that's about to be superseded.
+  // 250 ms is short enough that intentional clicks still feel responsive.
+  let switchDebounce: ReturnType<typeof setTimeout> | null = null;
   $effect(() => {
     const target = soundfont;
     void fetchSoundfont(target);
-    if (engineState === 'ready') void switchSoundbank(target);
+    if (engineState !== 'ready') return;
+    if (switchDebounce) clearTimeout(switchDebounce);
+    switchDebounce = setTimeout(() => {
+      switchDebounce = null;
+      void switchSoundbank(target);
+    }, 250);
   });
 
   function awaitSongLoaded(s: Sequencer, id: string): Promise<void> {
