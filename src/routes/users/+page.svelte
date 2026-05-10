@@ -100,7 +100,7 @@
   </details>
 
   {#if unclaimedContributors.length > 0}
-    <details class="group/contrib grid gap-3">
+    <details open class="group/contrib grid gap-3">
       <summary class="flex items-start gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
         <ChevronDown class="size-4 mt-0.5 text-amber-300 transition-transform group-[&:not([open])]/contrib:-rotate-90" />
         <div class="grid gap-1">
@@ -119,7 +119,7 @@
   {/if}
 
   {#if unclaimedUsers.length > 0}
-    <details class="group/users2 grid gap-3">
+    <details open class="group/users2 grid gap-3">
       <summary class="flex items-start gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
         <ChevronDown class="size-4 mt-0.5 text-sky-300 transition-transform group-[&:not([open])]/users2:-rotate-90" />
         <div class="grid gap-1">
