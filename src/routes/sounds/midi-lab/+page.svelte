@@ -1077,7 +1077,7 @@
               ? 'border-b-2 border-foreground text-foreground'
               : 'border-b-2 border-transparent text-zinc-300 hover:text-foreground'}"
         >
-          <t.icon class="size-4 shrink-0" aria-hidden="true" />
+          <t.icon class="size-6 shrink-0" aria-hidden="true" />
           <span class="font-display text-[0.8rem] tracking-[0.2em]">{t.label}</span>
           <span class="text-sm text-zinc-300 font-mono hidden md:inline">{t.sub}</span>
           <span
@@ -1168,7 +1168,7 @@
               ? 'border-b-2 border-foreground text-foreground'
               : 'border-b-2 border-transparent text-zinc-300 hover:text-foreground'}"
         >
-          <g.icon class="size-4 shrink-0" aria-hidden="true" />
+          <g.icon class="size-6 shrink-0" aria-hidden="true" />
           <span class="font-display text-[0.8rem] tracking-[0.2em]">{g.label}</span>
           <span class="text-xs text-zinc-400 font-mono hidden md:inline">{g.sub}</span>
           <span
