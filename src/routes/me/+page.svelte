@@ -6,6 +6,7 @@
   import type { SocialProvider } from '$lib/auth';
   import { authClient } from '$lib/auth-client';
   import AffiliationsEditor from '$lib/components/profile/AffiliationsEditor.svelte';
+  import AliasEditor from '$lib/components/profile/AliasEditor.svelte';
   import AvatarUpload from '$lib/components/profile/AvatarUpload.svelte';
   import BannerUpload from '$lib/components/profile/BannerUpload.svelte';
   import LinksEditor from '$lib/components/profile/LinksEditor.svelte';
@@ -198,6 +199,14 @@
     {#if connectionError}
       <p class="mt-3 text-sm text-destructive">{connectionError}</p>
     {/if}
+  </div>
+
+  <div>
+    <h2 class="font-display text-xl mb-2">Also known as</h2>
+    <p class="text-sm text-muted-foreground mb-4">
+      Other handles or names you go by — shown as chips on your public profile, separate from your display name.
+    </p>
+    <AliasEditor initial={data.aliases} />
   </div>
 
   <div>

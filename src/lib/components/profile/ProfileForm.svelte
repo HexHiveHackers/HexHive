@@ -52,10 +52,10 @@
     <Input id="username" bind:value={username} required />
   </div>
   <div class="grid gap-1.5">
-    <Label for="alias">Alias <span class="text-xs text-muted-foreground font-normal">(optional, public display name)</span></Label>
+    <Label for="alias">Display name <span class="text-xs text-muted-foreground font-normal">(optional, public)</span></Label>
     <Input
       id="alias"
-      placeholder="Display name"
+      placeholder="How you'd like to be called"
       maxlength={80}
       bind:value={alias}
     />
