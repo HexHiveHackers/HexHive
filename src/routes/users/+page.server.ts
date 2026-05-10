@@ -16,6 +16,7 @@ export const load: PageServerLoad = async () => {
       joinedAt: u.joinedAt.getTime(),
       isPlaceholder: u.isPlaceholder,
       placeholderKind: u.placeholderKind,
+      fromTeamAquaRepo: u.fromTeamAquaRepo,
     })),
   };
 };

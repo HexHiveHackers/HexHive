@@ -54,7 +54,13 @@
           {/if}
         </div>
         <div class="mt-1 min-h-[2lh] text-xs text-muted-foreground">
-          {#if u.bio}<p class="line-clamp-2">{u.bio}</p>{/if}
+          {#if u.bio}
+            <p class="line-clamp-2">{u.bio}</p>
+          {:else if u.isPlaceholder && u.fromTeamAquaRepo}
+            <p class="line-clamp-2 italic opacity-80">
+              Contributor on Team Aqua's asset repo. Imported as a HexHive seed.
+            </p>
+          {/if}
         </div>
         <div class="mt-2 flex items-center gap-3 text-[0.7rem] text-muted-foreground">
           {#if u.isPlaceholder}

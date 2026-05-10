@@ -97,6 +97,10 @@ export interface DirectoryUser {
   // contributions; 'user' = a person we wanted to credit/track but with
   // no assets attached yet. Ignored for non-placeholder users.
   placeholderKind: 'contributor' | 'user';
+  // True when the user is attached to the "Team Aquas Asset Repo"
+  // affiliation. Used by the directory card to fall back to a synthetic
+  // bio when no real bio was harvested from per-folder READMEs.
+  fromTeamAquaRepo: boolean;
 }
 
 // Lists every user with a username, paired with the most recent
@@ -106,6 +110,18 @@ export interface DirectoryUser {
 // so the directory shows everyone visible elsewhere on the site.
 export async function listDirectoryUsers(db: DB): Promise<DirectoryUser[]> {
   const lastActiveSql = sql<number | null>`max(${schema.session.updatedAt})`;
+  // Resolve the "Team Aquas Asset Repo" affiliation id once; the
+  // directory card uses it as a synthetic-bio fallback for placeholders
+  // that are members of the repo but have no harvested bio of their own.
+  const repoIdRows = await db
+    .select({ id: schema.affiliation.id })
+    .from(schema.affiliation)
+    .where(sql`lower(${schema.affiliation.name}) = lower('Team Aquas Asset Repo')`)
+    .limit(1);
+  const repoId = repoIdRows[0]?.id ?? null;
+  const fromAquaSql = repoId
+    ? sql<number>`EXISTS(SELECT 1 FROM ${schema.profileAffiliation} pa WHERE pa.user_id = ${schema.user.id} AND pa.affiliation_id = ${repoId})`
+    : sql<number>`0`;
   const rows = await db
     .select({
       username: schema.profile.username,
@@ -119,6 +135,7 @@ export async function listDirectoryUsers(db: DB): Promise<DirectoryUser[]> {
       placeholderKind: schema.user.placeholderKind,
       joinedAt: schema.user.createdAt,
       lastActive: lastActiveSql,
+      fromTeamAquaRepo: fromAquaSql,
     })
     .from(schema.profile)
     .innerJoin(schema.user, eq(schema.user.id, schema.profile.userId))
@@ -137,6 +154,7 @@ export async function listDirectoryUsers(db: DB): Promise<DirectoryUser[]> {
     joinedAt: r.joinedAt,
     isPlaceholder: r.isPlaceholder,
     placeholderKind: r.placeholderKind,
+    fromTeamAquaRepo: Number(r.fromTeamAquaRepo) > 0,
   }));
 }
 
