@@ -236,6 +236,41 @@ export const TOOLS: Tool[] = [
       },
     ],
   },
+  {
+    slug: 'hexmaniacadvance',
+    name: 'HexManiacAdvance',
+    tagline: 'Specialised hex editor for Pokémon GBA ROMs with rich structured tools and table-driven editing.',
+    author: 'Haven',
+    authorUrl: 'https://github.com/haven1433',
+    repoUrl: 'https://github.com/haven1433/HexManiacAdvance',
+    releasesUrl: 'https://github.com/haven1433/HexManiacAdvance/releases',
+    status: 'active',
+    subtypes: ['hex-editor', 'binary', 'asset-injector', 'sprite-editor', 'script-editor', 'tool'],
+    platforms: ['windows', 'macos', 'linux'],
+    languages: ['C#', '.NET'],
+    targetedSystems: ['Game Boy Advance'],
+    tags: [
+      'hex editor',
+      'sprite editor',
+      'script editor',
+      'palette tools',
+      'table editor',
+      'metadata anchors',
+      'GBA Pokémon',
+    ],
+    highlights: [
+      'Editor that understands GBA Pokémon ROM structure: trainer parties, moves, items, scripts, sprites, maps.',
+      'Anchored navigation — names instead of raw offsets, cross-references, and follow-pointer everywhere.',
+      'Integrated sprite, palette, and tilemap editing with import/export.',
+      'Built-in script editor with syntax help for the standard Pokémon engine commands.',
+      'Active development with a Discord community for support and contributors.',
+    ],
+    description: [
+      'HexManiacAdvance (HMA) is the modern successor to huderlem’s original Hex Maniac Advance. It is a specialised hex editor for Generation 3 Pokémon ROMs that exposes the underlying data as named tables, structured rows, and follow-pointer references rather than raw bytes.',
+      'It bundles sprite, palette, tilemap, script, and table tooling into one application so most romhacking workflows can stay inside HMA without bouncing between disparate single-purpose utilities.',
+    ],
+    extraLinks: [{ label: 'Discord (development + support)', href: 'https://discord.gg/x9eQuBg' }],
+  },
 ];
 
 export function listTools(): Tool[] {
