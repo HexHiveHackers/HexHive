@@ -57,6 +57,13 @@
       "when": 1778280120000,
       "tag": "0007_profile_banner",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1778280180000,
+      "tag": "0008_placeholder_accounts",
+      "breakpoints": true
     }
   ]
 }

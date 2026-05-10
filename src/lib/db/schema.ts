@@ -14,6 +14,7 @@ export const user = sqliteTable('user', {
   createdAt: ts('created_at'),
   updatedAt: ts('updated_at'),
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
+  isPlaceholder: integer('is_placeholder', { mode: 'boolean' }).notNull().default(false),
 });
 
 export const session = sqliteTable('session', {
@@ -88,6 +89,7 @@ export const profile = sqliteTable(
     // the owner types in for credit / public display. Distinct from
     // user.email which is the synthetic OAuth-identity placeholder.
     contactEmail: text('contact_email'),
+    homepageUrl: text('homepage_url'),
     createdAt: ts('created_at'),
     updatedAt: ts('updated_at'),
   },
