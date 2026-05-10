@@ -274,6 +274,12 @@ export const romhackMeta = sqliteTable('romhack_meta', {
   screenshots: text('screenshots', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
   boxart: text('boxart', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
   trailer: text('trailer', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
+  // External community / source links rendered as their own panel on
+  // the listing page. Both optional, both detected by HostIcon for
+  // glyph selection (so e.g. discordUrl works whether it's discord.gg
+  // or discord.com, and sourceUrl works for GitHub or GitLab equally).
+  discordUrl: text('discord_url'),
+  sourceUrl: text('source_url'),
 });
 
 export const assetHiveMeta = sqliteTable('asset_hive_meta', {
