@@ -45,7 +45,13 @@
         target="_blank"
         rel="noopener noreferrer"
         class="hover:text-foreground hover:underline"
-      >Icons8</a>.
+      >Icons8</a>
+      (<a
+        href="https://icons8.com/license"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hover:text-foreground hover:underline"
+      >license</a>).
     </p>
   </div>
 </footer>
