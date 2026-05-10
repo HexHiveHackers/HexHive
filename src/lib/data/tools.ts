@@ -247,8 +247,7 @@ export const TOOLS: Tool[] = [
     authorUrl: 'https://github.com/haven1433',
     repoUrl: 'https://github.com/haven1433/HexManiacAdvance',
     releasesUrl: 'https://github.com/haven1433/HexManiacAdvance/releases',
-    iconUrl:
-      'https://raw.githubusercontent.com/haven1433/HexManiacAdvance/master/src/HexManiac.WPF/Resources/AppImage.png',
+    iconUrl: 'https://cdn.hexhive.app/tool-icons/hexmaniacadvance.png',
     status: 'active',
     subtypes: ['hex-editor', 'binary', 'asset-injector', 'sprite-editor', 'script-editor', 'tool'],
     platforms: ['windows', 'macos', 'linux'],
