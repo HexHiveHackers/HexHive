@@ -593,7 +593,15 @@
     mutedSlots = new Set();
     overrides = loadOverrides(vgHash);
     warnings = vg.warnings.slice();
+    // Actually pause the seq before swapping the song. Without this,
+    // setting isPlaying=false alone doesn't tell loadIntoSequencer to
+    // pause (it captures wasPlaying from the just-flipped flag), so
+    // loadNewSongList replaces the song while the playhead is still
+    // running and the new fixture auto-plays. pauseLatch suppresses any
+    // in-flight auto-resume from a concurrent soundfont swap.
+    seq?.pause();
     isPlaying = false;
+    pauseLatch = true;
     currentTime = 0;
     duration = 0;
     seqLoadedFor = null;
