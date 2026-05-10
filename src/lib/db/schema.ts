@@ -15,6 +15,13 @@ export const user = sqliteTable('user', {
   updatedAt: ts('updated_at'),
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
   isPlaceholder: integer('is_placeholder', { mode: 'boolean' }).notNull().default(false),
+  // When isPlaceholder is true, distinguishes placeholders we created
+  // because the person has asset contributions ("contributor") from
+  // ones who are just people we wanted to credit/track without any
+  // asset attached yet ("user"). Ignored when isPlaceholder = false.
+  placeholderKind: text('placeholder_kind', { enum: ['contributor', 'user'] })
+    .notNull()
+    .default('contributor'),
 });
 
 export const session = sqliteTable('session', {

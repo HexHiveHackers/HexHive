@@ -24,7 +24,12 @@
 
   type Row = (typeof data.users)[number];
   const claimed = $derived(data.users.filter((u) => !u.isPlaceholder));
-  const unclaimed = $derived(data.users.filter((u) => u.isPlaceholder));
+  const unclaimedContributors = $derived(
+    data.users.filter((u) => u.isPlaceholder && u.placeholderKind === 'contributor'),
+  );
+  const unclaimedUsers = $derived(
+    data.users.filter((u) => u.isPlaceholder && u.placeholderKind === 'user'),
+  );
 </script>
 
 {#snippet card(u: Row)}
@@ -85,16 +90,30 @@
     {/if}
   </div>
 
-  {#if unclaimed.length > 0}
+  {#if unclaimedContributors.length > 0}
     <div class="grid gap-3">
       <div class="grid gap-1">
-        <h2 class="font-display text-sm uppercase tracking-[0.14em] text-amber-300">Unclaimed credits</h2>
+        <h2 class="font-display text-sm uppercase tracking-[0.14em] text-amber-300">Unclaimed contributors</h2>
         <p class="text-xs text-muted-foreground">
-          Profiles HexHive created on behalf of original creators. If one is yours, sign in with the matching provider to claim it.
+          Profiles HexHive created on behalf of original asset creators. If one is yours, sign in with the matching provider to claim it.
         </p>
       </div>
       <ul class="grid gap-2 sm:grid-cols-2">
-        {#each unclaimed as u (u.username)}{@render card(u)}{/each}
+        {#each unclaimedContributors as u (u.username)}{@render card(u)}{/each}
+      </ul>
+    </div>
+  {/if}
+
+  {#if unclaimedUsers.length > 0}
+    <div class="grid gap-3">
+      <div class="grid gap-1">
+        <h2 class="font-display text-sm uppercase tracking-[0.14em] text-sky-300">Unclaimed users</h2>
+        <p class="text-xs text-muted-foreground">
+          People we wanted to credit or track but who don't have any assets attached yet. Tool developers, community figures, etc.
+        </p>
+      </div>
+      <ul class="grid gap-2 sm:grid-cols-2">
+        {#each unclaimedUsers as u (u.username)}{@render card(u)}{/each}
       </ul>
     </div>
   {/if}

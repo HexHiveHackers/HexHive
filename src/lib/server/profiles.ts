@@ -93,6 +93,10 @@ export interface DirectoryUser {
   // Unclaimed credit account — created by HexHive on behalf of an
   // original creator who hasn't signed in yet.
   isPlaceholder: boolean;
+  // Sub-category when isPlaceholder is true. 'contributor' = has asset
+  // contributions; 'user' = a person we wanted to credit/track but with
+  // no assets attached yet. Ignored for non-placeholder users.
+  placeholderKind: 'contributor' | 'user';
 }
 
 // Lists every user with a username, paired with the most recent
@@ -112,6 +116,7 @@ export async function listDirectoryUsers(db: DB): Promise<DirectoryUser[]> {
       bio: schema.profile.bio,
       hideActivity: schema.profile.hideActivity,
       isPlaceholder: schema.user.isPlaceholder,
+      placeholderKind: schema.user.placeholderKind,
       joinedAt: schema.user.createdAt,
       lastActive: lastActiveSql,
     })
@@ -131,6 +136,7 @@ export async function listDirectoryUsers(db: DB): Promise<DirectoryUser[]> {
     lastActive: r.hideActivity || r.lastActive == null ? null : new Date(Number(r.lastActive) * 1000),
     joinedAt: r.joinedAt,
     isPlaceholder: r.isPlaceholder,
+    placeholderKind: r.placeholderKind,
   }));
 }
 

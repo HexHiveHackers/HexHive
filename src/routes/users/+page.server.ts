@@ -15,6 +15,7 @@ export const load: PageServerLoad = async () => {
       lastActive: u.lastActive ? u.lastActive.getTime() : null,
       joinedAt: u.joinedAt.getTime(),
       isPlaceholder: u.isPlaceholder,
+      placeholderKind: u.placeholderKind,
     })),
   };
 };
