@@ -298,6 +298,14 @@
   // after spessasynth's seek-time controller reset wipes them.
   let drumChannelsCurrent = $state<ReadonlySet<number>>(new Set());
 
+  // Scrub state — while the user is dragging the playhead, the seq stays
+  // paused (no audible glitches from a flurry of seeks). On release,
+  // commit the final position and resume if it was playing before.
+  let synthScrubbing = $state(false);
+  let synthScrubResume = false;
+  let mp3Scrubbing = $state(false);
+  let mp3ScrubResume = false;
+
   // Engine state mirrors SoundPlayer.svelte's lifecycle.
   let engineState = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
   let isPlaying = $state(false);
@@ -717,7 +725,7 @@
   }
 
   $effect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || synthScrubbing) return;
     const tick = (): void => {
       if (seq) currentTime = seq.currentHighResolutionTime;
       rafId = requestAnimationFrame(tick);
@@ -725,6 +733,42 @@
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
   });
+
+  function synthScrubStart(): void {
+    synthScrubbing = true;
+    synthScrubResume = isPlaying;
+    if (isPlaying) {
+      seq?.pause();
+      isPlaying = false;
+    }
+  }
+  function synthScrubMove(t: number): void {
+    currentTime = t;
+  }
+  function synthScrubEnd(): void {
+    if (!synthScrubbing) return;
+    synthScrubbing = false;
+    seek(currentTime);
+    if (synthScrubResume) {
+      seq?.play();
+      isPlaying = true;
+    }
+  }
+
+  function mp3ScrubStart(): void {
+    mp3Scrubbing = true;
+    mp3ScrubResume = mp3IsPlaying;
+    mp3El?.pause();
+  }
+  function mp3ScrubMove(t: number): void {
+    mp3CurrentTime = t;
+  }
+  function mp3ScrubEnd(): void {
+    if (!mp3Scrubbing) return;
+    mp3Scrubbing = false;
+    mp3Seek(mp3CurrentTime);
+    if (mp3ScrubResume) void mp3El?.play();
+  }
 
   onMount(() => {
     // Auto-load on first visit. Honour ?song=<id> if present, fall back
@@ -1225,7 +1269,13 @@
               max={mp3Duration || 1}
               step="0.01"
               value={mp3CurrentTime}
-              oninput={(e) => mp3Seek(Number.parseFloat((e.currentTarget as HTMLInputElement).value))}
+              onpointerdown={mp3ScrubStart}
+              onkeydown={mp3ScrubStart}
+              oninput={(e) => mp3ScrubMove(Number.parseFloat((e.currentTarget as HTMLInputElement).value))}
+              onpointerup={mp3ScrubEnd}
+              onkeyup={mp3ScrubEnd}
+              onpointercancel={mp3ScrubEnd}
+              onblur={mp3ScrubEnd}
               aria-label="Reference recording scrub"
             />
             <span
@@ -1315,7 +1365,13 @@
             max={duration || 1}
             step="0.01"
             value={currentTime}
-            oninput={(e) => seek(Number.parseFloat((e.currentTarget as HTMLInputElement).value))}
+            onpointerdown={synthScrubStart}
+            onkeydown={synthScrubStart}
+            oninput={(e) => synthScrubMove(Number.parseFloat((e.currentTarget as HTMLInputElement).value))}
+            onpointerup={synthScrubEnd}
+            onkeyup={synthScrubEnd}
+            onpointercancel={synthScrubEnd}
+            onblur={synthScrubEnd}
             disabled={engineState !== 'ready'}
             aria-label="Synth MIDI scrub"
           />
