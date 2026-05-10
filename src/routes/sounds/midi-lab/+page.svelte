@@ -987,14 +987,14 @@
 </svelte:head>
 
 <section class="mx-auto max-w-5xl px-4 py-8 space-y-6">
-  <header class="space-y-2">
-    <div class="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground font-display">
+  <header class="space-y-3">
+    <div class="flex items-center gap-2 text-sm uppercase tracking-widest text-zinc-200 font-display">
       <FlaskConical class="size-4" /> beta
     </div>
-    <h1 class="text-2xl md:text-3xl font-display">MIDI lab</h1>
-    <p class="text-sm text-muted-foreground max-w-2xl">
+    <h1 class="text-3xl md:text-4xl font-display text-foreground">MIDI lab</h1>
+    <p class="text-base text-zinc-200 leading-relaxed max-w-2xl">
       Test how a Pokémon GBA MIDI sounds when its program-changes are remapped to the right VGK SF2 presets via its
-      voicegroup <code class="text-xs">.inc</code>. A/B against the vanilla recording. Override any slot live.
+      voicegroup <code class="text-sm bg-zinc-900/60 rounded px-1 py-0.5 text-foreground">.inc</code>. A/B against the vanilla recording. Override any slot live.
     </p>
   </header>
 
@@ -1005,9 +1005,9 @@
   <div class="space-y-3">
     <div class="flex flex-wrap items-baseline justify-between gap-3">
       <div class="flex items-baseline gap-3">
-        <span class="text-xs uppercase tracking-[0.25em] text-foreground font-display">Fixtures</span>
+        <span class="text-sm uppercase tracking-[0.25em] text-foreground font-display">Fixtures</span>
         {#if loaded}
-          <span class="text-xs text-muted-foreground">
+          <span class="text-sm text-zinc-200">
             loaded: <span class="font-mono text-foreground">{loaded.label}</span>
           </span>
         {/if}
@@ -1028,13 +1028,13 @@
           class="relative -mb-px flex items-center gap-2 px-3 py-2 text-sm transition-colors
             {activeFixtureTab === t.id
               ? 'border-b-2 border-foreground text-foreground'
-              : 'border-b-2 border-transparent text-muted-foreground hover:text-foreground'}"
+              : 'border-b-2 border-transparent text-zinc-300 hover:text-foreground'}"
         >
-          <span class="font-display text-[0.65rem] tracking-[0.2em]">{t.label}</span>
-          <span class="text-xs text-muted-foreground/80 font-mono hidden md:inline">{t.sub}</span>
+          <span class="font-display text-[0.8rem] tracking-[0.2em]">{t.label}</span>
+          <span class="text-sm text-zinc-300 font-mono hidden md:inline">{t.sub}</span>
           <span
-            class="rounded-full px-1.5 py-0.5 font-mono text-[0.6rem] tabular-nums
-              {activeFixtureTab === t.id ? 'bg-foreground/10 text-foreground' : 'bg-muted/40 text-muted-foreground'}"
+            class="rounded-full px-1.5 py-0.5 font-mono text-[0.75rem] tabular-nums
+              {activeFixtureTab === t.id ? 'bg-foreground/10 text-foreground' : 'bg-muted/40 text-zinc-300'}"
           >
             {count}
           </span>
@@ -1064,16 +1064,16 @@
         >
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1.5 text-foreground">
-                <Music class="size-3.5 shrink-0 text-muted-foreground" />
-                <span class="truncate text-sm font-medium">{f.label}</span>
+              <div class="flex items-center gap-2 text-foreground">
+                <Music class="size-4 shrink-0 text-zinc-300" />
+                <span class="truncate text-base font-medium">{f.label}</span>
               </div>
-              <div class="mt-1 font-mono text-[0.65rem] tracking-wide text-muted-foreground truncate">
+              <div class="mt-1 font-mono text-sm tracking-wide text-zinc-300 truncate">
                 {f.game}
               </div>
             </div>
             <span
-              class="shrink-0 rounded-sm border border-amber-500/40 bg-amber-500/5 px-1.5 py-0.5 font-display text-[0.55rem] tracking-[0.2em] text-amber-300"
+              class="shrink-0 rounded-sm border border-amber-500/40 bg-amber-500/5 px-1.5 py-0.5 font-display text-[0.8rem] tracking-[0.2em] text-amber-300"
               title="{refKind} reference recording"
             >
               {refKind}
@@ -1093,20 +1093,20 @@
   <div class="space-y-3">
     <div class="flex flex-wrap items-baseline justify-between gap-3">
       <div class="flex items-baseline gap-3">
-        <span class="text-xs uppercase tracking-[0.25em] text-foreground font-display">
+        <span class="text-sm uppercase tracking-[0.25em] text-foreground font-display">
           Bank rack
         </span>
-        <span class="text-xs text-muted-foreground">
+        <span class="text-sm text-zinc-200">
           active:
           <span class="font-mono text-foreground">{soundfont.title}</span>
-          <span class="font-display text-[0.6rem] tracking-[0.2em] {TONE_TEXT[soundfont.tone]} ml-1">
+          <span class="font-display text-[0.75rem] tracking-[0.2em] {TONE_TEXT[soundfont.tone]} ml-1">
             {ERA_LABEL[soundfont.era]}
           </span>
         </span>
       </div>
       {#if swappingTo}
         {@const target = SOUNDFONTS.find((s) => s.id === swappingTo)}
-        <span class="font-mono text-xs text-muted-foreground inline-flex items-center gap-1.5">
+        <span class="font-mono text-sm text-zinc-200 inline-flex items-center gap-1.5">
           <Loader2 class="size-3.5 animate-spin text-zinc-300" />
           <span>loading <span class="text-foreground">{target?.title ?? swappingTo}</span>…</span>
         </span>
@@ -1130,13 +1130,13 @@
           class="relative -mb-px flex items-center gap-2 px-3 py-2 text-sm transition-colors
             {activeTab === g.id
               ? 'border-b-2 border-foreground text-foreground'
-              : 'border-b-2 border-transparent text-muted-foreground hover:text-foreground'}"
+              : 'border-b-2 border-transparent text-zinc-300 hover:text-foreground'}"
         >
-          <span class="font-display text-[0.65rem] tracking-[0.2em]">{g.label}</span>
-          <span class="text-xs text-muted-foreground/80 font-mono hidden md:inline">{g.sub}</span>
+          <span class="font-display text-[0.8rem] tracking-[0.2em]">{g.label}</span>
+          <span class="text-xs text-zinc-400 font-mono hidden md:inline">{g.sub}</span>
           <span
-            class="rounded-full px-1.5 py-0.5 font-mono text-[0.6rem] tabular-nums
-              {activeTab === g.id ? 'bg-foreground/10 text-foreground' : 'bg-muted/40 text-muted-foreground'}"
+            class="rounded-full px-1.5 py-0.5 font-mono text-[0.75rem] tabular-nums
+              {activeTab === g.id ? 'bg-foreground/10 text-foreground' : 'bg-muted/40 text-zinc-300'}"
           >
             {count}
           </span>
@@ -1193,28 +1193,28 @@
 
           <!-- era tag + platform -->
           <div class="relative mb-2 flex items-center gap-2">
-            <span class="font-display text-[0.6rem] tracking-[0.25em] {TONE_TEXT[sf.tone]}">
+            <span class="font-display text-[0.75rem] tracking-[0.25em] {TONE_TEXT[sf.tone]}">
               {ERA_LABEL[sf.era]}
             </span>
-            <span class="text-[0.65rem] uppercase tracking-wider text-muted-foreground font-mono">
+            <span class="text-[0.8rem] uppercase tracking-wider text-zinc-300 font-mono">
               · {sf.platform}
             </span>
           </div>
 
           <!-- title -->
-          <div class="relative pr-5 text-base font-medium leading-snug text-foreground">
+          <div class="relative pr-5 text-lg font-medium leading-snug text-foreground">
             {sf.title}
           </div>
 
           <!-- byline -->
-          <div class="relative mt-0.5 font-mono text-xs text-muted-foreground truncate">
+          <div class="relative mt-1 font-mono text-sm text-zinc-300 truncate">
             {sf.byline}
           </div>
 
           <!-- engine context (Pokémon Essentials etc.) -->
           {#if sf.context}
             <div
-              class="relative mt-2 inline-flex items-center gap-1 rounded-sm border border-fuchsia-500/50 bg-fuchsia-500/10 px-1.5 py-0.5 font-mono text-[0.7rem] text-fuchsia-200"
+              class="relative mt-2 inline-flex items-center gap-1 rounded-sm border border-fuchsia-500/50 bg-fuchsia-500/10 px-1.5 py-0.5 font-mono text-[0.8rem] text-fuchsia-200"
             >
               <span aria-hidden="true">⌬</span>
               {sf.context}
@@ -1226,7 +1226,7 @@
             <div class="relative mt-2 flex flex-wrap gap-1">
               {#each sf.games as game}
                 <span
-                  class="rounded-sm border border-border/60 bg-slate-900/70 px-1.5 py-0.5 font-mono text-[0.7rem] tabular-nums text-foreground/80"
+                  class="rounded-sm border border-border/60 bg-slate-900/70 px-1.5 py-0.5 font-mono text-[0.8rem] tabular-nums text-foreground/80"
                 >
                   {game}
                 </span>
@@ -1239,7 +1239,7 @@
   </div>
 
   <div
-    class="border border-dashed rounded-lg p-6 text-sm text-muted-foreground opacity-40 cursor-not-allowed select-none"
+    class="border border-dashed rounded-lg p-6 text-base text-zinc-300 opacity-50 cursor-not-allowed select-none"
     aria-label="Custom file drop (coming soon)"
   >
     <div class="flex items-center gap-3">
@@ -1252,9 +1252,9 @@
   </div>
 
   {#if warnings.length > 0}
-    <div class="border border-amber-500/40 bg-amber-500/5 rounded-md p-3 text-xs">
+    <div class="border border-amber-500/40 bg-amber-500/5 rounded-md p-3 text-sm text-amber-100">
       <div class="font-medium mb-1 text-amber-300">Parser warnings</div>
-      <ul class="list-disc pl-5 space-y-0.5">
+      <ul class="list-disc pl-5 space-y-1">
         {#each warnings as w}<li>{w}</li>{/each}
       </ul>
     </div>
@@ -1263,8 +1263,8 @@
   {#if loaded}
     <section class="border rounded-lg p-4 space-y-4">
       <div>
-        <div class="font-medium">{loaded.label}</div>
-        <div class="text-xs text-muted-foreground font-mono">
+        <div class="text-lg font-medium text-foreground">{loaded.label}</div>
+        <div class="text-sm text-zinc-300 font-mono">
           {#if loaded.kind === 'sappy'}
             voicegroup: {loaded.voicegroup.name} · {loaded.usedSlots.size} slots used · vgHash {loaded.vgHash}
           {:else}
@@ -1287,7 +1287,7 @@
 
           <!-- header chip -->
           <div class="relative mb-2 flex items-center gap-2">
-            <span class="font-display text-[0.6rem] tracking-[0.25em] text-amber-300">
+            <span class="font-display text-[0.75rem] tracking-[0.25em] text-amber-300">
               <span class="sr-only">Reference recording ({loaded.refKind === 'ogg' ? 'GMGSx OGG render' : 'vanilla MP3'})</span>
               <span aria-hidden="true">FINAL · {loaded.refKind === 'ogg' ? 'OGG' : 'MP3'}</span>
             </span>
@@ -1327,7 +1327,7 @@
               {/if}
             </Button>
             <span
-              class="font-display text-[0.6rem] tabular-nums tracking-wider text-white rounded bg-amber-950/70 border border-amber-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(245,158,11,0.25)] min-w-[3.25rem] text-center"
+              class="font-display text-[0.75rem] tabular-nums tracking-wider text-white rounded bg-amber-950/70 border border-amber-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(245,158,11,0.25)] min-w-[3.25rem] text-center"
             >
               {fmtTime(mp3CurrentTime)}
             </span>
@@ -1349,7 +1349,7 @@
               aria-label="Reference recording scrub"
             />
             <span
-              class="font-display text-[0.6rem] tabular-nums tracking-wider text-white/80 rounded bg-amber-950/70 border border-amber-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(245,158,11,0.2)] min-w-[3.25rem] text-center"
+              class="font-display text-[0.75rem] tabular-nums tracking-wider text-white/80 rounded bg-amber-950/70 border border-amber-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(245,158,11,0.2)] min-w-[3.25rem] text-center"
             >
               {fmtTime(mp3Duration)}
             </span>
@@ -1379,7 +1379,7 @@
         ></div>
         <!-- header chip -->
         <div class="relative mb-2 flex items-center gap-2">
-          <span class="font-display text-[0.6rem] tracking-[0.25em] text-emerald-300">
+          <span class="font-display text-[0.75rem] tracking-[0.25em] text-emerald-300">
             <span class="sr-only">Synth (remapped MIDI)</span>
             <span aria-hidden="true">LIVE · MIDI</span>
           </span>
@@ -1403,7 +1403,7 @@
             {/if}
           </Button>
           <span
-            class="font-display text-[0.6rem] tabular-nums tracking-wider text-white rounded bg-emerald-950/70 border border-emerald-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(16,185,129,0.25)] min-w-[3.25rem] text-center"
+            class="font-display text-[0.75rem] tabular-nums tracking-wider text-white rounded bg-emerald-950/70 border border-emerald-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(16,185,129,0.25)] min-w-[3.25rem] text-center"
           >
             {fmtTime(currentTime)}
           </span>
@@ -1426,7 +1426,7 @@
             aria-label="Synth MIDI scrub"
           />
           <span
-            class="font-display text-[0.6rem] tabular-nums tracking-wider text-white/80 rounded bg-emerald-950/70 border border-emerald-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(16,185,129,0.2)] min-w-[3.25rem] text-center"
+            class="font-display text-[0.75rem] tabular-nums tracking-wider text-white/80 rounded bg-emerald-950/70 border border-emerald-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(16,185,129,0.2)] min-w-[3.25rem] text-center"
           >
             {fmtTime(duration)}
           </span>
@@ -1444,8 +1444,8 @@
         </div>
       </div>
 
-      <div class="space-y-1">
-        <div class="text-xs uppercase tracking-wider text-muted-foreground">Channel mutes</div>
+      <div class="space-y-2">
+        <div class="text-sm uppercase tracking-wider text-zinc-200 font-medium">Channel mutes</div>
         <div class="flex flex-wrap gap-1.5">
           {#each [...loaded.usedChannels].sort((a, b) => a - b) as ch}
             <button
@@ -1469,7 +1469,7 @@
     {#if loaded.kind === 'sappy'}
     <section class="border rounded-lg overflow-hidden">
       <header class="px-4 py-2 border-b flex items-center justify-between gap-3">
-        <div class="text-xs uppercase tracking-wider text-muted-foreground">
+        <div class="text-sm uppercase tracking-wider text-zinc-200 font-medium">
           Voicegroup → SF2 mapping ({rows.length} slots)
         </div>
         <button
@@ -1482,13 +1482,13 @@
         </button>
       </header>
       {#if presets.length === 0}
-        <div class="p-4 text-sm text-muted-foreground">Loading SF2 preset list…</div>
+        <div class="p-4 text-sm text-zinc-300">Loading SF2 preset list…</div>
       {:else}
         <ul class="divide-y">
           {#each rows as row (row.slot)}
-            <li class="flex flex-wrap items-center gap-3 px-4 py-2 text-sm">
-              <span class="font-mono text-xs w-10 text-muted-foreground tabular-nums">#{row.slot}</span>
-              <span class="font-mono text-xs flex-1 min-w-[16rem] truncate" title={entryLabel(row.entry)}>
+            <li class="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
+              <span class="font-mono text-sm w-10 text-zinc-300 tabular-nums">#{row.slot}</span>
+              <span class="font-mono text-sm flex-1 min-w-[16rem] truncate text-foreground" title={entryLabel(row.entry)}>
                 {entryLabel(row.entry)}
               </span>
               {#if overrides[row.slot]}
@@ -1497,7 +1497,7 @@
                 </Button>
               {/if}
               <select
-                class="bg-background border rounded px-2 py-1 text-xs font-mono min-w-[14rem]"
+                class="bg-background border rounded px-2 py-1.5 text-sm font-mono min-w-[14rem] text-foreground"
                 value={overrides[row.slot] ? presetKey(overrides[row.slot]) : 'auto'}
                 onchange={(e) => onSelect(row.slot, (e.currentTarget as HTMLSelectElement).value)}
               >
@@ -1541,9 +1541,9 @@
     </section>
     {/if}
   {:else}
-    <div class="text-sm text-muted-foreground">
+    <div class="text-base text-zinc-200 leading-relaxed">
       Pick a fixture above or drop your own files to start. The synth uses the FRLG VGK SF2 self-hosted on
-      <code>cdn.hexhive.app</code>.
+      <code class="text-foreground">cdn.hexhive.app</code>.
     </div>
   {/if}
 </section>
