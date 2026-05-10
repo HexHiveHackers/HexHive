@@ -814,8 +814,8 @@
   // VGK FRLG carry both a melodic preset and a drum kit at identical
   // (MSB, LSB, program) coordinates — the drum bit on the preset header
   // is the only differentiator, so the key has to encode it too.
-  function presetKey(p: { bankMSB: number; bankLSB: number; program: number; isAnyDrums: boolean }): string {
-    return `${p.bankMSB}:${p.bankLSB}:${p.program}:${p.isAnyDrums ? 'd' : 'm'}`;
+  function presetKey(p: { bankMSB: number; bankLSB: number; program: number; isDrum: boolean }): string {
+    return `${p.bankMSB}:${p.bankLSB}:${p.program}:${p.isDrum ? 'd' : 'm'}`;
   }
 
   function fmtCoord(bankMSB: number, bankLSB: number, program: number): string {
@@ -1381,7 +1381,7 @@
               >
                 <option value="auto">auto · {row.auto.label}</option>
                 {#each presets as p}
-                  <option value={presetKey(p)}>
+                  <option value={presetKey({ ...p, isDrum: p.isAnyDrums })}>
                     {fmtCoord(p.bankMSB, p.bankLSB, p.program)} · {p.name}{p.isAnyDrums ? ' (drum)' : ''}
                   </option>
                 {/each}
