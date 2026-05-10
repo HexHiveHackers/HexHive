@@ -1218,7 +1218,6 @@
   {#if loaded}
     <section class="border rounded-lg p-4 space-y-4">
       <div>
-        <div class="text-sm text-muted-foreground">Now loaded</div>
         <div class="font-medium">{loaded.label}</div>
         <div class="text-xs text-muted-foreground font-mono">
           {#if loaded.kind === 'sappy'}
@@ -1249,7 +1248,7 @@
             ></span>
             <span class="font-display text-[0.6rem] tracking-[0.25em] text-amber-300">
               <span class="sr-only">Reference recording ({loaded.refKind === 'ogg' ? 'GMGSx OGG render' : 'vanilla MP3'})</span>
-              <span aria-hidden="true">▷ FINAL · {loaded.refKind === 'ogg' ? 'OGG' : 'MP3'} ◁</span>
+              <span aria-hidden="true">FINAL · {loaded.refKind === 'ogg' ? 'OGG' : 'MP3'}</span>
             </span>
           </div>
 
@@ -1336,30 +1335,12 @@
           aria-hidden="true"
           class="pointer-events-none absolute inset-0 rounded-md opacity-[0.07] [background-image:linear-gradient(to_right,#10b981_1px,transparent_1px),linear-gradient(to_bottom,#10b981_1px,transparent_1px)] [background-size:8px_8px]"
         ></div>
-        <!-- viewfinder corner brackets -->
-        <span aria-hidden="true" class="absolute size-2 border-emerald-400/60 top-1.5 left-1.5 border-l border-t"></span>
-        <span aria-hidden="true" class="absolute size-2 border-emerald-400/60 top-1.5 right-1.5 border-r border-t"></span>
-        <span
-          aria-hidden="true"
-          class="absolute size-2 border-emerald-400/60 bottom-1.5 left-1.5 border-l border-b"
-        ></span>
-        <span
-          aria-hidden="true"
-          class="absolute size-2 border-emerald-400/60 bottom-1.5 right-1.5 border-r border-b"
-        ></span>
-
         <!-- header chip -->
         <div class="relative mb-2 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <span
-              aria-hidden="true"
-              class="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_2px_rgba(16,185,129,0.65)] animate-pulse"
-            ></span>
-            <span class="font-display text-[0.6rem] tracking-[0.25em] text-emerald-300">
-              <span class="sr-only">Synth (remapped MIDI)</span>
-              <span aria-hidden="true">[ LIVE · MIDI ]</span>
-            </span>
-          </div>
+          <span class="font-display text-[0.6rem] tracking-[0.25em] text-emerald-300">
+            <span class="sr-only">Synth (remapped MIDI)</span>
+            <span aria-hidden="true">LIVE · MIDI</span>
+          </span>
           <span class="font-display text-[0.5rem] tracking-[0.3em] text-emerald-500/60">
             vg:{loaded.voicegroup.name}
           </span>
