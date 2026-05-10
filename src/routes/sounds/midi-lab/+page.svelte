@@ -221,6 +221,19 @@
   $effect(() => {
     activeTab = groupOf(soundfont.era);
   });
+
+  // Fixture rack tabs — same pattern as banks. Sappy GBA rips and the
+  // Pokémon Essentials GM bundle are conceptually different sources so
+  // they get their own tabs; otherwise the bar would be a long scroll.
+  type FixtureTabId = 'sappy' | 'gm';
+  const FIXTURE_TABS: { id: FixtureTabId; label: string; sub: string; kind: 'sappy' | 'gm' }[] = [
+    { id: 'sappy', label: 'GBA rips', sub: 'Sappy engine · .mid + voicegroup', kind: 'sappy' },
+    { id: 'gm', label: 'Pokémon Essentials', sub: 'GM render · zeak6464/Fire-Red', kind: 'gm' },
+  ];
+  let activeFixtureTab = $state<FixtureTabId>('sappy');
+  $effect(() => {
+    if (loaded) activeFixtureTab = loaded.kind === 'sappy' ? 'sappy' : 'gm';
+  });
   const WORKLET_URL = '/spessasynth_processor.min.js';
 
   let { data }: { data: PageData } = $props();
@@ -251,6 +264,10 @@
   let loopOn = $state(true);
   let soundfont = $state<Soundfont>(SOUNDFONTS[0]);
   let activeBankId = $state('');
+  // Per-bank parse state. True once the worklet has parsed the SF2; the
+  // bytes stay resident so a subsequent switchSoundbank is just a
+  // priorityOrder change — no parse latency, instant A/B comparison.
+  let bankReady = $state<Record<string, boolean>>({});
   // The id of the bank we're currently switching to (or null when idle).
   // Drives the amber-pulse LED on the target chip and the "swapping…"
   // indicator in the rack header.
@@ -296,6 +313,16 @@
     if (!libPromise) libPromise = import('spessasynth_lib');
   }
 
+  // Add a bank to the worklet (parses the SF2) and mark it ready. Idempotent.
+  async function ensureBankLoaded(s: WorkletSynthesizer, sf: Soundfont): Promise<void> {
+    if (bankReady[sf.id]) return;
+    const buf = await fetchSoundfont(sf);
+    if (!s.soundBankManager.priorityOrder.includes(sf.id)) {
+      await s.soundBankManager.addSoundBank(buf, sf.id);
+    }
+    bankReady = { ...bankReady, [sf.id]: true };
+  }
+
   async function initEngine(): Promise<void> {
     if (engineState === 'ready' || engineState === 'loading') return;
     engineState = 'loading';
@@ -306,8 +333,10 @@
       const lib = await (libPromise as Promise<typeof import('spessasynth_lib')>);
       const s = new lib.WorkletSynthesizer(audioCtx);
       s.connect(audioCtx.destination);
-      const sf = await fetchSoundfont(soundfont);
-      await s.soundBankManager.addSoundBank(sf, soundfont.id);
+      // Block readiness on the user-selected bank only. The rest pre-warm
+      // in the background so subsequent A/B switches are pure priorityOrder
+      // changes (no parse latency).
+      await ensureBankLoaded(s, soundfont);
       activeBankId = soundfont.id;
       await s.isReady;
       const sq = new lib.Sequencer(s);
@@ -319,36 +348,49 @@
       seq = sq;
       presets = listPresets(s);
       engineState = 'ready';
+      // Sequential pre-warm — the worklet is single-threaded, so parallel
+      // adds just queue up. Sequential surfaces per-bank readiness as it
+      // happens (chip LEDs go from dim → ready as the rack warms up).
+      void (async () => {
+        for (const other of SOUNDFONTS) {
+          if (other.id === soundfont.id) continue;
+          try {
+            await ensureBankLoaded(s, other);
+          } catch (err) {
+            console.warn('midi-lab: pre-warm failed for', other.id, err);
+          }
+        }
+        // Re-assert priority so the active bank stays on top after the
+        // background loads have shuffled the order.
+        s.soundBankManager.priorityOrder = [
+          activeBankId,
+          ...s.soundBankManager.priorityOrder.filter((id) => id !== activeBankId),
+        ];
+        presets = listPresets(s);
+      })();
     } catch (err) {
       console.error('midi-lab: engine init failed', err);
       engineState = 'error';
     }
   }
 
-  // Swap the active soundbank. Single-active-bank model: kill all ringing
-  // voices, parse the new bank if needed, set it first in priority, then
-  // delete every other bank so synth.presetList contains only the active
-  // one — no preset-name contamination, no parallel-bank cacophony. The
-  // SF2 byte payload stays in sfBytesCache, so re-adding on a future
-  // switch skips the network fetch (parse cost is unavoidable).
+  // Swap the active soundbank. With pre-warm, every bank is resident in
+  // the worklet after init, so this is a pure priorityOrder change — no
+  // SF2 parse, instant A/B. Keys to avoiding the cacophony bug: (1) call
+  // synth.stopAll(true) BEFORE flipping priorityOrder so old-bank
+  // sustained notes don't ring through the swap; (2) loadIntoSequencer
+  // rebuilds the MIDI and re-emits all program-change events against the
+  // new active preset, so notes after the swap pull from the new bank.
   async function switchSoundbank(target: Soundfont): Promise<void> {
     if (!synth || activeBankId === target.id) return;
     swappingTo = target.id;
     try {
-      // Force-stop all active voices BEFORE tearing down the bank;
-      // sustained notes on the old preset would otherwise keep ringing
-      // through the swap and pile up against the new bank's note-ons.
       synth.stopAll(true);
-      if (!synth.soundBankManager.priorityOrder.includes(target.id)) {
-        const buf = await fetchSoundfont(target);
-        await synth.soundBankManager.addSoundBank(buf, target.id);
-      }
+      await ensureBankLoaded(synth, target);
       synth.soundBankManager.priorityOrder = [
         target.id,
         ...synth.soundBankManager.priorityOrder.filter((id) => id !== target.id),
       ];
-      const others = synth.soundBankManager.priorityOrder.filter((id) => id !== target.id);
-      for (const id of others) await synth.soundBankManager.deleteSoundBank(id);
       activeBankId = target.id;
       presets = listPresets(synth);
       if (loaded) {
@@ -779,14 +821,90 @@
     </p>
   </header>
 
-  <div class="flex flex-wrap items-center gap-2">
-    <span class="text-xs uppercase tracking-wider text-muted-foreground mr-2">Fixtures:</span>
-    {#each data.fixtures as f}
-      <Button variant="outline" size="sm" onclick={() => void loadFixture(f)}>
-        <Music class="size-4" /> {f.label}
-        <span class="text-muted-foreground font-mono text-xs">[{f.game}]</span>
-      </Button>
-    {/each}
+  <!-- ── FIXTURE RACK ──────────────────────────────────────────────────
+       Same hierarchy pattern as the bank rack: neutral tabs to pick a
+       source family, cards inside to pick a specific song. Active fixture
+       gets a subtle ring; the tab containing it shows a small white pip. -->
+  <div class="space-y-3">
+    <div class="flex flex-wrap items-baseline justify-between gap-3">
+      <div class="flex items-baseline gap-3">
+        <span class="text-xs uppercase tracking-[0.25em] text-foreground font-display">Fixtures</span>
+        {#if loaded}
+          <span class="text-xs text-muted-foreground">
+            loaded: <span class="font-mono text-foreground">{loaded.label}</span>
+          </span>
+        {/if}
+      </div>
+    </div>
+
+    <div role="tablist" aria-label="Fixture sources" class="flex flex-wrap gap-1 border-b border-border/60">
+      {#each FIXTURE_TABS as t (t.id)}
+        {@const count = data.fixtures.filter((f) => f.kind === t.kind).length}
+        {@const containsActive = loaded?.kind === t.kind}
+        <button
+          role="tab"
+          type="button"
+          aria-selected={activeFixtureTab === t.id}
+          onclick={() => {
+            activeFixtureTab = t.id;
+          }}
+          class="relative -mb-px flex items-center gap-2 px-3 py-2 text-sm transition-colors
+            {activeFixtureTab === t.id
+              ? 'border-b-2 border-foreground text-foreground'
+              : 'border-b-2 border-transparent text-muted-foreground hover:text-foreground'}"
+        >
+          <span class="font-display text-[0.65rem] tracking-[0.2em]">{t.label}</span>
+          <span class="text-xs text-muted-foreground/80 font-mono hidden md:inline">{t.sub}</span>
+          <span
+            class="rounded-full px-1.5 py-0.5 font-mono text-[0.6rem] tabular-nums
+              {activeFixtureTab === t.id ? 'bg-foreground/10 text-foreground' : 'bg-muted/40 text-muted-foreground'}"
+          >
+            {count}
+          </span>
+          {#if containsActive}
+            <span aria-hidden="true" class="size-1.5 rounded-full bg-zinc-200 shadow-[0_0_5px_1px_rgba(228,228,231,0.6)]"></span>
+          {/if}
+        </button>
+      {/each}
+    </div>
+
+    <div
+      role="tabpanel"
+      aria-label="{FIXTURE_TABS.find((t) => t.id === activeFixtureTab)?.label} fixtures"
+      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
+    >
+      {#each data.fixtures.filter((f) => f.kind === FIXTURE_TABS.find((t) => t.id === activeFixtureTab)?.kind) as f (f.id)}
+        {@const isActive = loaded?.songId === f.id}
+        {@const refKind = f.refUrl?.endsWith('.ogg') ? 'OGG' : 'MP3'}
+        <button
+          type="button"
+          onclick={() => void loadFixture(f)}
+          aria-pressed={isActive}
+          class="group relative overflow-hidden rounded-md border bg-slate-950/70 p-3 text-left transition-all
+            {isActive
+              ? 'border-zinc-300/70 shadow-[0_0_0_1px_rgba(228,228,231,0.25),0_0_18px_-6px_rgba(228,228,231,0.5)]'
+              : 'border-border/70 hover:border-foreground/40 hover:bg-slate-900/70'}"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 text-foreground">
+                <Music class="size-3.5 shrink-0 text-muted-foreground" />
+                <span class="truncate text-sm font-medium">{f.label}</span>
+              </div>
+              <div class="mt-1 font-mono text-[0.65rem] tracking-wide text-muted-foreground truncate">
+                {f.game}
+              </div>
+            </div>
+            <span
+              class="shrink-0 rounded-sm border border-amber-500/40 bg-amber-500/5 px-1.5 py-0.5 font-display text-[0.55rem] tracking-[0.2em] text-amber-300"
+              title="{refKind} reference recording"
+            >
+              {refKind}
+            </span>
+          </div>
+        </button>
+      {/each}
+    </div>
   </div>
 
   <!-- ── BANK RACK ─────────────────────────────────────────────────────
@@ -815,6 +933,20 @@
           <Loader2 class="size-3.5 animate-spin text-zinc-300" />
           <span>swapping → <span class="text-foreground">{target?.title ?? swappingTo}</span>…</span>
         </span>
+      {:else}
+        {@const total = SOUNDFONTS.length}
+        {@const ready = SOUNDFONTS.filter((s) => bankReady[s.id]).length}
+        {#if engineState !== 'idle' && ready < total}
+          <span class="font-mono text-xs text-muted-foreground inline-flex items-center gap-1.5">
+            <Loader2 class="size-3.5 animate-spin text-zinc-400" />
+            <span>warming {ready}/{total}…</span>
+          </span>
+        {:else if engineState === 'ready'}
+          <span class="font-mono text-xs text-muted-foreground inline-flex items-center gap-1.5">
+            <span class="size-2 rounded-full bg-zinc-300 shadow-[0_0_6px_1px_rgba(228,228,231,0.5)]"></span>
+            <span>{total} banks armed · swap is instant</span>
+          </span>
+        {/if}
       {/if}
     </div>
 
@@ -861,6 +993,7 @@
       {#each SOUNDFONTS.filter((sf) => GROUPS.find((g) => g.id === activeTab)?.eras.includes(sf.era)) as sf (sf.id)}
         {@const isActive = activeBankId === sf.id}
         {@const isParsing = swappingTo === sf.id}
+        {@const isReady = bankReady[sf.id] === true}
         {@const isLocked = swappingTo !== null && !isParsing}
         <button
           type="button"
@@ -884,14 +1017,16 @@
             class="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:linear-gradient(to_right,#94a3b8_1px,transparent_1px),linear-gradient(to_bottom,#94a3b8_1px,transparent_1px)] [background-size:8px_8px]"
           ></span>
 
-          <!-- LED — only one bank is loaded at a time. Active = tone glow,
-               parsing = neutral amber pulse on the chip we're switching to,
-               otherwise dim. -->
+          <!-- LED — active = tone glow + pulse, parsing/swapping = white
+               pulse, ready (pre-warmed but not active) = tone-coloured
+               dot, dim = not yet parsed. -->
           <span aria-hidden="true" class="absolute top-2.5 right-2.5 flex size-3 items-center justify-center">
             {#if isActive}
               <span class="size-2.5 rounded-full {TONE_LED_ACTIVE[sf.tone]} animate-pulse"></span>
             {:else if isParsing}
               <span class="size-2.5 rounded-full bg-zinc-300 shadow-[0_0_8px_2px_rgba(228,228,231,0.7)] animate-pulse"></span>
+            {:else if isReady}
+              <span class="size-2 rounded-full {TONE_LED_READY[sf.tone]}"></span>
             {:else}
               <span class="size-2 rounded-full bg-slate-700"></span>
             {/if}
@@ -1115,27 +1250,8 @@
             </span>
           </div>
 
-          <!-- transport: reel · audio · reel · loop -->
+          <!-- transport: audio · reel · loop -->
           <div class="relative flex items-center gap-3">
-            <svg
-              viewBox="0 0 24 24"
-              class="size-8 shrink-0 text-amber-400/80 animate-[spin_8s_linear_infinite]"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="0.6" />
-              <circle cx="12" cy="12" r="3" fill="currentColor" />
-              <circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.7" />
-              <g stroke="currentColor" stroke-width="0.5" opacity="0.7">
-                <line x1="12" y1="3" x2="12" y2="6" />
-                <line x1="12" y1="18" x2="12" y2="21" />
-                <line x1="3" y1="12" x2="6" y2="12" />
-                <line x1="18" y1="12" x2="21" y2="12" />
-                <line x1="5.5" y1="5.5" x2="7.5" y2="7.5" />
-                <line x1="16.5" y1="16.5" x2="18.5" y2="18.5" />
-                <line x1="18.5" y1="5.5" x2="16.5" y2="7.5" />
-                <line x1="7.5" y1="16.5" x2="5.5" y2="18.5" />
-              </g>
-            </svg>
             {#key loaded.songId}
               <audio
                 bind:this={mp3El}
