@@ -55,7 +55,7 @@
     <Label for="alias">Alias <span class="text-xs text-muted-foreground font-normal">(optional, public display name)</span></Label>
     <Input
       id="alias"
-      placeholder="Yak Attack"
+      placeholder="Display name"
       maxlength={80}
       bind:value={alias}
     />

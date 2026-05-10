@@ -39,7 +39,7 @@
       {#each data.tools as tool (tool.slug)}
         <a
           href="/tools/{tool.slug}"
-          class="group relative overflow-hidden rounded-md border border-border/70 bg-slate-950/70 p-4 transition-all hover:border-sky-400/60 hover:bg-slate-900/70"
+          class="group relative flex flex-col h-full overflow-hidden rounded-md border border-border/70 bg-slate-950/70 p-4 transition-all hover:border-sky-400/60 hover:bg-slate-900/70"
         >
           <span aria-hidden="true" class="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-sky-400/80 via-cyan-300/70 to-sky-500/60"></span>
 
@@ -72,7 +72,7 @@
               <div class="font-mono text-sm text-zinc-300 truncate">by {tool.author}</div>
             </div>
           </div>
-          <p class="relative mt-3 text-sm text-zinc-200 leading-relaxed line-clamp-3">
+          <p class="relative mt-3 text-sm text-zinc-200 leading-relaxed line-clamp-3 min-h-[3lh]">
             {tool.tagline}
           </p>
 
@@ -86,7 +86,7 @@
             </div>
           {/if}
 
-          <div class="relative mt-3 flex flex-wrap gap-1">
+          <div class="relative mt-auto pt-3 flex flex-wrap gap-1">
             {#each tool.platforms as p}
               <span class="rounded-sm border border-sky-500/30 bg-sky-500/5 px-1.5 py-0.5 font-mono text-[0.75rem] text-sky-200">
                 {TOOL_PLATFORM_LABEL[p]}

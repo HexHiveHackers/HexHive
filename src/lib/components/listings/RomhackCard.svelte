@@ -14,9 +14,9 @@
 </script>
 
 <MatureWrap mature={item.mature}>
-  <a class="block border rounded-lg bg-card hover:bg-accent/40 transition-colors p-4"
+  <a class="flex flex-col h-full border rounded-lg bg-card hover:bg-accent/40 transition-colors p-4"
      href={`/romhacks/${item.slug}`}>
-    <div class="flex items-start justify-between gap-2 mb-2">
+    <div class="flex items-start justify-between gap-2 mb-2 min-h-[3rem]">
       <h3 class="font-medium line-clamp-2">{item.title}</h3>
       <TypeBadge type="romhack" />
     </div>
@@ -28,7 +28,7 @@
         <Badge variant="outline">{c}</Badge>
       {/each}
     </div>
-    <div class="mt-3 text-xs text-muted-foreground flex justify-between">
+    <div class="mt-auto pt-3 text-xs text-muted-foreground flex justify-between">
       <span>by {item.authorName}</span>
       <span>{item.downloads} ↓</span>
     </div>
