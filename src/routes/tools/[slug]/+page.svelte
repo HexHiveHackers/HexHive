@@ -33,7 +33,16 @@
         {TOOL_STATUS_LABEL[tool.status]}
       </span>
     </div>
-    <h1 class="font-display text-3xl md:text-4xl text-foreground">{tool.name}</h1>
+    <div class="flex items-center gap-4">
+      <span class="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border/60 bg-slate-900/70 text-zinc-300">
+        {#if tool.iconUrl}
+          <img src={tool.iconUrl} alt={`${tool.name} icon`} class="size-full object-contain" />
+        {:else}
+          <Wrench class="size-8" />
+        {/if}
+      </span>
+      <h1 class="font-display text-3xl md:text-4xl text-foreground">{tool.name}</h1>
+    </div>
     <p class="text-base text-zinc-200 leading-relaxed">{tool.tagline}</p>
     <div class="flex flex-wrap items-center gap-3 text-sm text-zinc-300">
       {#if data.credit}

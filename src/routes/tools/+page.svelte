@@ -57,13 +57,21 @@
             </span>
           </div>
 
-          <div class="relative pr-5 text-lg font-medium leading-snug text-foreground">
-            {tool.name}
+          <div class="relative flex items-center gap-3">
+            <span class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/60 bg-slate-900/70 text-zinc-300">
+              {#if tool.iconUrl}
+                <img src={tool.iconUrl} alt="" class="size-full object-contain" loading="lazy" />
+              {:else}
+                <Wrench class="size-5" />
+              {/if}
+            </span>
+            <div class="min-w-0">
+              <div class="text-lg font-medium leading-snug text-foreground truncate">
+                {tool.name}
+              </div>
+              <div class="font-mono text-sm text-zinc-300 truncate">by {tool.author}</div>
+            </div>
           </div>
-          <div class="relative mt-1 font-mono text-sm text-zinc-300">
-            by {tool.author}
-          </div>
-
           <p class="relative mt-3 text-sm text-zinc-200 leading-relaxed line-clamp-3">
             {tool.tagline}
           </p>

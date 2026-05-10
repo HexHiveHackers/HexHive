@@ -50,6 +50,9 @@ export type Tool = {
   homepageUrl?: string;
   releasesUrl?: string;
   branch?: string;
+  // Square icon for the tool, shown on the index card and detail header.
+  // When unset, the UI falls back to a generic wrench glyph.
+  iconUrl?: string;
   status: ToolStatus;
   /** What the tool does. A tool may be more than one (hex + decomp). */
   subtypes: ToolSubtype[];
@@ -244,6 +247,8 @@ export const TOOLS: Tool[] = [
     authorUrl: 'https://github.com/haven1433',
     repoUrl: 'https://github.com/haven1433/HexManiacAdvance',
     releasesUrl: 'https://github.com/haven1433/HexManiacAdvance/releases',
+    iconUrl:
+      'https://raw.githubusercontent.com/haven1433/HexManiacAdvance/master/src/HexManiac.WPF/Resources/AppImage.png',
     status: 'active',
     subtypes: ['hex-editor', 'binary', 'asset-injector', 'sprite-editor', 'script-editor', 'tool'],
     platforms: ['windows', 'macos', 'linux'],
