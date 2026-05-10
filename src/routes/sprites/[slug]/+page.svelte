@@ -50,7 +50,7 @@
     <div class="flex items-center gap-2 text-xs text-muted-foreground">
       <TypeBadge type="sprite" />
       <CreditLine
-        displayName={data.detail.authorName}
+        displayName={authorName}
         username={data.detail.authorUsername ?? ''}
         homepageUrl={data.detail.authorHomepageUrl}
         isPlaceholder={data.detail.authorIsPlaceholder}
