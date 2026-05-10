@@ -1,0 +1,71 @@
+<script lang="ts">
+  import Avatar from '$lib/components/profile/Avatar.svelte';
+
+  let { data } = $props();
+
+  function relative(ms: number): string {
+    const diff = Date.now() - ms;
+    const s = Math.max(1, Math.round(diff / 1000));
+    if (s < 60) return `${s}s ago`;
+    const m = Math.round(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.round(m / 60);
+    if (h < 24) return `${h}h ago`;
+    const d = Math.round(h / 24);
+    if (d < 30) return `${d}d ago`;
+    const mo = Math.round(d / 30);
+    if (mo < 12) return `${mo}mo ago`;
+    return `${Math.round(mo / 12)}y ago`;
+  }
+
+  function joinedLabel(ms: number): string {
+    return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+  }
+</script>
+
+<svelte:head><title>Users · HexHive</title></svelte:head>
+
+<section class="mx-auto max-w-5xl px-4 py-10 grid gap-6">
+  <header class="grid gap-2">
+    <span class="font-display text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">Directory</span>
+    <h1 class="font-display text-2xl">Users</h1>
+    <p class="text-sm text-muted-foreground">Everyone with a HexHive account, sorted by most recent activity.</p>
+  </header>
+
+  {#if data.users.length === 0}
+    <p class="text-sm text-muted-foreground">No users yet.</p>
+  {:else}
+    <ul class="grid gap-2 sm:grid-cols-2">
+      {#each data.users as u (u.username)}
+        <li>
+          <a
+            href={`/u/${u.username}`}
+            class="group flex items-start gap-3 rounded-lg border bg-card/40 p-4 transition-colors hover:border-primary/50 hover:bg-card"
+          >
+            <Avatar avatarKey={u.avatarKey} name={u.name || u.username} size={48} />
+            <div class="min-w-0 flex-1">
+              <div class="flex items-baseline gap-2 flex-wrap">
+                <span class="font-display text-sm group-hover:text-primary">@{u.username}</span>
+                {#if u.pronouns}
+                  <span class="text-xs text-muted-foreground">{u.pronouns}</span>
+                {/if}
+              </div>
+              {#if u.bio}
+                <p class="mt-1 line-clamp-2 text-xs text-muted-foreground">{u.bio}</p>
+              {/if}
+              <div class="mt-2 flex items-center gap-3 text-[0.7rem] text-muted-foreground">
+                {#if u.lastActive}
+                  <span title={new Date(u.lastActive).toLocaleString()}>Active {relative(u.lastActive)}</span>
+                {:else}
+                  <span class="italic opacity-70">Activity hidden</span>
+                {/if}
+                <span aria-hidden="true">·</span>
+                <span>Joined {joinedLabel(u.joinedAt)}</span>
+              </div>
+            </div>
+          </a>
+        </li>
+      {/each}
+    </ul>
+  {/if}
+</section>

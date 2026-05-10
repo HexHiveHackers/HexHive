@@ -5,7 +5,7 @@ import { contactEmail as contactEmailSchema, username as usernameSchema } from '
 import { requireUser } from '$lib/server/auth-utils';
 import { clearAvatar, setAvatarKey } from '$lib/server/avatars';
 import { clearBanner, setBannerKey } from '$lib/server/banners';
-import { setBio, setContactEmail, setPronouns, setUsername } from '$lib/server/profiles';
+import { setBio, setContactEmail, setHideActivity, setPronouns, setUsername } from '$lib/server/profiles';
 import type { RequestHandler } from './$types';
 
 const Body = z.object({
@@ -15,6 +15,7 @@ const Body = z.object({
   contactEmail: contactEmailSchema.optional(),
   avatarKey: z.string().min(1).max(200).nullable().optional(),
   bannerKey: z.string().min(1).max(200).nullable().optional(),
+  hideActivity: z.boolean().optional(),
 });
 
 export const PATCH: RequestHandler = async (event) => {
@@ -44,5 +45,6 @@ export const PATCH: RequestHandler = async (event) => {
   else if (body.avatarKey !== undefined) await setAvatarKey(db, user.id, body.avatarKey);
   if (body.bannerKey === null) await clearBanner(db, user.id);
   else if (body.bannerKey !== undefined) await setBannerKey(db, user.id, body.bannerKey);
+  if (body.hideActivity !== undefined) await setHideActivity(db, user.id, body.hideActivity);
   return json({ ok: true });
 };

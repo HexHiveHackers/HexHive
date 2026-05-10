@@ -14,6 +14,7 @@
       pronouns: string | null;
       bio: string | null;
       contactEmail: string | null;
+      hideActivity: boolean;
     };
   } = $props();
   // One-time seed from the prop; the form is then locally editable.
@@ -21,6 +22,7 @@
   let pronouns = $state(untrack(() => initial.pronouns ?? ''));
   let bio = $state(untrack(() => initial.bio ?? ''));
   let contactEmail = $state(untrack(() => initial.contactEmail ?? ''));
+  let hideActivity = $state(untrack(() => initial.hideActivity));
   let busy = $state(false);
   let err = $state<string | null>(null);
   let ok = $state(false);
@@ -32,7 +34,7 @@
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ username, pronouns, bio, contactEmail })
+        body: JSON.stringify({ username, pronouns, bio, contactEmail, hideActivity })
       });
       if (!res.ok) throw new Error(await res.text());
       ok = true;
@@ -73,6 +75,19 @@
       Shown on your public profile. Not verified, not used for sign-in or notifications.
     </p>
   </div>
+  <label class="flex items-start gap-3 rounded-md border p-3 cursor-pointer hover:bg-muted/30 transition-colors">
+    <input
+      type="checkbox"
+      bind:checked={hideActivity}
+      class="mt-0.5 h-4 w-4 rounded border-input bg-background accent-primary"
+    />
+    <span class="grid gap-1">
+      <span class="text-sm font-medium">Hide last-active timestamp</span>
+      <span class="text-xs text-muted-foreground">
+        When on, your last-active time is hidden from your profile and the public users directory.
+      </span>
+    </span>
+  </label>
   {#if err}<p class="text-sm text-destructive">{err}</p>{/if}
   {#if ok}<p class="text-sm text-emerald-700 dark:text-emerald-300">Saved.</p>{/if}
   <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save'}</Button>
