@@ -63,7 +63,7 @@
             <span class="italic opacity-70">Activity hidden</span>
           {/if}
           <span aria-hidden="true">·</span>
-          <span>Joined {joinedLabel(u.joinedAt)}</span>
+          <span>{u.isPlaceholder ? 'Indexed' : 'Joined'} {joinedLabel(u.joinedAt)}</span>
         </div>
       </div>
     </a>
