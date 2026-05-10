@@ -1322,7 +1322,8 @@
             </span>
             <input
               type="range"
-              class="flex-1 accent-amber-400"
+              class="midilab-scrub flex-1 accent-amber-400"
+              style="--track-fill: #fbbf24; --fill: {mp3Duration > 0 ? (mp3CurrentTime / mp3Duration) * 100 : 0}"
               min="0"
               max={mp3Duration || 1}
               step="0.01"
@@ -1397,7 +1398,8 @@
           </span>
           <input
             type="range"
-            class="flex-1 accent-emerald-400"
+            class="midilab-scrub flex-1 accent-emerald-400"
+            style="--track-fill: #34d399; --fill: {duration > 0 ? (currentTime / duration) * 100 : 0}"
             min="0"
             max={duration || 1}
             step="0.01"
@@ -1536,16 +1538,27 @@
 </section>
 
 <style>
-  /* Both transport sliders share a uniform unfilled track look (dim
-     zinc) so the only colour difference between the synth and tape
-     panels is the accent on the filled portion + thumb. */
-  input[type="range"]::-webkit-slider-runnable-track {
-    background: rgba(63, 63, 70, 0.55);
+  /* Transport sliders. Unfilled portion is uniform dim zinc; filled
+     portion uses each player's accent (emerald on synth, amber on
+     tape). Implemented as a linear-gradient on the track that splits
+     at --fill (0..100), so we don't depend on the browser's
+     accent-color painting the fill (Firefox doesn't). --track-fill
+     is the accent colour. */
+  .midilab-scrub::-webkit-slider-runnable-track {
+    background: linear-gradient(
+      to right,
+      var(--track-fill, #34d399) calc(var(--fill, 0) * 1%),
+      rgba(63, 63, 70, 0.55) calc(var(--fill, 0) * 1%)
+    );
     height: 0.4rem;
     border-radius: 9999px;
   }
-  input[type="range"]::-moz-range-track {
-    background: rgba(63, 63, 70, 0.55);
+  .midilab-scrub::-moz-range-track {
+    background: linear-gradient(
+      to right,
+      var(--track-fill, #34d399) calc(var(--fill, 0) * 1%),
+      rgba(63, 63, 70, 0.55) calc(var(--fill, 0) * 1%)
+    );
     height: 0.4rem;
     border-radius: 9999px;
   }
