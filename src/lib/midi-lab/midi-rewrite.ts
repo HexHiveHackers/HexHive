@@ -6,6 +6,7 @@
 
 export interface MappingChoice {
   bankMSB: number;
+  bankLSB: number;
   program: number;
   label: string;
   reason: string;
@@ -209,12 +210,23 @@ export function rewriteProgramChanges(
             data: Uint8Array.from([choice.program & 0x7f]),
           });
         } else {
+          // CC0 = bank MSB
           out.push({
             delta: e.delta,
             kind: 'midi',
             status: 0xb0 | channel,
             channel,
             data: Uint8Array.from([0, choice.bankMSB & 0x7f]),
+          });
+          // CC32 = bank LSB. Many banks use only MSB and leave LSB at 0;
+          // emit CC32 unconditionally so the synth's previously-selected
+          // LSB on this channel doesn't leak into the new selection.
+          out.push({
+            delta: 0,
+            kind: 'midi',
+            status: 0xb0 | channel,
+            channel,
+            data: Uint8Array.from([32, (choice.bankLSB ?? 0) & 0x7f]),
           });
           out.push({
             delta: 0,

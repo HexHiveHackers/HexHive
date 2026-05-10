@@ -793,8 +793,14 @@
     }
   }
 
-  function presetKey(p: { bankMSB: number; program: number }): string {
-    return `${p.bankMSB}:${p.program}`;
+  // Key includes bankLSB so SF2s with multiple presets at the same
+  // (MSB, program) but different LSB don't collide in the dropdown.
+  function presetKey(p: { bankMSB: number; bankLSB: number; program: number }): string {
+    return `${p.bankMSB}:${p.bankLSB}:${p.program}`;
+  }
+
+  function fmtCoord(bankMSB: number, bankLSB: number, program: number): string {
+    return bankLSB === 0 ? `${bankMSB}:${program}` : `${bankMSB}.${bankLSB}:${program}`;
   }
 
   function onSelect(slot: number, key: string): void {
@@ -802,15 +808,17 @@
       void setOverride(slot, null);
       return;
     }
-    const [bStr, pStr] = key.split(':');
-    const b = Number.parseInt(bStr, 10);
+    const [msbStr, lsbStr, pStr] = key.split(':');
+    const msb = Number.parseInt(msbStr, 10);
+    const lsb = Number.parseInt(lsbStr, 10);
     const p = Number.parseInt(pStr, 10);
-    const hit = presets.find((q) => q.bankMSB === b && q.program === p);
+    const hit = presets.find((q) => q.bankMSB === msb && q.bankLSB === lsb && q.program === p);
     if (!hit) return;
     void setOverride(slot, {
       bankMSB: hit.bankMSB,
+      bankLSB: hit.bankLSB,
       program: hit.program,
-      label: `${hit.bankMSB}:${hit.program} ${hit.name}`,
+      label: `${fmtCoord(hit.bankMSB, hit.bankLSB, hit.program)} ${hit.name}`,
       reason: 'manual override',
     });
   }
@@ -1331,7 +1339,7 @@
                 <option value="auto">auto · {row.auto.label}</option>
                 {#each presets as p}
                   <option value={presetKey(p)}>
-                    {p.bankMSB}:{p.program} · {p.name}{p.isAnyDrums ? ' (drum)' : ''}
+                    {fmtCoord(p.bankMSB, p.bankLSB, p.program)} · {p.name}{p.isAnyDrums ? ' (drum)' : ''}
                   </option>
                 {/each}
               </select>

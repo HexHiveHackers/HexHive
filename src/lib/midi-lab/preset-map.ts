@@ -16,6 +16,7 @@ export interface SfPreset {
 
 export interface MappingChoice {
   bankMSB: number;
+  bankLSB: number;
   program: number;
   label: string;
   reason: string;
@@ -78,8 +79,22 @@ function bestDrum(presets: readonly SfPreset[], hint: string): SfPreset | undefi
   return best;
 }
 
+// Format a (MSB, LSB, program) coordinate as "MSB:program" when LSB is 0
+// (the common case) or "MSB.LSB:program" when LSB is non-zero, so SF2s
+// that use bank LSB to expose preset variants don't all collapse to the
+// same display string.
+export function fmtPresetCoord(bankMSB: number, bankLSB: number, program: number): string {
+  return bankLSB === 0 ? `${bankMSB}:${program}` : `${bankMSB}.${bankLSB}:${program}`;
+}
+
 function asChoice(p: SfPreset, reason: string): MappingChoice {
-  return { bankMSB: p.bankMSB, program: p.program, label: `${p.bankMSB}:${p.program} ${p.name}`, reason };
+  return {
+    bankMSB: p.bankMSB,
+    bankLSB: p.bankLSB,
+    program: p.program,
+    label: `${fmtPresetCoord(p.bankMSB, p.bankLSB, p.program)} ${p.name}`,
+    reason,
+  };
 }
 
 // VGK is its own preset layout — bank 0 program N is NOT GM. When no name
@@ -87,8 +102,8 @@ function asChoice(p: SfPreset, reason: string): MappingChoice {
 // 0:0 Grand Piano in VGK) and flag the row so the user knows to override.
 function defaultMelodic(presets: readonly SfPreset[], reason: string): MappingChoice {
   const first = presets.find((p) => !p.isAnyDrums);
-  if (first) return { ...asChoice(first, reason), label: `${first.bankMSB}:${first.program} ${first.name}` };
-  return { bankMSB: 0, program: 0, label: '0:0 (none)', reason };
+  if (first) return asChoice(first, reason);
+  return { bankMSB: 0, bankLSB: 0, program: 0, label: '0:0 (none)', reason };
 }
 
 // Pull a name hint out of a Sappy keysplit subgroup name. e.g.
@@ -142,7 +157,13 @@ export function autoMap(entry: VoiceEntry, _slot: number, presets: readonly SfPr
       // Last-resort drum fallback: first drum preset in the bank, or 128:0.
       const anyDrum = presets.find((p) => p.isAnyDrums);
       if (anyDrum) return asChoice(anyDrum, `drumkit fallback for ${entry.subgroupName}`);
-      return { bankMSB: 128, program: 0, label: '128:0 (drum)', reason: `drum fallback ${entry.subgroupName}` };
+      return {
+        bankMSB: 128,
+        bankLSB: 0,
+        program: 0,
+        label: '128:0 (drum)',
+        reason: `drum fallback ${entry.subgroupName}`,
+      };
     }
     case 'keysplit': {
       // Multi-instrument keysplits can't pick one preset perfectly, but the

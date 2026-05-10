@@ -36,6 +36,7 @@ describe('rewriteProgramChanges', () => {
     expect(pcCount).toBeGreaterThan(0);
     const rewritten = rewriteProgramChanges(orig, (slot, _ch) => ({
       bankMSB: 7,
+      bankLSB: 0,
       program: slot,
       label: 'noop',
       reason: 'test',
@@ -48,31 +49,40 @@ describe('rewriteProgramChanges', () => {
     const orig = readMidi('pallet/mus_pallet.mid');
     const rewritten = rewriteProgramChanges(orig, (_slot, _ch) => ({
       bankMSB: 42,
+      bankLSB: 0,
       program: 17,
       label: 'pinned',
       reason: 'test',
     }));
+    // Each PC is now preceded by CC0 (bank MSB) and CC32 (bank LSB),
+    // emitted with delta-0 so the triple lands on the same tick.
     const smf = parseSmf(rewritten);
-    let foundPair = false;
+    let foundTriple = false;
     for (const track of smf.tracks) {
-      for (let i = 0; i < track.length - 1; i++) {
+      for (let i = 0; i < track.length - 2; i++) {
         const a = track[i];
         const b = track[i + 1];
+        const c = track[i + 2];
         if (
           a.kind === 'midi' &&
           (a.status & 0xf0) === 0xb0 &&
           a.data[0] === 0 &&
           a.data[1] === 42 &&
           b.kind === 'midi' &&
-          (b.status & 0xf0) === 0xc0 &&
-          b.data[0] === 17 &&
-          b.delta === 0
+          (b.status & 0xf0) === 0xb0 &&
+          b.data[0] === 32 &&
+          b.data[1] === 0 &&
+          b.delta === 0 &&
+          c.kind === 'midi' &&
+          (c.status & 0xf0) === 0xc0 &&
+          c.data[0] === 17 &&
+          c.delta === 0
         ) {
-          foundPair = true;
+          foundTriple = true;
         }
       }
     }
-    expect(foundPair).toBe(true);
+    expect(foundTriple).toBe(true);
   });
 
   it('zeroes NoteOn velocity for events on a muted slot', () => {
@@ -80,7 +90,7 @@ describe('rewriteProgramChanges', () => {
     // Mute every slot — no audible NoteOn should remain.
     const rewritten = rewriteProgramChanges(
       orig,
-      (slot) => ({ bankMSB: 0, program: slot, label: '', reason: '' }),
+      (slot) => ({ bankMSB: 0, bankLSB: 0, program: slot, label: '', reason: '' }),
       () => true,
     );
     const smf = parseSmf(rewritten);
@@ -97,7 +107,7 @@ describe('rewriteProgramChanges', () => {
     const orig = readMidi('pallet/mus_pallet.mid');
     const rewritten = rewriteProgramChanges(
       orig,
-      (slot) => ({ bankMSB: 0, program: slot, label: '', reason: '' }),
+      (slot) => ({ bankMSB: 0, bankLSB: 0, program: slot, label: '', reason: '' }),
       () => false,
     );
     const smf = parseSmf(rewritten);
@@ -119,13 +129,16 @@ describe('rewriteProgramChanges', () => {
 
       const rewritten = rewriteProgramChanges(orig, (slot) => ({
         bankMSB: 0,
+        bankLSB: 0,
         program: slot,
         label: '',
         reason: '',
       }));
       const newSmf = parseSmf(rewritten);
       const newEventCount = newSmf.tracks.reduce((acc, t) => acc + t.length, 0);
-      expect(newEventCount).toBe(origEventCount + origPcCount);
+      // Every original PC now expands to (CC0 + CC32 + PC) — two extra
+      // bank-select CCs per program-change after the rewrite.
+      expect(newEventCount).toBe(origEventCount + 2 * origPcCount);
     }
   });
 });
