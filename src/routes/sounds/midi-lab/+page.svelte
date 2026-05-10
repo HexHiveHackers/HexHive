@@ -1239,7 +1239,19 @@
             class="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.08] [background-image:repeating-linear-gradient(0deg,#f59e0b_0_1px,transparent_1px_4px)]"
           ></div>
 
-          <!-- transport: audio · reel · loop -->
+          <!-- header chip — mirrors the synth panel's "[ LIVE · MIDI ]" -->
+          <div class="relative mb-2 flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              class="size-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.55)]"
+            ></span>
+            <span class="font-display text-[0.6rem] tracking-[0.25em] text-amber-300">
+              <span class="sr-only">Reference recording ({loaded.refKind === 'ogg' ? 'GMGSx OGG render' : 'vanilla MP3'})</span>
+              <span aria-hidden="true">▷ FINAL · {loaded.refKind === 'ogg' ? 'OGG' : 'MP3'} ◁</span>
+            </span>
+          </div>
+
+          <!-- transport: audio · loop -->
           <div class="relative flex items-center gap-3">
             {#key loaded.songId}
               <audio
@@ -1253,25 +1265,6 @@
                 <track kind="captions" />
               </audio>
             {/key}
-            <svg
-              viewBox="0 0 24 24"
-              class="size-8 shrink-0 text-amber-400/80 animate-[spin_8s_linear_infinite_reverse]"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="0.6" />
-              <circle cx="12" cy="12" r="3" fill="currentColor" />
-              <circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.7" />
-              <g stroke="currentColor" stroke-width="0.5" opacity="0.7">
-                <line x1="12" y1="3" x2="12" y2="6" />
-                <line x1="12" y1="18" x2="12" y2="21" />
-                <line x1="3" y1="12" x2="6" y2="12" />
-                <line x1="18" y1="12" x2="21" y2="12" />
-                <line x1="5.5" y1="5.5" x2="7.5" y2="7.5" />
-                <line x1="16.5" y1="16.5" x2="18.5" y2="18.5" />
-                <line x1="18.5" y1="5.5" x2="16.5" y2="7.5" />
-                <line x1="7.5" y1="16.5" x2="5.5" y2="18.5" />
-              </g>
-            </svg>
             <button
               type="button"
               onclick={toggleLoop}
@@ -1283,16 +1276,6 @@
             >
               <Repeat class="size-3" /> loop
             </button>
-          </div>
-
-          <!-- footer chip — placed below the audio so it sits adjacent to
-               the SF2 mapping table just below; the user reads "FINAL ·
-               MP3" right next to the instruments it's the reference for. -->
-          <div class="relative mt-3 flex items-center justify-end">
-            <span class="font-display text-[0.55rem] tracking-[0.25em] text-amber-300">
-              <span class="sr-only">Reference recording ({loaded.refKind === 'ogg' ? 'GMGSx OGG render' : 'vanilla MP3'})</span>
-              <span aria-hidden="true">▷ FINAL · {loaded.refKind === 'ogg' ? 'OGG' : 'MP3'} ◁</span>
-            </span>
           </div>
         </div>
       {/if}
