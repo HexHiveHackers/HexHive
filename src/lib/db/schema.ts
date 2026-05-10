@@ -90,6 +90,7 @@ export const profile = sqliteTable(
     // user.email which is the synthetic OAuth-identity placeholder.
     contactEmail: text('contact_email'),
     homepageUrl: text('homepage_url'),
+    hideActivity: integer('hide_activity', { mode: 'boolean' }).notNull().default(false),
     createdAt: ts('created_at'),
     updatedAt: ts('updated_at'),
   },

@@ -64,6 +64,13 @@
       "when": 1778280180000,
       "tag": "0008_placeholder_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1778280240000,
+      "tag": "0009_profile_hide_activity",
+      "breakpoints": true
     }
   ]
 }

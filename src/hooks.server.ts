@@ -23,6 +23,8 @@ const isPublic = (pathname: string) =>
   pathname.startsWith('/sounds') ||
   pathname.startsWith('/scripts') ||
   pathname.startsWith('/u/') ||
+  pathname === '/users' ||
+  pathname.startsWith('/users/') ||
   pathname.startsWith('/search') ||
   pathname.startsWith('/privacy') ||
   pathname.startsWith('/terms') ||

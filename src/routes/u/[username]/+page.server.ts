@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/db';
 import * as schema from '$lib/db/schema';
-import { getProfileByUsername, listingsByUser } from '$lib/server/profiles';
+import { getProfileByUsername, lastActiveFor, listingsByUser } from '$lib/server/profiles';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -15,6 +15,7 @@ export const load: PageServerLoad = async ({ params }) => {
     .where(eq(schema.user.id, profile.userId))
     .limit(1);
   const listings = await listingsByUser(db, profile.userId, { self: false });
+  const lastActive = await lastActiveFor(db, profile.userId, { respectHideFlag: true });
   return {
     profile: {
       username: profile.username,
@@ -26,6 +27,7 @@ export const load: PageServerLoad = async ({ params }) => {
       name: userRows[0]?.name ?? '',
       homepageUrl: profile.homepageUrl,
       isPlaceholder: userRows[0]?.isPlaceholder ?? false,
+      lastActive: lastActive ? lastActive.getTime() : null,
     },
     listings,
   };

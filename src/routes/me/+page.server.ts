@@ -47,6 +47,7 @@ export const load: PageServerLoad = async (event) => {
       contactEmail: profile.contactEmail,
       avatarKey: profile.avatarKey,
       bannerKey: profile.bannerKey,
+      hideActivity: profile.hideActivity,
       name: userRows[0]?.name ?? user.email,
     },
     drafts: listings.filter((l) => l.status === 'draft'),
