@@ -41,10 +41,10 @@ export const GAMES: Record<string, Game> = {
     shortTitle: 'Yu-Gi-Oh! WCT 2006',
     platform: 'gba',
     year: 2006,
-    noIntroName: 'Yu-Gi-Oh! Ultimate Masters - World Championship Tournament 2006 (USA)',
+    noIntroName: 'Yu-Gi-Oh! - Ultimate Masters - World Championship Tournament 2006 (USA) (En,Ja,Fr,De,Es,It)',
     boxartUrl: libretroBoxart(
       'Nintendo_-_Game_Boy_Advance',
-      'Yu-Gi-Oh! Ultimate Masters - World Championship Tournament 2006 (USA)',
+      'Yu-Gi-Oh! - Ultimate Masters - World Championship Tournament 2006 (USA) (En,Ja,Fr,De,Es,It)',
     ),
   },
   'ygo-eds': {
@@ -53,8 +53,8 @@ export const GAMES: Record<string, Game> = {
     shortTitle: 'Yu-Gi-Oh! EDS',
     platform: 'gba',
     year: 2002,
-    noIntroName: 'Yu-Gi-Oh! The Eternal Duelist Soul (USA)',
-    boxartUrl: libretroBoxart('Nintendo_-_Game_Boy_Advance', 'Yu-Gi-Oh! The Eternal Duelist Soul (USA)'),
+    noIntroName: 'Yu-Gi-Oh! - The Eternal Duelist Soul (USA)',
+    boxartUrl: libretroBoxart('Nintendo_-_Game_Boy_Advance', 'Yu-Gi-Oh! - The Eternal Duelist Soul (USA)'),
   },
   'ygo-wct-2004': {
     id: 'ygo-wct-2004',
@@ -62,8 +62,11 @@ export const GAMES: Record<string, Game> = {
     shortTitle: 'Yu-Gi-Oh! WCT 2004',
     platform: 'gba',
     year: 2004,
-    noIntroName: 'Yu-Gi-Oh! World Championship Tournament 2004 (USA)',
-    boxartUrl: libretroBoxart('Nintendo_-_Game_Boy_Advance', 'Yu-Gi-Oh! World Championship Tournament 2004 (USA)'),
+    noIntroName: 'Yu-Gi-Oh! - World Championship Tournament 2004 (USA) (En,Ja,Fr,De,Es,It)',
+    boxartUrl: libretroBoxart(
+      'Nintendo_-_Game_Boy_Advance',
+      'Yu-Gi-Oh! - World Championship Tournament 2004 (USA) (En,Ja,Fr,De,Es,It)',
+    ),
   },
   'ygo-7-trials-to-glory': {
     id: 'ygo-7-trials-to-glory',
@@ -71,10 +74,10 @@ export const GAMES: Record<string, Game> = {
     shortTitle: 'Yu-Gi-Oh! 7 Trials to Glory',
     platform: 'gba',
     year: 2005,
-    noIntroName: 'Yu-Gi-Oh! 7 Trials to Glory - World Championship Tournament 2005 (USA)',
+    noIntroName: 'Yu-Gi-Oh! - 7 Trials to Glory - World Championship Tournament 2005 (USA) (En,Ja,Fr,De,Es,It)',
     boxartUrl: libretroBoxart(
       'Nintendo_-_Game_Boy_Advance',
-      'Yu-Gi-Oh! 7 Trials to Glory - World Championship Tournament 2005 (USA)',
+      'Yu-Gi-Oh! - 7 Trials to Glory - World Championship Tournament 2005 (USA) (En,Ja,Fr,De,Es,It)',
     ),
   },
   'ygo-worldwide-edition': {
@@ -83,10 +86,10 @@ export const GAMES: Record<string, Game> = {
     shortTitle: 'Yu-Gi-Oh! Worldwide Edition',
     platform: 'gba',
     year: 2003,
-    noIntroName: 'Yu-Gi-Oh! Worldwide Edition - Stairway to the Destined Duel (USA)',
+    noIntroName: 'Yu-Gi-Oh! - Worldwide Edition - Stairway to the Destined Duel (USA) (En,Ja,Fr,De,Es,It)',
     boxartUrl: libretroBoxart(
       'Nintendo_-_Game_Boy_Advance',
-      'Yu-Gi-Oh! Worldwide Edition - Stairway to the Destined Duel (USA)',
+      'Yu-Gi-Oh! - Worldwide Edition - Stairway to the Destined Duel (USA) (En,Ja,Fr,De,Es,It)',
     ),
   },
   'ygo-reshef': {
@@ -95,8 +98,8 @@ export const GAMES: Record<string, Game> = {
     shortTitle: 'Yu-Gi-Oh! Reshef of Destruction',
     platform: 'gba',
     year: 2004,
-    noIntroName: 'Yu-Gi-Oh! Reshef of Destruction (USA)',
-    boxartUrl: libretroBoxart('Nintendo_-_Game_Boy_Advance', 'Yu-Gi-Oh! Reshef of Destruction (USA)'),
+    noIntroName: 'Yu-Gi-Oh! - Reshef of Destruction (USA)',
+    boxartUrl: libretroBoxart('Nintendo_-_Game_Boy_Advance', 'Yu-Gi-Oh! - Reshef of Destruction (USA)'),
   },
 };
 
