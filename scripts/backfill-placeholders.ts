@@ -8,12 +8,78 @@
  * Custom repo path:   REPO=/path/to/Team-Aquas-Asset-Repo bun scripts/backfill-placeholders.ts
  */
 
+import { readdir, readFile, stat } from 'node:fs/promises';
+import path from 'node:path';
 import { createClient } from '@libsql/client';
-import { like, or } from 'drizzle-orm';
+import { eq, like, or } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
 import * as schema from '../src/lib/db/schema';
 
 type DB = ReturnType<typeof drizzle<typeof schema>>;
+
+export function slugifyContributor(name: string): string {
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 32) || 'unknown'
+  );
+}
+
+const ALLOWED_HOSTS = [
+  'github.com',
+  'pokecommunity.com',
+  'twitter.com',
+  'x.com',
+  'bsky.app',
+  'mastodon.social',
+  'youtube.com',
+  'soundcloud.com',
+  'bandcamp.com',
+];
+
+export function extractCreatorUrl(markdown: string): string | null {
+  const urlRe = /https?:\/\/[^\s)\]]+/g;
+  const candidates = markdown.match(urlRe) ?? [];
+  for (const raw of candidates) {
+    let parsed: URL;
+    try {
+      parsed = new URL(raw);
+    } catch {
+      continue;
+    }
+    const host = parsed.host.replace(/^www\./, '');
+    if (host === 'discord.gg' || host === 'discord.com') continue;
+    if (/^i\.|imgur\.com$/.test(host)) continue;
+    if (/\.(png|jpe?g|gif|webp|svg|mp3|wav|ogg)$/i.test(parsed.pathname)) continue;
+    if (ALLOWED_HOSTS.some((h) => host === h || host.endsWith(`.${h}`))) {
+      return raw;
+    }
+  }
+  return null;
+}
+
+const ASSET_TYPE_DIRS = [
+  'Audio',
+  'Battle Backgrounds',
+  'Battle effects',
+  'Field Effects',
+  'Items',
+  'Maps',
+  'Official Pokemon Assets',
+  'Other',
+  'Overworld Other Sprites',
+  'Overworld Pokemon Sprites',
+  'Overworld Trainer Sprites',
+  'Pokemon',
+  'Pokemon Essentials Packs',
+  'Projects',
+  'Tilesets',
+  'Trainer Back Sprites',
+  'Trainer Front Sprites',
+  'User Interface',
+];
 
 export async function runPhaseA(db: DB): Promise<{ flagged: number }> {
   const result = await db
@@ -24,14 +90,56 @@ export async function runPhaseA(db: DB): Promise<{ flagged: number }> {
   return { flagged: result.length };
 }
 
+export async function runPhaseB(db: DB, repoRoot: string): Promise<{ updated: number }> {
+  let updated = 0;
+  for (const assetType of ASSET_TYPE_DIRS) {
+    const dir = path.join(repoRoot, assetType);
+    let entries: string[];
+    try {
+      entries = await readdir(dir);
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const subdir = path.join(dir, entry);
+      try {
+        const s = await stat(subdir);
+        if (!s.isDirectory()) continue;
+      } catch {
+        continue;
+      }
+      const readmePath = path.join(subdir, 'README.md');
+      let md: string;
+      try {
+        md = await readFile(readmePath, 'utf8');
+      } catch {
+        continue;
+      }
+      const url = extractCreatorUrl(md);
+      if (!url) continue;
+      const slug = slugifyContributor(entry);
+      const userId = `seed-contrib-${slug}`;
+      const profileRows = await db.select().from(schema.profile).where(eq(schema.profile.userId, userId)).limit(1);
+      if (!profileRows[0]) continue;
+      if (profileRows[0].homepageUrl) continue;
+      await db.update(schema.profile).set({ homepageUrl: url }).where(eq(schema.profile.userId, userId));
+      updated += 1;
+    }
+  }
+  return { updated };
+}
+
 async function main() {
   const url = process.env.DATABASE_URL ?? 'file:./local.db';
   const authToken = process.env.DATABASE_AUTH_TOKEN;
+  const repoRoot = process.env.REPO ?? '/home/user/Team-Aquas-Asset-Repo';
   const client = createClient({ url, authToken });
   const db = drizzle(client, { schema });
 
   const a = await runPhaseA(db);
   console.log(`Phase A: flagged ${a.flagged} seed users as placeholder.`);
+  const b = await runPhaseB(db, repoRoot);
+  console.log(`Phase B: harvested ${b.updated} homepage URLs from ${repoRoot}.`);
 }
 
 if (import.meta.main) {
