@@ -24,7 +24,18 @@
   // card colours, not the chrome.
   type Era = 'gen1' | 'gen2' | 'gen1-2' | 'gen3' | 'engine' | 'gm';
   type Platform = 'GB' | 'GBA' | 'Engine' | 'Universal';
-  type Tone = 'orange' | 'emerald' | 'violet' | 'fuchsia' | 'red' | 'amber' | 'sky' | 'indigo';
+  type Tone =
+    | 'orange'
+    | 'emerald'
+    | 'violet'
+    | 'fuchsia'
+    | 'red'
+    | 'amber'
+    | 'sky'
+    | 'indigo'
+    | 'gen12' // Gen 1+2 Game Boy: red → amber (Red → Gold)
+    | 'rse' // Ruby / Sapphire / Emerald: red → blue → green
+    | 'white'; // multi-game / catch-all banks
   type Soundfont = {
     id: string;
     url: string;
@@ -56,7 +67,7 @@
       label: 'Pokémon GBA (Mills)',
       byline: 'Mills · multi-game',
       era: 'gen3',
-      tone: 'violet',
+      tone: 'white',
       platform: 'GBA',
       games: ['R/S/E', 'FR/LG'],
     },
@@ -78,7 +89,7 @@
       label: 'Pokémon RSE v2.0 (unofficial)',
       byline: 'unofficial · v2.0',
       era: 'gen3',
-      tone: 'indigo',
+      tone: 'rse',
       platform: 'GBA',
       games: ['R/S/E'],
     },
@@ -112,7 +123,7 @@
       label: 'Game Boy GM — Pokémon Gen 1+2 (CynthiaCelestic)',
       byline: 'CynthiaCelestic',
       era: 'gen1-2',
-      tone: 'red',
+      tone: 'gen12',
       platform: 'GB',
       games: ['R/B/Y', 'G/S/C'],
     },
@@ -123,7 +134,7 @@
       label: 'Game Boy GM — Pokémon Gen 1+2 (stgiga fixed)',
       byline: 'stgiga · re-tuned',
       era: 'gen1-2',
-      tone: 'amber',
+      tone: 'gen12',
       platform: 'GB',
       games: ['R/B/Y', 'G/S/C'],
     },
@@ -163,6 +174,12 @@
     amber: 'bg-amber-500/80',
     sky: 'bg-sky-400/80',
     indigo: 'bg-indigo-500/80',
+    // Gen 1+2 GB: red (Red) → amber (Gold).
+    gen12: 'bg-gradient-to-r from-red-500/80 to-amber-400/80',
+    // Ruby/Sapphire/Emerald: red → blue → green.
+    rse: 'bg-gradient-to-r from-red-500/80 via-sky-500/80 to-emerald-500/80',
+    // Mills multi-game catch-all: bright neutral white.
+    white: 'bg-zinc-100/80',
   };
   const TONE_LED_READY: Record<Tone, string> = {
     orange: 'bg-orange-400 shadow-[0_0_5px_1px_rgba(251,146,60,0.6)]',
@@ -173,6 +190,9 @@
     amber: 'bg-amber-400 shadow-[0_0_5px_1px_rgba(251,191,36,0.6)]',
     sky: 'bg-sky-300 shadow-[0_0_5px_1px_rgba(125,211,252,0.6)]',
     indigo: 'bg-indigo-400 shadow-[0_0_5px_1px_rgba(129,140,248,0.6)]',
+    gen12: 'bg-amber-400 shadow-[0_0_5px_1px_rgba(251,191,36,0.6)]',
+    rse: 'bg-emerald-400 shadow-[0_0_5px_1px_rgba(52,211,153,0.6)]',
+    white: 'bg-zinc-100 shadow-[0_0_5px_1px_rgba(244,244,245,0.6)]',
   };
   const TONE_LED_ACTIVE: Record<Tone, string> = {
     orange: 'bg-orange-300 shadow-[0_0_12px_3px_rgba(251,146,60,0.9)]',
@@ -183,6 +203,9 @@
     amber: 'bg-amber-300 shadow-[0_0_12px_3px_rgba(251,191,36,0.9)]',
     sky: 'bg-sky-200 shadow-[0_0_12px_3px_rgba(125,211,252,0.9)]',
     indigo: 'bg-indigo-300 shadow-[0_0_12px_3px_rgba(129,140,248,0.9)]',
+    gen12: 'bg-amber-300 shadow-[0_0_12px_3px_rgba(251,191,36,0.9)]',
+    rse: 'bg-emerald-300 shadow-[0_0_12px_3px_rgba(52,211,153,0.9)]',
+    white: 'bg-white shadow-[0_0_12px_3px_rgba(244,244,245,0.9)]',
   };
   const TONE_TEXT: Record<Tone, string> = {
     orange: 'text-orange-300',
@@ -193,6 +216,9 @@
     amber: 'text-amber-300',
     sky: 'text-sky-200',
     indigo: 'text-indigo-300',
+    gen12: 'text-amber-200',
+    rse: 'text-emerald-200',
+    white: 'text-zinc-100',
   };
   // Active card glow ring per tone — matches the LED's colour family so
   // the whole chip feels like one lit unit.
@@ -205,6 +231,9 @@
     amber: 'border-amber-500/70 shadow-[0_0_0_1px_rgba(245,158,11,0.3),0_0_24px_-6px_rgba(245,158,11,0.75)]',
     sky: 'border-sky-400/70 shadow-[0_0_0_1px_rgba(56,189,248,0.3),0_0_24px_-6px_rgba(56,189,248,0.75)]',
     indigo: 'border-indigo-500/70 shadow-[0_0_0_1px_rgba(99,102,241,0.3),0_0_24px_-6px_rgba(99,102,241,0.75)]',
+    gen12: 'border-amber-400/70 shadow-[0_0_0_1px_rgba(251,191,36,0.3),0_0_24px_-6px_rgba(251,191,36,0.75)]',
+    rse: 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.3),0_0_24px_-6px_rgba(16,185,129,0.75)]',
+    white: 'border-zinc-200/70 shadow-[0_0_0_1px_rgba(244,244,245,0.3),0_0_24px_-6px_rgba(244,244,245,0.75)]',
   };
 
   // Bank rack tabs — group by era so the user picks family first, chip
