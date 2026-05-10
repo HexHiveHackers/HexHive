@@ -7,8 +7,9 @@ CREATE TABLE `affiliation` (
   `url` text,
   `created_at` integer DEFAULT (unixepoch()) NOT NULL
 );
+--> statement-breakpoint
 CREATE UNIQUE INDEX `affiliation_name_unique` ON `affiliation` (lower(`name`));
-
+--> statement-breakpoint
 CREATE TABLE `profile_affiliation` (
   `user_id` text NOT NULL,
   `affiliation_id` text NOT NULL,
@@ -18,4 +19,5 @@ CREATE TABLE `profile_affiliation` (
   FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`affiliation_id`) REFERENCES `affiliation`(`id`) ON DELETE CASCADE
 );
+--> statement-breakpoint
 CREATE INDEX `profile_affiliation_user_idx` ON `profile_affiliation` (`user_id`);
