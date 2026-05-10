@@ -2,8 +2,6 @@
   import {
     Cpu,
     FlaskConical,
-    Gamepad,
-    Gamepad2,
     Globe,
     Loader2,
     Music,
@@ -17,6 +15,8 @@
   import { onMount } from 'svelte';
   import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
+  import IconGb from '$lib/components/icons/IconGb.svelte';
+  import IconGba from '$lib/components/icons/IconGba.svelte';
   import { Button } from '$lib/components/ui/button';
   import {
     detectDrumChannels,
@@ -263,8 +263,8 @@
   type GroupId = 'gen3' | 'gen1-2' | 'engine' | 'gm';
   type IconCmp = typeof Music;
   const GROUPS: { id: GroupId; label: string; sub: string; eras: readonly Era[]; icon: IconCmp }[] = [
-    { id: 'gen3', label: 'Gen III', sub: 'Game Boy Advance', eras: ['gen3'], icon: Gamepad2 },
-    { id: 'gen1-2', label: 'Gen I · II', sub: 'Game Boy / Color', eras: ['gen1', 'gen2', 'gen1-2'], icon: Gamepad },
+    { id: 'gen3', label: 'Gen III', sub: 'Game Boy Advance', eras: ['gen3'], icon: IconGba },
+    { id: 'gen1-2', label: 'Gen I · II', sub: 'Game Boy / Color', eras: ['gen1', 'gen2', 'gen1-2'], icon: IconGb },
     { id: 'engine', label: 'Engines', sub: 'Pokémon Essentials et al.', eras: ['engine'], icon: Cpu },
     { id: 'gm', label: 'Universal', sub: 'GM fallback', eras: ['gm'], icon: Globe },
   ];
@@ -290,7 +290,7 @@
     kind: 'sappy' | 'gm';
     icon: IconCmp;
   }[] = [
-    { id: 'sappy', label: 'GBA rips', sub: 'Sappy engine · .mid + voicegroup', kind: 'sappy', icon: Gamepad2 },
+    { id: 'sappy', label: 'GBA rips', sub: 'Sappy engine · .mid + voicegroup', kind: 'sappy', icon: IconGba },
     { id: 'gm', label: 'Pokémon Essentials', sub: 'GM render · zeak6464/Fire-Red', kind: 'gm', icon: Cpu },
   ];
   let activeFixtureTab = $state<FixtureTabId>('sappy');
@@ -1356,7 +1356,7 @@
               onclick={mp3TogglePlay}
               size="sm"
               variant="outline"
-              class="bg-amber-500/15 border-amber-500/60 text-amber-300 transition-colors hover:bg-amber-500/25 hover:border-amber-400 hover:text-amber-200"
+              class="border bg-amber-500/15 border-amber-500/60 text-amber-300 transition-colors hover:bg-amber-500/25 hover:border-amber-400 hover:text-amber-200"
             >
               {#if mp3IsPlaying}
                 <Pause class="size-4" /> Pause
@@ -1430,7 +1430,7 @@
             disabled={engineState === 'loading' || engineState === 'error' || !loaded}
             size="sm"
             variant="outline"
-            class="bg-emerald-500/15 border-emerald-500/60 text-emerald-400 transition-colors hover:bg-emerald-500/25 hover:border-emerald-400 hover:text-emerald-300"
+            class="border bg-emerald-500/15 border-emerald-500/60 text-emerald-400 transition-colors hover:bg-emerald-500/25 hover:border-emerald-400 hover:text-emerald-300"
           >
             {#if engineState === 'loading'}
               <Loader2 class="size-4 animate-spin" /> loading…
