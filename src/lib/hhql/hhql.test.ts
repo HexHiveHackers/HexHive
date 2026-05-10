@@ -1,5 +1,8 @@
 // src/lib/hhql/hhql.test.ts
 import { describe, expect, it } from 'vitest';
+import { evaluate } from './evaluator';
+import type { DirectoryRow } from './fields-users';
+import { fieldsUsers } from './fields-users';
 import { parse } from './parser';
 import { tokenize } from './tokens';
 
@@ -140,5 +143,97 @@ describe('parse', () => {
     const r = parse('hasBio AND');
     expect(r.ok).toBe(false);
     expect(r.ast).not.toBeNull(); // we got at least the left side
+  });
+});
+
+function row(overrides: Partial<DirectoryRow> = {}): DirectoryRow {
+  return {
+    username: 'someone',
+    alias: null,
+    bio: null,
+    listingsByType: { romhack: 0, sprite: 0, sound: 0, script: 0 },
+    totalDownloads: 0,
+    lastActive: null,
+    joinedAt: Date.now(),
+    hasBio: false,
+    hasAlias: false,
+    hasAvatar: false,
+    hasLinks: false,
+    hasAffiliations: false,
+    affiliations: [],
+    akas: [],
+    isPlaceholder: false,
+    isAdmin: false,
+    ...overrides,
+  };
+}
+
+function predicate(query: string) {
+  const r = parse(query);
+  if (!r.ok || !r.ast) throw new Error(`parse failed: ${JSON.stringify(r)}`);
+  const ast = r.ast;
+  return (r: DirectoryRow) => evaluate(ast, r, fieldsUsers);
+}
+
+describe('evaluate', () => {
+  it('compares numbers', () => {
+    const p = predicate('downloads > 100');
+    expect(p(row({ totalDownloads: 200 }))).toBe(true);
+    expect(p(row({ totalDownloads: 50 }))).toBe(false);
+  });
+
+  it('matches string contains case-insensitively', () => {
+    const p = predicate('bio ~ shiny');
+    expect(p(row({ bio: 'Loves SHINY pokemon' }))).toBe(true);
+    expect(p(row({ bio: 'no match' }))).toBe(false);
+    expect(p(row({ bio: null }))).toBe(false);
+  });
+
+  it('handles bare boolean shorthand', () => {
+    const p = predicate('hasBio');
+    expect(p(row({ hasBio: true }))).toBe(true);
+    expect(p(row({ hasBio: false }))).toBe(false);
+  });
+
+  it('handles NOT bare', () => {
+    const p = predicate('NOT placeholder');
+    expect(p(row({ isPlaceholder: false }))).toBe(true);
+    expect(p(row({ isPlaceholder: true }))).toBe(false);
+  });
+
+  it('IN over enum array (creates)', () => {
+    const p = predicate('creates IN (sprite, sound)');
+    expect(p(row({ listingsByType: { romhack: 0, sprite: 2, sound: 0, script: 0 } }))).toBe(true);
+    expect(p(row({ listingsByType: { romhack: 1, sprite: 0, sound: 0, script: 0 } }))).toBe(false);
+  });
+
+  it('IS EMPTY / IS NOT EMPTY for nullable string', () => {
+    const empty = predicate('alias IS EMPTY');
+    const notEmpty = predicate('alias IS NOT EMPTY');
+    expect(empty(row({ alias: null }))).toBe(true);
+    expect(empty(row({ alias: 'x' }))).toBe(false);
+    expect(notEmpty(row({ alias: 'x' }))).toBe(true);
+  });
+
+  it('relative dates against `active`', () => {
+    const recent = Date.now() - 3 * 86_400_000; // 3 days ago
+    const old = Date.now() - 30 * 86_400_000;
+    const p = predicate('active > -7d');
+    expect(p(row({ lastActive: recent }))).toBe(true);
+    expect(p(row({ lastActive: old }))).toBe(false);
+    expect(p(row({ lastActive: null }))).toBe(false);
+  });
+
+  it('combines AND / OR with correct precedence', () => {
+    const p = predicate('hasBio AND (downloads > 100 OR placeholder)');
+    expect(p(row({ hasBio: true, totalDownloads: 200 }))).toBe(true);
+    expect(p(row({ hasBio: true, isPlaceholder: true }))).toBe(true);
+    expect(p(row({ hasBio: true, totalDownloads: 50, isPlaceholder: false }))).toBe(false);
+    expect(p(row({ hasBio: false, totalDownloads: 200 }))).toBe(false);
+  });
+
+  it('returns false (no row) for unknown fields', () => {
+    const p = predicate('nope = 1');
+    expect(p(row())).toBe(false);
   });
 });
