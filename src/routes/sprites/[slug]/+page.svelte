@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Upload } from '@lucide/svelte';
   import { page } from '$app/state';
+  import CreditLine from '$lib/components/credit-line.svelte';
   import SpriteGallery from '$lib/components/listings/sprite/SpriteGallery.svelte';
   import TypeBadge from '$lib/components/listings/TypeBadge.svelte';
   import VersionTimeline from '$lib/components/listings/VersionTimeline.svelte';
@@ -48,7 +49,13 @@
   <header class="mb-6">
     <div class="flex items-center gap-2 text-xs text-muted-foreground">
       <TypeBadge type="sprite" />
-      <span>by {authorName}</span><span>·</span>
+      <CreditLine
+        displayName={data.detail.authorName}
+        username={data.detail.authorUsername ?? ''}
+        homepageUrl={data.detail.authorHomepageUrl}
+        isPlaceholder={data.detail.authorIsPlaceholder}
+      />
+      <span>·</span>
       <span>{listing.downloads} downloads</span>
     </div>
     <h1 class="font-display text-3xl mt-2">{listing.title}</h1>
