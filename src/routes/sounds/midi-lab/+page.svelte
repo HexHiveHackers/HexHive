@@ -1358,13 +1358,10 @@
           class="pointer-events-none absolute inset-0 rounded-2xl opacity-[0.07] [background-image:linear-gradient(to_right,#10b981_1px,transparent_1px),linear-gradient(to_bottom,#10b981_1px,transparent_1px)] [background-size:8px_8px]"
         ></div>
         <!-- header chip -->
-        <div class="relative mb-2 flex items-center justify-between gap-3">
+        <div class="relative mb-2 flex items-center gap-2">
           <span class="font-display text-[0.6rem] tracking-[0.25em] text-emerald-300">
             <span class="sr-only">Synth (remapped MIDI)</span>
             <span aria-hidden="true">LIVE · MIDI</span>
-          </span>
-          <span class="font-display text-[0.5rem] tracking-[0.3em] text-emerald-500/60">
-            vg:{loaded.voicegroup.name}
           </span>
         </div>
 
