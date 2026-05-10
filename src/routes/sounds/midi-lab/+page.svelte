@@ -357,6 +357,28 @@
       sq.eventHandler.addEvent('songEnded', 'midilab-end', () => {
         isPlaying = false;
       });
+      // Drum-mode invariant: the synth's per-channel drum flag gets
+      // wiped by every spessasynth-internal reset (loadNewSongList,
+      // seek-driven sendMIDIAllOff, loop-point reset). Rather than
+      // sprinkle setDrums calls after every action that might trigger
+      // one, subscribe to the seq events that signal a reset and
+      // re-apply drumChannelsCurrent there. Single source of truth,
+      // single re-application path. queueMicrotask pushes the
+      // re-apply past any synchronous controller replay that follows
+      // the event callback.
+      const reapplyDrums = (): void => {
+        if (!synth) return;
+        for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannelsCurrent.has(ch));
+      };
+      sq.eventHandler.addEvent('timeChange', 'midilab-drums-time', () => {
+        queueMicrotask(reapplyDrums);
+      });
+      sq.eventHandler.addEvent('loopCountChange', 'midilab-drums-loop', () => {
+        queueMicrotask(reapplyDrums);
+      });
+      sq.eventHandler.addEvent('songChange', 'midilab-drums-song', () => {
+        queueMicrotask(reapplyDrums);
+      });
       ctx = audioCtx;
       synth = s;
       seq = sq;
@@ -496,6 +518,10 @@
       bytes = new Uint8Array(loaded.midiBytes);
       drumChannels = new Set();
     }
+    // Publish the new drum-channel set BEFORE the load so the
+    // songChange/timeChange listeners (registered in initEngine) read
+    // the current set when they fire during loadNewSongList.
+    drumChannelsCurrent = drumChannels;
     const wasPlaying = isPlaying;
     // Pause for the duration of the load. Without this, the seq keeps
     // emitting note-ons through the swap and you get a brief patch of
@@ -521,7 +547,10 @@
     // synth resolves the program-change to whatever melodic preset
     // lives at the same (bank, program) coordinates — exactly the
     // mute/unmute = back to piano regression.
-    drumChannelsCurrent = drumChannels;
+    // Defence-in-depth: also apply directly. The seq listeners will fire
+    // for the load's songChange/timeChange anyway, but doing it here too
+    // means a fresh load with restoreTime=0 (no seek) doesn't depend on
+    // the worklet's event ordering to get the first drum frame right.
     if (synth) {
       for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannels.has(ch));
     }
@@ -666,13 +695,8 @@
     if (!seq) return;
     seq.currentTime = t;
     currentTime = t;
-    // The seek triggers spessasynth's sendMIDIAllOff, which resets
-    // per-channel drum mode. Re-apply our flags so a scrub doesn't
-    // silently demote a drum kit back to the melodic preset that lives
-    // at the same (bank, program) coords.
-    if (synth) {
-      for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannelsCurrent.has(ch));
-    }
+    // Drum-mode is restored by the seq's timeChange listener registered
+    // in initEngine — no per-call-site re-apply needed.
   }
 
   async function toggleSlotMute(slot: number): Promise<void> {
