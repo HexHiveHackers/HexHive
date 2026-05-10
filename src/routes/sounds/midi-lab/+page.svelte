@@ -469,26 +469,19 @@
     if (!seq || !loaded) return;
     seqLoadedFor = null;
     let bytes: Uint8Array;
+    let drumChannels: Set<number>;
     if (loaded.kind === 'sappy') {
       const ps = presets;
       const merged = buildMappings(loaded.voicegroup, overrides, ps);
       const muted = mutedSlots;
       const resolver = (slot: number, _ch: number) => merged[slot];
       bytes = rewriteProgramChanges(loaded.midiBytes, resolver, muted.size > 0 ? (slot) => muted.has(slot) : undefined);
-      // Drum kits live at SF2 bank 128 — a value MIDI's 7-bit CC0 can't
-      // transmit. Tell the synth which channels should be drum-mode so the
-      // program-change selects the kit instead of a melodic preset.
-      const drumChannels = detectDrumChannels(loaded.midiBytes, resolver);
-      if (synth) {
-        for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannels.has(ch));
-      }
+      drumChannels = detectDrumChannels(loaded.midiBytes, resolver);
     } else {
-      // GM fixture — pass the MIDI through verbatim. Reset every channel
-      // back to non-drum so a previous Sappy fixture's drum-mode flags
-      // don't leak; spessasynth will detect channel 9 as drums on its own
-      // per the GM spec.
+      // GM fixture — pass the MIDI through verbatim. Channel 9 is drums
+      // by GM convention; spessasynth handles that on its own.
       bytes = new Uint8Array(loaded.midiBytes);
-      if (synth) for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, false);
+      drumChannels = new Set();
     }
     const wasPlaying = isPlaying;
     // Pause for the duration of the load. Without this, the seq keeps
@@ -504,6 +497,14 @@
     new Uint8Array(buf).set(bytes);
     seq.loadNewSongList([{ binary: buf, fileName: id }]);
     await loadedP;
+    // Apply drum-mode flags AFTER the song loads. loadNewSongList resets
+    // every channel's controllers (including drum mode), so calling
+    // setDrums before the load would be wiped out — our drum-kit
+    // overrides would silently degrade to whatever melodic preset
+    // happened to live at the same (bank, program) coordinates.
+    if (synth) {
+      for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannels.has(ch));
+    }
     seq.loopCount = loopOn ? Number.POSITIVE_INFINITY : 0;
     duration = seq.duration;
     if (restoreTime > 0) seq.currentTime = Math.min(restoreTime, seq.duration);
@@ -809,10 +810,12 @@
     }
   }
 
-  // Key includes bankLSB so SF2s with multiple presets at the same
-  // (MSB, program) but different LSB don't collide in the dropdown.
-  function presetKey(p: { bankMSB: number; bankLSB: number; program: number }): string {
-    return `${p.bankMSB}:${p.bankLSB}:${p.program}`;
+  // Key includes bankLSB AND a drum/melodic discriminator. SF2 banks like
+  // VGK FRLG carry both a melodic preset and a drum kit at identical
+  // (MSB, LSB, program) coordinates — the drum bit on the preset header
+  // is the only differentiator, so the key has to encode it too.
+  function presetKey(p: { bankMSB: number; bankLSB: number; program: number; isAnyDrums: boolean }): string {
+    return `${p.bankMSB}:${p.bankLSB}:${p.program}:${p.isAnyDrums ? 'd' : 'm'}`;
   }
 
   function fmtCoord(bankMSB: number, bankLSB: number, program: number): string {
@@ -824,11 +827,14 @@
       void setOverride(slot, null);
       return;
     }
-    const [msbStr, lsbStr, pStr] = key.split(':');
+    const [msbStr, lsbStr, pStr, drumStr] = key.split(':');
     const msb = Number.parseInt(msbStr, 10);
     const lsb = Number.parseInt(lsbStr, 10);
     const p = Number.parseInt(pStr, 10);
-    const hit = presets.find((q) => q.bankMSB === msb && q.bankLSB === lsb && q.program === p);
+    const wantDrum = drumStr === 'd';
+    const hit = presets.find(
+      (q) => q.bankMSB === msb && q.bankLSB === lsb && q.program === p && q.isAnyDrums === wantDrum,
+    );
     if (!hit) return;
     void setOverride(slot, {
       bankMSB: hit.bankMSB,
