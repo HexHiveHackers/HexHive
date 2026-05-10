@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ChevronDown } from '@lucide/svelte';
   import Avatar from '$lib/components/profile/Avatar.svelte';
 
   let { data } = $props();
@@ -52,9 +53,9 @@
             <span class="text-xs text-muted-foreground">{u.pronouns}</span>
           {/if}
         </div>
-        {#if u.bio}
-          <p class="mt-1 line-clamp-2 text-xs text-muted-foreground">{u.bio}</p>
-        {/if}
+        <div class="mt-1 min-h-[2lh] text-xs text-muted-foreground">
+          {#if u.bio}<p class="line-clamp-2">{u.bio}</p>{/if}
+        </div>
         <div class="mt-2 flex items-center gap-3 text-[0.7rem] text-muted-foreground">
           {#if u.isPlaceholder}
             <span class="italic opacity-70">
