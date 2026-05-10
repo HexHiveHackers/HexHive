@@ -497,17 +497,20 @@
     new Uint8Array(buf).set(bytes);
     seq.loadNewSongList([{ binary: buf, fileName: id }]);
     await loadedP;
-    // Apply drum-mode flags AFTER the song loads. loadNewSongList resets
-    // every channel's controllers (including drum mode), so calling
-    // setDrums before the load would be wiped out — our drum-kit
-    // overrides would silently degrade to whatever melodic preset
-    // happened to live at the same (bank, program) coordinates.
-    if (synth) {
-      for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannels.has(ch));
-    }
     seq.loopCount = loopOn ? Number.POSITIVE_INFINITY : 0;
     duration = seq.duration;
     if (restoreTime > 0) seq.currentTime = Math.min(restoreTime, seq.duration);
+    // Apply drum-mode flags LAST — after both loadNewSongList AND any
+    // seek. Both reset per-channel controllers (loadNewSongList wipes
+    // state outright; setting currentTime triggers spessasynth's
+    // sendMIDIAllOff/reset path during the seek). If setDrums is
+    // applied before either, the channel reverts to melodic and the
+    // synth resolves the program-change to whatever melodic preset
+    // lives at the same (bank, program) coordinates — exactly the
+    // mute/unmute = back to piano regression.
+    if (synth) {
+      for (let ch = 0; ch < 16; ch++) synth.setDrums(ch, drumChannels.has(ch));
+    }
     seqLoadedFor = loaded.songId;
     // Auto-resume only if the user didn't pause during the load. The
     // `pauseLatch` flag is set by an explicit pause() click and cleared by
