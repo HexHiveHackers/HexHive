@@ -1334,7 +1334,7 @@
               onclick={mp3TogglePlay}
               size="sm"
               variant="outline"
-              class="border-amber-500/50 text-amber-200 hover:bg-amber-500/10"
+              class="border-amber-500/50 bg-transparent text-amber-200 hover:bg-amber-500/15 hover:border-amber-400 hover:text-amber-100"
             >
               {#if mp3IsPlaying}
                 <Pause class="size-4" /> Pause
@@ -1408,7 +1408,7 @@
             disabled={engineState === 'loading' || engineState === 'error' || !loaded}
             size="sm"
             variant="outline"
-            class="border-emerald-500/50 text-emerald-200 hover:bg-emerald-500/10"
+            class="border-emerald-500/50 bg-transparent text-emerald-200 hover:bg-emerald-500/15 hover:border-emerald-400 hover:text-emerald-100"
           >
             {#if engineState === 'loading'}
               <Loader2 class="size-4 animate-spin" /> loading…
