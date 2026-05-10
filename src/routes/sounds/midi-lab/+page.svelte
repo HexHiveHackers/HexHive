@@ -1078,8 +1078,8 @@
               : 'border-b-2 border-transparent text-zinc-300 hover:text-foreground'}"
         >
           <t.icon class="size-6 shrink-0" aria-hidden="true" />
-          <span class="font-display text-[0.8rem] tracking-[0.2em]">{t.label}</span>
-          <span class="text-sm text-zinc-300 font-mono hidden md:inline">{t.sub}</span>
+          <span class="font-display text-[0.8rem] tracking-[0.2em] leading-none">{t.label}</span>
+          <span class="text-sm text-zinc-300 font-mono hidden md:inline leading-none">{t.sub}</span>
           <span
             class="rounded-full px-1.5 py-0.5 font-mono text-[0.75rem] tabular-nums
               {activeFixtureTab === t.id ? 'bg-foreground/10 text-foreground' : 'bg-muted/40 text-zinc-300'}"
@@ -1169,8 +1169,8 @@
               : 'border-b-2 border-transparent text-zinc-300 hover:text-foreground'}"
         >
           <g.icon class="size-6 shrink-0" aria-hidden="true" />
-          <span class="font-display text-[0.8rem] tracking-[0.2em]">{g.label}</span>
-          <span class="text-xs text-zinc-400 font-mono hidden md:inline">{g.sub}</span>
+          <span class="font-display text-[0.8rem] tracking-[0.2em] leading-none">{g.label}</span>
+          <span class="text-xs text-zinc-400 font-mono hidden md:inline leading-none">{g.sub}</span>
           <span
             class="rounded-full px-1.5 py-0.5 font-mono text-[0.75rem] tabular-nums
               {activeTab === g.id ? 'bg-foreground/10 text-foreground' : 'bg-muted/40 text-zinc-300'}"
