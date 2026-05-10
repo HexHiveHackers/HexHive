@@ -60,6 +60,13 @@
           >
             {seg.value}
           </a>
+        {:else if seg.kind === 'mention'}
+          <a
+            href={seg.href}
+            class="text-foreground hover:text-primary underline-offset-2 hover:underline"
+          >
+            {seg.value}
+          </a>
         {:else}
           {seg.value}
         {/if}
