@@ -235,6 +235,13 @@ export const listingVersion = sqliteTable(
     version: text('version').notNull(),
     changelog: text('changelog'),
     isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(false),
+    // True when the build has been confirmed against a known source
+    // (a hash, the original release post, etc.). Listings can also
+    // record historical entries gathered from changelogs without a
+    // surviving build artefact; those get verified=false. Default
+    // true so author-uploaded versions are trusted unless explicitly
+    // marked otherwise.
+    verified: integer('verified', { mode: 'boolean' }).notNull().default(true),
     createdAt: ts('created_at'),
   },
   (t) => ({

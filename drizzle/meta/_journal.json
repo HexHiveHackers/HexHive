@@ -113,6 +113,13 @@
       "when": 1778280600000,
       "tag": "0015_romhack_meta_links",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1778280660000,
+      "tag": "0016_listing_version_verified",
+      "breakpoints": true
     }
   ]
 }
