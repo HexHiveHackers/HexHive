@@ -5,11 +5,12 @@ import { contactEmail as contactEmailSchema, username as usernameSchema } from '
 import { requireUser } from '$lib/server/auth-utils';
 import { clearAvatar, setAvatarKey } from '$lib/server/avatars';
 import { clearBanner, setBannerKey } from '$lib/server/banners';
-import { setBio, setContactEmail, setHideActivity, setPronouns, setUsername } from '$lib/server/profiles';
+import { setAlias, setBio, setContactEmail, setHideActivity, setPronouns, setUsername } from '$lib/server/profiles';
 import type { RequestHandler } from './$types';
 
 const Body = z.object({
   username: usernameSchema.optional(),
+  alias: z.string().max(80).optional(),
   pronouns: z.string().max(80).optional(),
   bio: z.string().max(2000).optional(),
   contactEmail: contactEmailSchema.optional(),
@@ -38,6 +39,7 @@ export const PATCH: RequestHandler = async (event) => {
       throw error(400, (e as Error).message);
     }
   }
+  if (body.alias !== undefined) await setAlias(db, user.id, body.alias);
   if (body.pronouns !== undefined) await setPronouns(db, user.id, body.pronouns);
   if (body.bio !== undefined) await setBio(db, user.id, body.bio);
   if (body.contactEmail !== undefined) await setContactEmail(db, user.id, body.contactEmail);

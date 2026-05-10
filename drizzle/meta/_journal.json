@@ -71,6 +71,20 @@
       "when": 1778280240000,
       "tag": "0009_profile_hide_activity",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1778280300000,
+      "tag": "0010_profile_alias",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1778280360000,
+      "tag": "0011_affiliations",
+      "breakpoints": true
     }
   ]
 }

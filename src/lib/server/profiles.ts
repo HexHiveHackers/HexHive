@@ -60,6 +60,15 @@ export async function setPronouns(db: DB, userId: string, pronouns: string): Pro
     .where(eq(schema.profile.userId, userId));
 }
 
+// Free-form display name shown alongside the @handle. Empty string clears.
+export async function setAlias(db: DB, userId: string, alias: string): Promise<void> {
+  const trimmed = alias.trim();
+  await db
+    .update(schema.profile)
+    .set({ alias: trimmed === '' ? null : trimmed, updatedAt: new Date() })
+    .where(eq(schema.profile.userId, userId));
+}
+
 // When true, the user's last-active timestamp is suppressed on both the
 // public users directory and their profile page. Single toggle drives both.
 export async function setHideActivity(db: DB, userId: string, hide: boolean): Promise<void> {
@@ -71,6 +80,7 @@ export async function setHideActivity(db: DB, userId: string, hide: boolean): Pr
 
 export interface DirectoryUser {
   username: string;
+  alias: string | null;
   name: string;
   avatarKey: string | null;
   pronouns: string | null;
@@ -80,40 +90,47 @@ export interface DirectoryUser {
   // first session refresh).
   lastActive: Date | null;
   joinedAt: Date;
+  // Unclaimed credit account — created by HexHive on behalf of an
+  // original creator who hasn't signed in yet.
+  isPlaceholder: boolean;
 }
 
-// Lists every non-placeholder user with a username, paired with the most
-// recent session.updatedAt as a "last active" signal. Better Auth touches
+// Lists every user with a username, paired with the most recent
+// session.updatedAt as a "last active" signal. Better Auth touches
 // session.updatedAt on each refresh, so it tracks live use rather than
-// initial sign-in. Placeholder credit accounts are excluded — they don't
-// represent real signed-in users.
+// initial sign-in. Includes placeholder credit accounts as "unclaimed"
+// so the directory shows everyone visible elsewhere on the site.
 export async function listDirectoryUsers(db: DB): Promise<DirectoryUser[]> {
   const lastActiveSql = sql<number | null>`max(${schema.session.updatedAt})`;
   const rows = await db
     .select({
       username: schema.profile.username,
+      alias: schema.profile.alias,
       name: schema.user.name,
       avatarKey: schema.profile.avatarKey,
       pronouns: schema.profile.pronouns,
       bio: schema.profile.bio,
       hideActivity: schema.profile.hideActivity,
+      isPlaceholder: schema.user.isPlaceholder,
       joinedAt: schema.user.createdAt,
       lastActive: lastActiveSql,
     })
     .from(schema.profile)
     .innerJoin(schema.user, eq(schema.user.id, schema.profile.userId))
     .leftJoin(schema.session, eq(schema.session.userId, schema.profile.userId))
-    .where(and(eq(schema.user.isPlaceholder, false), sql`length(${schema.profile.username}) > 0`))
+    .where(sql`length(${schema.profile.username}) > 0`)
     .groupBy(schema.profile.userId)
     .orderBy(desc(lastActiveSql));
   return rows.map((r) => ({
     username: r.username,
+    alias: r.alias,
     name: r.name,
     avatarKey: r.avatarKey,
     pronouns: r.pronouns,
     bio: r.bio,
     lastActive: r.hideActivity || r.lastActive == null ? null : new Date(Number(r.lastActive) * 1000),
     joinedAt: r.joinedAt,
+    isPlaceholder: r.isPlaceholder,
   }));
 }
 

@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/db';
 import * as schema from '$lib/db/schema';
+import { listAffiliationsForUser } from '$lib/server/affiliations';
 import { getProfileByUsername, lastActiveFor, listingsByUser } from '$lib/server/profiles';
 import type { PageServerLoad } from './$types';
 
@@ -16,9 +17,11 @@ export const load: PageServerLoad = async ({ params }) => {
     .limit(1);
   const listings = await listingsByUser(db, profile.userId, { self: false });
   const lastActive = await lastActiveFor(db, profile.userId, { respectHideFlag: true });
+  const affiliations = await listAffiliationsForUser(db, profile.userId);
   return {
     profile: {
       username: profile.username,
+      alias: profile.alias,
       pronouns: profile.pronouns,
       bio: profile.bio,
       contactEmail: profile.contactEmail,
@@ -30,5 +33,6 @@ export const load: PageServerLoad = async ({ params }) => {
       lastActive: lastActive ? lastActive.getTime() : null,
     },
     listings,
+    affiliations,
   };
 };

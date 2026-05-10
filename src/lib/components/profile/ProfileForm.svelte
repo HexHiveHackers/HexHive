@@ -11,6 +11,7 @@
   }: {
     initial: {
       username: string;
+      alias: string | null;
       pronouns: string | null;
       bio: string | null;
       contactEmail: string | null;
@@ -19,6 +20,7 @@
   } = $props();
   // One-time seed from the prop; the form is then locally editable.
   let username = $state(untrack(() => initial.username));
+  let alias = $state(untrack(() => initial.alias ?? ''));
   let pronouns = $state(untrack(() => initial.pronouns ?? ''));
   let bio = $state(untrack(() => initial.bio ?? ''));
   let contactEmail = $state(untrack(() => initial.contactEmail ?? ''));
@@ -34,7 +36,7 @@
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ username, pronouns, bio, contactEmail, hideActivity })
+        body: JSON.stringify({ username, alias, pronouns, bio, contactEmail, hideActivity })
       });
       if (!res.ok) throw new Error(await res.text());
       ok = true;
@@ -48,6 +50,18 @@
   <div class="grid gap-1.5">
     <Label for="username">Username</Label>
     <Input id="username" bind:value={username} required />
+  </div>
+  <div class="grid gap-1.5">
+    <Label for="alias">Alias <span class="text-xs text-muted-foreground font-normal">(optional, public display name)</span></Label>
+    <Input
+      id="alias"
+      placeholder="Yak Attack"
+      maxlength={80}
+      bind:value={alias}
+    />
+    <p class="text-xs text-muted-foreground">
+      Shown alongside your @handle. Leave blank to display only your username.
+    </p>
   </div>
   <div class="grid gap-1.5">
     <Label for="pronouns">Pronouns <span class="text-xs text-muted-foreground font-normal">(optional, public)</span></Label>

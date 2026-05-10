@@ -4,6 +4,7 @@ import { auth, enabledSocialProviders, type SocialProvider } from '$lib/auth';
 import { db } from '$lib/db';
 import * as schema from '$lib/db/schema';
 import { deleteAccount } from '$lib/server/account';
+import { listAffiliationsForUser } from '$lib/server/affiliations';
 import { requireUser } from '$lib/server/auth-utils';
 import { getOrCreateProfile, listingsByUser } from '$lib/server/profiles';
 import type { Actions, PageServerLoad } from './$types';
@@ -16,7 +17,7 @@ export interface ConnectedAccount {
 
 export const load: PageServerLoad = async (event) => {
   const user = requireUser(event);
-  const [profile, listings, userRows, accountRows] = await Promise.all([
+  const [profile, listings, userRows, accountRows, affiliations] = await Promise.all([
     getOrCreateProfile(db, user.id),
     listingsByUser(db, user.id, { self: true }),
     db.select({ name: schema.user.name }).from(schema.user).where(eq(schema.user.id, user.id)).limit(1),
@@ -28,6 +29,7 @@ export const load: PageServerLoad = async (event) => {
       })
       .from(schema.account)
       .where(eq(schema.account.userId, user.id)),
+    listAffiliationsForUser(db, user.id),
   ]);
   // Filter to only providers HexHive currently supports — defends the UI
   // against legacy provider rows surviving from older deploys.
@@ -42,6 +44,7 @@ export const load: PageServerLoad = async (event) => {
   return {
     profile: {
       username: profile.username,
+      alias: profile.alias,
       pronouns: profile.pronouns,
       bio: profile.bio,
       contactEmail: profile.contactEmail,
@@ -54,6 +57,7 @@ export const load: PageServerLoad = async (event) => {
     published: listings.filter((l) => l.status !== 'draft'),
     connections,
     availableProviders: enabledSocialProviders.filter((p) => !connections.some((c) => c.provider === p)),
+    affiliations,
   };
 };
 

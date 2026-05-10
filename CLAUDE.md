@@ -62,7 +62,7 @@ bun run format        # format all files in-place
 - single quotes, semicolons always, 2-space indent, 120-char line width
 - `html.experimentalFullSupportEnabled: true` for Svelte support (Biome 2.3+)
 - `src/app.css` is excluded because Tailwind v4's `@source` / `@custom-variant` / `@theme` aren't understood by Biome's CSS parser
-- A few rules are off in `**/*.svelte` overrides (`useConst`, `useImportType`, `noUnusedVariables`, `noUnusedImports`, `noGlobalAssign`) to avoid false positives from Svelte's reactivity and the experimental parser
+- A few rules are off in `**/*.svelte` overrides (`useConst`, `useImportType`, `noUnusedVariables`, `noUnusedImports`, `noUnusedFunctionParameters`, `noGlobalAssign`) to avoid false positives from Svelte's reactivity, snippets, and the experimental parser
 
 Pre-commit hook runs `biome check --write --no-errors-on-unmatched` on staged `*.{ts,tsx,js,mjs,cjs,json,jsonc,css,svelte}` files.
 

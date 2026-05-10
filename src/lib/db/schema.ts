@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 const ts = (name: string) => integer(name, { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull();
 
@@ -90,12 +90,53 @@ export const profile = sqliteTable(
     // user.email which is the synthetic OAuth-identity placeholder.
     contactEmail: text('contact_email'),
     homepageUrl: text('homepage_url'),
+    // Friendly display name shown alongside the @handle. Free-form,
+    // non-unique, optional. Distinct from user.name (OAuth-provided).
+    alias: text('alias'),
     hideActivity: integer('hide_activity', { mode: 'boolean' }).notNull().default(false),
     createdAt: ts('created_at'),
     updatedAt: ts('updated_at'),
   },
   (t) => ({
     usernameIdx: uniqueIndex('profile_username_unique').on(sql`lower(${t.username})`),
+  }),
+);
+
+// Group / project / community a user is part of (e.g. a romhack team,
+// a Discord server, an asset collective). Names are unique
+// case-insensitively so multiple users joining the same group share
+// one row, then attach their own role on profile_affiliation.
+export const affiliation = sqliteTable(
+  'affiliation',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    url: text('url'),
+    createdAt: ts('created_at'),
+  },
+  (t) => ({
+    nameIdx: uniqueIndex('affiliation_name_unique').on(sql`lower(${t.name})`),
+  }),
+);
+
+// User's membership in a group, with an optional free-form role.
+// Composite PK prevents duplicate (user, group) pairs; both FKs cascade
+// so deleting a user or a group prunes the join rows.
+export const profileAffiliation = sqliteTable(
+  'profile_affiliation',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    affiliationId: text('affiliation_id')
+      .notNull()
+      .references(() => affiliation.id, { onDelete: 'cascade' }),
+    role: text('role'),
+    createdAt: ts('created_at'),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.affiliationId] }),
+    userIdx: index('profile_affiliation_user_idx').on(t.userId),
   }),
 );
 

@@ -28,6 +28,27 @@
     </div>
   {/if}
   <ProfileSummary profile={data.profile} />
+  {#if data.affiliations.length > 0}
+    <div>
+      <h2 class="font-display text-xl mb-4">Affiliations</h2>
+      <ul class="grid gap-2 sm:grid-cols-2">
+        {#each data.affiliations as a (a.id)}
+          <li class="rounded-md border bg-card/40 px-3 py-2 text-sm">
+            <div class="flex items-baseline gap-2 flex-wrap">
+              {#if a.url}
+                <a href={a.url} target="_blank" rel="noopener noreferrer" class="font-medium hover:text-primary hover:underline">{a.name}</a>
+              {:else}
+                <span class="font-medium">{a.name}</span>
+              {/if}
+              {#if a.role}
+                <span class="text-xs text-muted-foreground">— {a.role}</span>
+              {/if}
+            </div>
+          </li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
   <div>
     <h2 class="font-display text-xl mb-4">Uploads</h2>
     {#if data.listings.length === 0}

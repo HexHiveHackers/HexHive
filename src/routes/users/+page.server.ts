@@ -7,12 +7,14 @@ export const load: PageServerLoad = async () => {
   return {
     users: users.map((u) => ({
       username: u.username,
+      alias: u.alias,
       name: u.name,
       avatarKey: u.avatarKey,
       pronouns: u.pronouns,
       bio: u.bio,
       lastActive: u.lastActive ? u.lastActive.getTime() : null,
       joinedAt: u.joinedAt.getTime(),
+      isPlaceholder: u.isPlaceholder,
     })),
   };
 };

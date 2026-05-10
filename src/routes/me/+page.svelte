@@ -5,6 +5,7 @@
   import { page } from '$app/state';
   import type { SocialProvider } from '$lib/auth';
   import { authClient } from '$lib/auth-client';
+  import AffiliationsEditor from '$lib/components/profile/AffiliationsEditor.svelte';
   import AvatarUpload from '$lib/components/profile/AvatarUpload.svelte';
   import BannerUpload from '$lib/components/profile/BannerUpload.svelte';
   import ProfileForm from '$lib/components/profile/ProfileForm.svelte';
@@ -196,6 +197,15 @@
     {#if connectionError}
       <p class="mt-3 text-sm text-destructive">{connectionError}</p>
     {/if}
+  </div>
+
+  <div>
+    <h2 class="font-display text-xl mb-2">Affiliations</h2>
+    <p class="text-sm text-muted-foreground mb-4">
+      Romhacks, groups, collectives, projects, communities — anywhere you'd like to be credited.
+      Each one shows on your public profile with the role you give it.
+    </p>
+    <AffiliationsEditor initial={data.affiliations} />
   </div>
 
   <div>
