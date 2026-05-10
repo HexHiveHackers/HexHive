@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Upload } from '@lucide/svelte';
+  import { FlaskConical, Upload } from '@lucide/svelte';
   import AssetHiveCard from '$lib/components/listings/AssetHiveCard.svelte';
   import MatureFilterToggle from '$lib/components/listings/MatureFilterToggle.svelte';
   import { Button } from '$lib/components/ui/button';
@@ -12,7 +12,11 @@
   <header class="flex items-end justify-between mb-6 gap-3 flex-wrap">
     <h1 class="font-display text-2xl">Sounds</h1>
     <div class="flex items-center gap-3">
-      <a href="/sounds/midi-lab" class="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
+      <a
+        href="/sounds/midi-lab"
+        class="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground hover:text-emerald-300"
+      >
+        <FlaskConical size={14} />
         MIDI lab (beta)
       </a>
       <a href="/upload?type=sound"><Button><Upload size={14} />Upload</Button></a>
