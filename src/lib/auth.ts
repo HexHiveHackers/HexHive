@@ -40,10 +40,19 @@ function build() {
     },
 
     socialProviders: {
-      // Each mapProfileToUser returns the unique synthetic email +
-      // a display name pulled from the provider profile. Better Auth
-      // types provider profiles with `string | null` fields; we accept
-      // null and fall back to the synthetic-email-friendly id.
+      // Authoritative profile fields are what the user enters on /me;
+      // OAuth providers only confirm "this person controls account X
+      // on provider Y". We discard everything else they hand back —
+      // no name, no avatar, no email reuse — and store a synthetic
+      // per-account email as the unique identity key.
+      //
+      // user.name is required NOT NULL by the Better-Auth core schema,
+      // so each mapper sets it to the same opaque synthetic id used
+      // for the email local-part. The /me/setup flow asks the user
+      // for a handle (profile.username); display name (profile.alias)
+      // and avatar (profile.avatar_key) are filled in from /me. The
+      // user.image column is forced to null so the OAuth avatar never
+      // becomes the default.
       ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
         ? {
             google: {
@@ -51,7 +60,7 @@ function build() {
               clientSecret: env.GOOGLE_CLIENT_SECRET,
               mapProfileToUser: (p) => ({
                 email: `google-${p.sub}@oauth.hexhive.app`,
-                name: p.name ?? p.email ?? `google-${p.sub}`,
+                name: `google-${p.sub}`,
               }),
             },
           }
@@ -63,7 +72,7 @@ function build() {
               clientSecret: env.GITHUB_CLIENT_SECRET,
               mapProfileToUser: (p) => ({
                 email: `github-${p.id}@oauth.hexhive.app`,
-                name: p.login ?? p.name ?? `github-${p.id}`,
+                name: `github-${p.id}`,
               }),
             },
           }
@@ -75,11 +84,23 @@ function build() {
               clientSecret: env.DISCORD_CLIENT_SECRET,
               mapProfileToUser: (p) => ({
                 email: `discord-${p.id}@oauth.hexhive.app`,
-                name: p.global_name ?? p.username ?? `discord-${p.id}`,
+                name: `discord-${p.id}`,
               }),
             },
           }
         : {}),
+    },
+
+    // Defence-in-depth: even if a provider eventually leaks an image
+    // through some path mapProfileToUser doesn't cover, force it to
+    // null at the create boundary. Belt-and-braces — the mappers
+    // above already strip it.
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => ({ data: { ...user, image: null } }),
+        },
+      },
     },
 
     plugins: [
