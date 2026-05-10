@@ -12,12 +12,12 @@
     | { href: string; label: string; accent: string; type: 'midi-lab' };
 
   const portals: Portal[] = [
-    { href: '/romhacks', label: 'ROM HACKS', accent: 'emerald', type: 'romhack' },
-    { href: '/sprites', label: 'SPRITES', accent: 'fuchsia', type: 'sprite' },
+    { href: '/sprites', label: 'SPRITES', accent: 'rose', type: 'sprite' },
     { href: '/sounds', label: 'SOUNDS', accent: 'amber', type: 'sound' },
-    { href: '/scripts', label: 'SCRIPTS', accent: 'sky', type: 'script' },
-    { href: '/tools', label: 'TOOLS', accent: 'violet', type: 'tool' },
-    { href: '/sounds/midi-lab', label: 'MIDI LAB', accent: 'rose', type: 'midi-lab' },
+    { href: '/scripts', label: 'SCRIPTS', accent: 'emerald', type: 'script' },
+    { href: '/tools', label: 'TOOLS', accent: 'sky', type: 'tool' },
+    { href: '/romhacks', label: 'ROM HACKS', accent: 'violet', type: 'romhack' },
+    { href: '/sounds/midi-lab', label: 'MIDI LAB', accent: 'fuchsia', type: 'midi-lab' },
   ];
 </script>
 
@@ -34,7 +34,6 @@
 
   <!-- floating glitch bars -->
   <div class="glitch-bar glitch-bar--a" aria-hidden="true"></div>
-  <div class="glitch-bar glitch-bar--b" aria-hidden="true"></div>
   <div class="glitch-bar glitch-bar--c" aria-hidden="true"></div>
 
   <div class="relative z-10 mx-auto w-full max-w-3xl text-center">
@@ -155,12 +154,6 @@
     top: 22%;
     background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.28), transparent);
     animation: shear 5.4s ease-in-out infinite;
-  }
-  .glitch-bar--b {
-    top: 58%;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, rgba(217, 70, 239, 0.55), transparent);
-    animation: shear 7.1s ease-in-out -2.2s infinite reverse;
   }
   .glitch-bar--c {
     top: 78%;
@@ -342,7 +335,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .glitch::before, .glitch::after,
-    .glitch-bar--a, .glitch-bar--b, .glitch-bar--c,
+    .glitch-bar--a, .glitch-bar--c,
     .missingno span, .hex-void, .caret,
     .animate-fade-down, .animate-fade-up {
       animation-duration: 0.001ms;

@@ -56,15 +56,15 @@
     type: 'romhack' | 'sprite' | 'sound' | 'script' | 'tool';
     accent: string;
   };
-  // Match the per-type accents used by the upload wizard and the 404 portal
-  // grid: emerald (romhack) / fuchsia (sprite) / amber (sound) / sky (script)
-  // / violet (tool) / rose (midi lab).
+  // Rainbow sweep across the nav: rose → amber → emerald → sky → violet,
+  // with fuchsia for the trailing MIDI Lab icon button. The 404 portal
+  // grid mirrors the same order and colors.
   const navLinks: NavLink[] = [
-    { href: '/sprites', label: 'Sprites', type: 'sprite', accent: '#d946ef' },
+    { href: '/sprites', label: 'Sprites', type: 'sprite', accent: '#fb7185' },
     { href: '/sounds', label: 'Sounds', type: 'sound', accent: '#f59e0b' },
-    { href: '/scripts', label: 'Scripts', type: 'script', accent: '#38bdf8' },
-    { href: '/romhacks', label: 'Romhacks', type: 'romhack', accent: '#10b981' },
-    { href: '/tools', label: 'Tools', type: 'tool', accent: '#a78bfa' },
+    { href: '/scripts', label: 'Scripts', type: 'script', accent: '#10b981' },
+    { href: '/tools', label: 'Tools', type: 'tool', accent: '#38bdf8' },
+    { href: '/romhacks', label: 'Romhacks', type: 'romhack', accent: '#a78bfa' },
   ];
 
   // Highlight a nav entry when the current path is the section root or any
@@ -112,8 +112,8 @@
       <a
         href="/sounds/midi-lab"
         class="midi-lab-link inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors {midiLabActive
-          ? 'bg-rose-400/15 text-rose-300'
-          : 'text-muted-foreground hover:bg-rose-400/10 hover:text-rose-300'}"
+          ? 'bg-fuchsia-400/15 text-fuchsia-300'
+          : 'text-muted-foreground hover:bg-fuchsia-400/10 hover:text-fuchsia-300'}"
         aria-label="MIDI lab demo (WIP)"
         aria-current={midiLabActive ? 'page' : undefined}
         title="MIDI lab demo (WIP)"
@@ -215,8 +215,8 @@
       <a
         href="/sounds/midi-lab"
         class="flex min-h-12 select-none items-center justify-center gap-2 text-sm transition-colors {midiLabActive
-          ? 'text-rose-300'
-          : 'text-muted-foreground hover:text-rose-300'}"
+          ? 'text-fuchsia-300'
+          : 'text-muted-foreground hover:text-fuchsia-300'}"
         aria-current={midiLabActive ? 'page' : undefined}
         onclick={() => (mobileMenuOpen = false)}
       >
@@ -273,9 +273,8 @@
 
 <style>
   /* Per-type tinted nav. Hover lifts the muted text to white with a soft
-     accent glow; active places a Pokemon-menu-style ▶ pixel cursor to the
-     left of the link in the type's accent color, label stays white. No
-     pill, no underline, no rounded background.
+     accent glow; active draws a flat 2px underline in the type's accent
+     color, label stays white. No pill, no rounded background.
 
      Selectors are ordered low→high specificity to keep biome's
      noDescendingSpecificity happy. */
@@ -288,19 +287,14 @@
   .nav-link--active :global(svg) {
     color: var(--nav-accent);
   }
-  .nav-link--active::before {
+  .nav-link--active::after {
     content: '';
     position: absolute;
-    left: -2px;
-    top: 50%;
-    width: 0;
-    height: 0;
-    border-top: 4px solid transparent;
-    border-bottom: 4px solid transparent;
-    border-left: 6px solid var(--nav-accent);
-    transform: translateY(-50%);
-    filter: drop-shadow(0 0 6px color-mix(in oklch, var(--nav-accent) 70%, transparent));
-    animation: cursor-pulse 1.4s ease-in-out infinite;
+    left: 12px;
+    right: 12px;
+    bottom: 0;
+    height: 2px;
+    background: var(--nav-accent);
   }
   .nav-link:hover {
     color: var(--foreground);
@@ -308,10 +302,6 @@
   }
   .nav-link:hover :global(svg) {
     color: var(--nav-accent);
-  }
-  @keyframes cursor-pulse {
-    0%, 100% { transform: translate(0, -50%); opacity: 1; }
-    50% { transform: translate(2px, -50%); opacity: 0.75; }
   }
 
   .nav-link-mobile {
@@ -324,32 +314,21 @@
   .nav-link-mobile--active :global(svg) {
     color: var(--nav-accent);
   }
-  .nav-link-mobile--active::before {
+  .nav-link-mobile--active::after {
     content: '';
     position: absolute;
-    left: 1rem;
-    top: 50%;
-    width: 0;
-    height: 0;
-    border-top: 5px solid transparent;
-    border-bottom: 5px solid transparent;
-    border-left: 7px solid var(--nav-accent);
-    transform: translateY(-50%);
-    filter: drop-shadow(0 0 6px color-mix(in oklch, var(--nav-accent) 70%, transparent));
-    animation: cursor-pulse 1.4s ease-in-out infinite;
+    left: 50%;
+    bottom: 6px;
+    width: 32px;
+    height: 2px;
+    background: var(--nav-accent);
+    transform: translateX(-50%);
   }
   .nav-link-mobile:hover {
     color: var(--foreground);
   }
   .nav-link-mobile:hover :global(svg) {
     color: var(--nav-accent);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .nav-link--active::before,
-    .nav-link-mobile--active::before {
-      animation-duration: 0.001ms;
-    }
   }
 
   .hamburger-bar {
