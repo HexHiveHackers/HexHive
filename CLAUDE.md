@@ -143,6 +143,10 @@ For re-uploads, `/upload/[type]/version?id=<listingId>` drives the same loop aga
 - Don't push to GitHub until the user asks. The `origin` is `git@github.com:HexHiveHackers/HexHive.git` (the org repo).
 - Tags mark milestones: `foundation-complete`, `romhacks-vertical-complete`, `asset-hives-complete`, `v1-complete`, `v1.1-complete`, `v1.2-complete`.
 
+## Worktrees
+
+Isolated work happens under `.worktrees/<branch>` (gitignored). Create with `git worktree add .worktrees/<branch> -b <branch>`; the `scratch` branch/worktree already exists for ad-hoc exploration. Run `bun install` inside a fresh worktree — `node_modules/` is per-checkout.
+
 ## Plans and execution
 
 Implementation work is driven by plans under `docs/superpowers/plans/`. Each plan is a sequence of bite-sized tasks with code blocks, TDD steps, and exact commands. Plans are executed task-by-task with the superpowers `subagent-driven-development` workflow: a fresh subagent per task, plus reviews. **Don't deviate from a plan mid-task** — if a step is wrong, escalate and revise the plan instead of improvising.
