@@ -2,6 +2,8 @@ import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import CreditLine from './credit-line.svelte';
 
+// vitest globals aren't enabled in this project, so @testing-library/svelte's
+// auto-cleanup never registers — manual cleanup keeps the four renders isolated.
 afterEach(() => {
   cleanup();
 });
