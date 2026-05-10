@@ -2,6 +2,7 @@
   import { SiGithub } from '@icons-pack/svelte-simple-icons';
   import { ChevronLeft, ExternalLink, GitBranch, Wrench } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
+  import { GAMES, PLATFORM_LABEL } from '$lib/data/games';
   import { TOOL_PLATFORM_LABEL, TOOL_STATUS_LABEL, TOOL_SUBTYPE_LABEL } from '$lib/data/tools';
 
   let { data } = $props();
@@ -18,7 +19,7 @@
   <title>{tool.name} · Tools · HexHive</title>
 </svelte:head>
 
-<section class="mx-auto max-w-4xl px-4 py-10 space-y-8">
+<section class="mx-auto max-w-4xl px-4 py-10 space-y-6">
   <a href="/tools" class="inline-flex items-center gap-1 text-sm text-zinc-300 hover:text-foreground">
     <ChevronLeft class="size-4" /> All tools
   </a>
@@ -76,63 +77,29 @@
     </div>
   </header>
 
-  <!-- Metadata grid -->
-  <div class="grid gap-4 sm:grid-cols-2">
-    <div class="rounded-md border border-border/70 bg-slate-950/70 p-4 space-y-2">
-      <div class="text-sm uppercase tracking-wider text-zinc-200 font-medium">Subtypes</div>
-      <div class="flex flex-wrap gap-1.5">
-        {#each tool.subtypes as st}
-          <span class="rounded-sm border border-sky-500/40 bg-sky-500/10 px-2 py-0.5 font-mono text-sm text-sky-200">
-            {TOOL_SUBTYPE_LABEL[st]}
-          </span>
-        {/each}
-      </div>
-    </div>
-    <div class="rounded-md border border-border/70 bg-slate-950/70 p-4 space-y-2">
-      <div class="text-sm uppercase tracking-wider text-zinc-200 font-medium">Platforms</div>
-      <div class="flex flex-wrap gap-1.5">
-        {#each tool.platforms as p}
-          <span class="rounded-sm border border-border/60 bg-slate-900/70 px-2 py-0.5 font-mono text-sm text-foreground/90">
-            {TOOL_PLATFORM_LABEL[p]}
-          </span>
-        {/each}
-      </div>
-    </div>
-    <div class="rounded-md border border-border/70 bg-slate-950/70 p-4 space-y-2">
-      <div class="text-sm uppercase tracking-wider text-zinc-200 font-medium">Languages</div>
-      <div class="flex flex-wrap gap-1.5">
-        {#each tool.languages as l}
-          <span class="rounded-sm border border-border/60 bg-slate-900/70 px-2 py-0.5 font-mono text-sm text-foreground/90">
-            {l}
-          </span>
-        {/each}
-      </div>
-    </div>
-    <div class="rounded-md border border-border/70 bg-slate-950/70 p-4 space-y-2">
-      <div class="text-sm uppercase tracking-wider text-zinc-200 font-medium">Targets</div>
-      <div class="flex flex-wrap gap-1.5">
-        {#each tool.targetedSystems as ts}
-          <span class="rounded-sm border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-mono text-sm text-emerald-200">
-            {ts}
-          </span>
-        {/each}
-      </div>
-    </div>
+  <!-- Compact meta strip: subtypes (sky), platforms, targets (emerald), languages -->
+  <div class="rounded-md border border-border/70 bg-slate-950/70 p-3 flex flex-wrap gap-1.5">
+    {#each tool.subtypes as st}
+      <span class="rounded-sm border border-sky-500/40 bg-sky-500/10 px-2 py-0.5 font-mono text-sm text-sky-200">
+        {TOOL_SUBTYPE_LABEL[st]}
+      </span>
+    {/each}
+    {#each tool.targetedSystems as ts}
+      <span class="rounded-sm border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-mono text-sm text-emerald-200">
+        {ts}
+      </span>
+    {/each}
+    {#each tool.platforms as p}
+      <span class="rounded-sm border border-border/60 bg-slate-900/70 px-2 py-0.5 font-mono text-sm text-foreground/90">
+        {TOOL_PLATFORM_LABEL[p]}
+      </span>
+    {/each}
+    {#each tool.languages as l}
+      <span class="rounded-sm border border-border/60 bg-slate-900/70 px-2 py-0.5 font-mono text-sm text-foreground/90">
+        {l}
+      </span>
+    {/each}
   </div>
-
-  {#if tool.dependencies && tool.dependencies.length > 0}
-    <div class="rounded-md border border-border/70 bg-slate-950/70 p-4 space-y-2">
-      <div class="text-sm uppercase tracking-wider text-zinc-200 font-medium">Dependencies</div>
-      <ul class="grid gap-1 sm:grid-cols-2 text-sm text-zinc-200 font-mono">
-        {#each tool.dependencies as d}
-          <li class="flex items-start gap-2">
-            <span class="text-zinc-500">·</span>
-            <span>{d}</span>
-          </li>
-        {/each}
-      </ul>
-    </div>
-  {/if}
 
   <div class="space-y-3">
     <h2 class="font-display text-xl text-foreground">About</h2>
@@ -172,32 +139,84 @@
     </div>
   {/if}
 
-  {#if tool.supportedGames && tool.supportedGames.length > 0}
+  {#if tool.screenshots && tool.screenshots.length > 0}
     <div class="space-y-3">
-      <h2 class="font-display text-xl text-foreground">Supported games</h2>
-      <ul class="space-y-3">
-        {#each tool.supportedGames as g}
-          <li class="rounded-md border border-border/70 bg-slate-950/50 p-3">
-            <div class="text-base font-medium text-foreground">{g.title}</div>
-            {#if g.note}
-              <div class="mt-1 text-sm text-zinc-300 leading-relaxed">{g.note}</div>
+      <h2 class="font-display text-xl text-foreground">Screenshots</h2>
+      <div class="grid gap-3 sm:grid-cols-2">
+        {#each tool.screenshots as s}
+          <figure class="rounded-md border border-border/70 bg-slate-950/70 overflow-hidden">
+            <img src={s.url} alt={s.caption ?? tool.name} loading="lazy" class="w-full h-auto block" />
+            {#if s.caption}
+              <figcaption class="text-sm text-zinc-300 px-3 py-2 border-t border-border/60">{s.caption}</figcaption>
             {/if}
-          </li>
+          </figure>
         {/each}
-      </ul>
+      </div>
     </div>
   {/if}
 
-  {#if tool.tags.length > 0}
-    <div class="space-y-2">
-      <h2 class="font-display text-xl text-foreground">Tags</h2>
-      <div class="flex flex-wrap gap-1.5">
-        {#each tool.tags as t}
-          <span class="rounded-sm border border-border/60 bg-slate-900/70 px-2 py-0.5 font-mono text-sm text-foreground/80">
-            {t}
-          </span>
+  {#if tool.supportedGames && tool.supportedGames.length > 0}
+    <div class="space-y-3">
+      <h2 class="font-display text-xl text-foreground">Supported games</h2>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {#each tool.supportedGames as g}
+          {@const game = GAMES[g.gameId]}
+          {#if game}
+            <article class="rounded-md border border-border/70 bg-slate-950/70 overflow-hidden flex flex-col">
+              {#if game.boxartUrl}
+                <div class="aspect-[3/2] bg-slate-900/80 flex items-center justify-center overflow-hidden">
+                  <img
+                    src={game.boxartUrl}
+                    alt="{game.title} boxart"
+                    loading="lazy"
+                    class="max-h-full max-w-full object-contain"
+                  />
+                </div>
+              {/if}
+              <div class="p-3 space-y-1.5 flex-1">
+                <div class="flex items-center gap-2 text-[0.7rem] font-display tracking-[0.2em] text-sky-300">
+                  <span>{PLATFORM_LABEL[game.platform]}</span>
+                  {#if game.year}
+                    <span class="text-zinc-400">{game.year}</span>
+                  {/if}
+                </div>
+                <div class="text-base font-medium text-foreground leading-snug">
+                  {game.shortTitle ?? game.title}
+                </div>
+                {#if g.note}
+                  <p class="text-sm text-zinc-300 leading-relaxed">{g.note}</p>
+                {/if}
+              </div>
+            </article>
+          {/if}
         {/each}
       </div>
+    </div>
+  {/if}
+
+  {#if tool.dependencies && tool.dependencies.length > 0}
+    <details class="rounded-md border border-border/70 bg-slate-950/50">
+      <summary class="cursor-pointer px-3 py-2 text-sm uppercase tracking-wider text-zinc-200 font-medium select-none">
+        Dependencies
+      </summary>
+      <ul class="px-3 pb-3 grid gap-1 sm:grid-cols-2 text-sm text-zinc-200 font-mono">
+        {#each tool.dependencies as d}
+          <li class="flex items-start gap-2">
+            <span class="text-zinc-500">·</span>
+            <span>{d}</span>
+          </li>
+        {/each}
+      </ul>
+    </details>
+  {/if}
+
+  {#if tool.tags.length > 0}
+    <div class="flex flex-wrap gap-1.5">
+      {#each tool.tags as t}
+        <span class="rounded-sm border border-border/60 bg-slate-900/70 px-2 py-0.5 font-mono text-sm text-foreground/80">
+          {t}
+        </span>
+      {/each}
     </div>
   {/if}
 

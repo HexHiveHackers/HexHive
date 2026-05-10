@@ -65,8 +65,10 @@ export type Tool = {
   description: string[];
   /** Sectioned feature list for the detail page. */
   featureGroups?: { title: string; items: string[] }[];
-  /** Specific games / TOML / sym files bundled. */
-  supportedGames?: { title: string; note?: string }[];
+  /** Games this tool supports. References src/lib/data/games.ts entries by id; note is tool-specific. */
+  supportedGames?: { gameId: string; note?: string }[];
+  /** Screenshots / UI captures, rendered as a gallery on the detail page. */
+  screenshots?: { url: string; caption?: string }[];
   /** Free-form taxonomy chips. */
   tags: string[];
   /** Required runtime / external tooling (Python, devkitARM, etc.). */
@@ -115,7 +117,7 @@ export const TOOLS: Tool[] = [
     slug: 'channeler-advance',
     name: 'Channeler Advance',
     tagline:
-      'A cross-platform workbench for hacking GBA games — edit text, sprites, maps, scripts, and code in one window.',
+      'GBA ROM hacking tool: hex editor, sprite/tilemap/palette tools, ARM disassembly, and a FireRed map viewer.',
     author: 'Soul-8691',
     authorUrl: 'https://github.com/Soul-8691',
     repoUrl: 'https://github.com/Soul-8691/Channeler-Advance',
@@ -127,12 +129,12 @@ export const TOOLS: Tool[] = [
     languages: ['Python 3.8+', 'Tkinter'],
     targetedSystems: ['Game Boy Advance', 'Nintendo DS'],
     dependencies: [
-      'Python 3.8 or newer',
-      'Tkinter (often bundled; install python3-tk on Linux if missing)',
+      'Python 3.8+',
+      'Tkinter (usually bundled with Python; on Linux: python3-tk)',
       'Pillow, Pygments, tomli, tomli-w',
-      'Capstone (for assembly disassembly)',
-      'angr (optional — enables structured pseudo-C decompilation)',
-      'devkitARM (only needed for ASM-patch workflows)',
+      'Capstone (for ARM/Thumb disassembly)',
+      'angr (optional, used for the pseudo-C decompiler)',
+      'devkitARM (only for ASM patch workflows)',
     ],
     tags: [
       'hex editor',
@@ -149,103 +151,77 @@ export const TOOLS: Tool[] = [
       'cross-platform',
     ],
     highlights: [
-      'Edit ROM text, sprites, palettes, tilemaps and structured tables from a single hex view that already knows what each region means.',
-      "Browse a game's assembly code with real symbol names — branch targets and data references read like a labelled disassembly, not a soup of addresses.",
-      'See decompiled pseudo-C of any routine, or write your own ARM/Thumb assembly and inject it back into the ROM.',
-      "Drop in small C patches that link directly against the original game's functions — no manual address bookkeeping.",
-      'Browse the FireRed overworld: map groups, layouts, primary + secondary tilesets, region IDs, all rendered live from the ROM.',
-      'Import PNG sprites and tilemaps; export palettes in JASC, GIMP and Tilemap-Studio formats.',
-      'Runs identically on Windows, macOS and Linux — same Python entrypoint, same UI.',
+      'Hex editor with structured views for text, sprites, tables, and graphics in the same window.',
+      'ARM/Thumb disassembly and a pseudo-C decompiler (angr when installed, Capstone fallback).',
+      'Write Thumb ASM or small C patches in-editor and inject them.',
+      'Read-only FireRed overworld map browser.',
+      'PNG sprite/tilemap import; YDK deck and banlist import for Yu-Gi-Oh! titles.',
+      'Built-in Python scripting pane.',
+      'Cross-platform: Windows, macOS, Linux.',
     ],
     description: [
-      'Channeler Advance is a one-window workbench for hacking Game Boy Advance games. Open a ROM and you get a hex editor, a structured view of the text, sprites and tables inside, an assembly-language reader, a decompiler, and a graphics previewer — all wired together so a click in one pane jumps to the matching place in the others.',
-      "It's designed in the spirit of Hex Maniac Advance: rather than juggling separate tools for sprites, scripts, maps and code, you stay in one place and let the editor turn raw bytes into something readable. Per-game definition files describe where the text, sprites and tables live, so the editor can label them automatically.",
-      'For Pokémon FireRed it ships with a built-in overworld map browser — pick a map group and layout, see the world rendered with its tilesets and metatile blocks, and look up region IDs without leaving the editor.',
-      'For Yu-Gi-Oh! titles (Ultimate Masters 2006, Eternal Duelist Soul, several Worldwide Edition / WCT entries, Reshef of Destruction) it can import EDOPro deck files and banlists straight into the relevant card data.',
-      "When you need to go deeper, the assembly pane reads the ROM's code with proper function names and inline pointer comments, the pseudo-C pane shows a structured decompilation when angr is installed, and the patch panes let you write Thumb assembly or small C functions that compile and link against the game's own routines.",
-      'Cross-platform from the ground up — same Python codebase, same UI, same shortcuts on Windows, macOS and Linux.',
+      'Channeler Advance is a Python desktop app for hacking Game Boy Advance ROMs. The main window is a hex editor; a docked panel cycles between the named-anchor browser, ARM/Thumb disassembly, pseudo-C, and a Python script pad. A separate Tools window pins up to six structured views (text tables, structs, graphics) on a 3x2 grid.',
+      'Per-game TOML definitions describe where text, sprites, tables, and routines live, so the hex view labels regions automatically and double-clicking a pointer follows it. FireRed ships with both a definition file and the official symbol file, so disassembly reads with real function names. Yu-Gi-Oh! titles get YDK deck and banlist imports surfaced inline on the relevant structs.',
     ],
     featureGroups: [
       {
-        title: 'Hex editing, the everyday stuff',
+        title: 'Editing',
         items: [
-          'Hex, ASCII and Pokémon-text views side by side; toggle insert vs overwrite.',
-          'Find and replace, copy/paste (with separate insert and overwrite paste), goto by address or by name.',
-          'Double-click a pointer to follow it; double-click a routine to highlight the whole function.',
-          'Cross-references panel shows everywhere in the ROM that points to the byte under the cursor.',
+          'Hex / ASCII / Pokémon-text views with insert and overwrite modes.',
+          'Find and replace, goto by address or symbol name, cross-references panel.',
+          'Double-click a pointer to follow; double-click a routine to highlight the whole function.',
         ],
       },
       {
-        title: 'Sprites, tilesets and palettes',
+        title: 'Graphics',
         items: [
-          'Live preview of 4-bit and 8-bit sprites, including LZ77 and Huffman compressed art.',
-          'Import a PNG sprite back into the ROM, with optional automatic relocation when the new art is larger.',
-          'Tilemap import sized to your image, with automatic flip-aware tile deduplication (Tilemap-Studio style).',
-          'Palette browser; import or export JASC .pal, GIMP .gpl, Tilemap-Studio RGB lines, or raw RGB555 .bin.',
-          'Scrollable 8bpp palette viewer for full 256-colour masters.',
+          '4-bit and 8-bit sprite preview, including LZ77 and Huffman compressed art.',
+          'PNG sprite import with automatic relocation when the new art is larger.',
+          'Tilemap import with flip-aware tile deduplication (Tilemap-Studio style).',
+          'Palette import/export: JASC .pal, GIMP .gpl, Tilemap Studio RGB lines, raw RGB555 .bin.',
         ],
       },
       {
-        title: 'FireRed overworld map browser',
+        title: 'Code',
         items: [
-          'Pick a map group and layout from a tree view; see the assembled map render live from the ROM.',
-          'Inspect primary and secondary tilesets and the metatile block grid (13 BG palette slots, 2× zoom, hover to see metatile data).',
-          'Browse region section IDs and map IDs without writing a single offset by hand.',
+          'ARM/Thumb disassembly with FireRed function names and inline pointer-pool comments.',
+          'Pseudo-C decompilation (angr or Capstone fallback).',
+          'HackMew-style Thumb assembly editor: write, compile, insert.',
+          'C-inject editor compiles small C patches and links them against vanilla FireRed symbols.',
         ],
       },
       {
-        title: 'Code & patching',
+        title: 'FireRed map viewer',
         items: [
-          'ARM and Thumb disassembly with real symbol names — branch targets become readable function names, pointer pools get inline comments.',
-          'Pseudo-C view through angr when installed; falls back to a Capstone-based pseudo-C reader otherwise.',
-          'HackMew-style Thumb assembly editor with one-shortcut compile & insert.',
-          "C-inject patches: write a small C function in the editor, compile, and have the linker resolve calls to the game's own routines automatically.",
-          'Built-in Python scripting pane for one-off edits and bulk operations.',
-        ],
-      },
-      {
-        title: 'Yu-Gi-Oh! workflows',
-        items: [
-          'Import EDOPro .ydk deck files into deck slots inside the ROM with one click.',
-          'Import EDOPro .conf / .lflist banlists, or a plain JSON {"Card Name": copies} dictionary.',
-          'Edit card data, duelist tables and Reshef-specific structures from the same struct editor as everything else.',
-        ],
-      },
-      {
-        title: 'Quality of life',
-        items: [
-          'A 3×2 docked tools grid lets you pin up to six structured views (text tables, structs, graphics) at once and find them by name.',
-          'Span-aware navigation: jumping to a name selects the whole table, structure or function it points at, not just the first byte.',
-          'Hex viewport caches its render — large ROMs stay responsive while you scroll and edit.',
-          'Unicode-safe UI text including a Linux-friendly ellipsis so labels never break.',
+          'Browse map groups and layouts; render with primary + secondary tilesets.',
+          'Inspect the metatile block grid (13 palette slots, 2x zoom, hover for metatile data).',
+          'Region section IDs and map IDs surfaced without manual offset lookup.',
         ],
       },
     ],
     supportedGames: [
       {
-        title: 'Pokémon FireRed',
-        note: 'Full structure definitions and a built-in read-only overworld map browser. Disassembly uses the official symbol file so code reads with real function names.',
+        gameId: 'pokemon-firered',
+        note: 'Full structure definitions, official symbol file, and a built-in read-only overworld map viewer.',
       },
+      { gameId: 'ygo-wct-2006', note: 'Bundled structure definitions. Companion ygowct06 disassembly repo.' },
       {
-        title: 'Yu-Gi-Oh! Ultimate Masters: World Championship Tournament 2006',
-        note: "Bundled structure definitions; ARM7TDMI reference disassembly available from the author's companion ygowct06 repo.",
+        gameId: 'ygo-eds',
+        note: 'The deepest Yu-Gi-Oh! map in the bundled set; covers card data, decks, and duelists.',
       },
-      {
-        title: 'Yu-Gi-Oh! The Eternal Duelist Soul',
-        note: 'The deepest Yu-Gi-Oh! map of the bundled set — covers card data, decks and duelists.',
-      },
-      {
-        title: 'Yu-Gi-Oh! WCT 2004, 7 Trials to Glory (WCT 2005), Worldwide Edition, Reshef of Destruction',
-        note: 'Partial structure maps for each — load with File → Load structure TOML, or place a matching .toml beside the ROM. Reshef sprites need the "reshef" graphics prefix to decode.',
-      },
+      { gameId: 'ygo-wct-2004', note: 'Partial structure map.' },
+      { gameId: 'ygo-7-trials-to-glory', note: 'Partial structure map.' },
+      { gameId: 'ygo-worldwide-edition', note: 'Partial structure map.' },
+      { gameId: 'ygo-reshef', note: 'Partial structure map. Sprites need the "reshef" graphics prefix to decode.' },
     ],
+    screenshots: [],
     extraLinks: [
       {
-        label: 'pret/pokefirered — FireRed C decompilation',
+        label: 'pret/pokefirered (FireRed C decompilation)',
         href: 'https://github.com/pret/pokefirered',
       },
       {
-        label: 'Soul-8691/ygowct06 — companion WCT 2006 disassembly',
+        label: 'Soul-8691/ygowct06 (companion WCT 2006 disassembly)',
         href: 'https://github.com/Soul-8691/ygowct06',
       },
     ],
