@@ -119,15 +119,23 @@
   // touches AudioContext — browsers refuse to resume an AudioContext
   // that wasn't created in a user-gesture handler, so the actual
   // context creation has to wait for the click.
-  const sfBytesCache = new Map<string, Promise<ArrayBuffer>>();
+  // Cache as Blob, not ArrayBuffer: spessasynth's addSoundBank uses
+  // postMessage with a transfer list to ship the buffer to the worklet,
+  // which DETACHES it on the main thread. A subsequent fetch of the
+  // same id from a Promise<ArrayBuffer> cache would resolve to a
+  // detached/empty buffer, the worklet would parse 0 bytes, and the
+  // bank would silently turn into garbage. Blobs are immutable;
+  // .arrayBuffer() returns a fresh buffer every call.
+  const sfBlobCache = new Map<string, Promise<Blob>>();
   let libPromise: Promise<typeof import('spessasynth_lib')> | null = null;
-  function prewarmSoundfont(sf: Soundfont): Promise<ArrayBuffer> {
-    let p = sfBytesCache.get(sf.id);
+  async function prewarmSoundfont(sf: Soundfont): Promise<ArrayBuffer> {
+    let p = sfBlobCache.get(sf.id);
     if (!p) {
-      p = fetch(sf.url).then((r) => r.arrayBuffer());
-      sfBytesCache.set(sf.id, p);
+      p = fetch(sf.url).then((r) => r.blob());
+      sfBlobCache.set(sf.id, p);
     }
-    return p;
+    const blob = await p;
+    return blob.arrayBuffer();
   }
   function prewarmEngine(): void {
     if (typeof window === 'undefined') return;
