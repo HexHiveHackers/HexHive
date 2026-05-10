@@ -1578,6 +1578,18 @@
       {/if}
     </section>
     {/if}
+  {:else}
+    <!-- Auto-load is in flight: Pallet Town is fetching/parsing on mount.
+         Reserves vertical space so the page doesn't reflow when state
+         lands; the role="status" aria-live region announces it for AT. -->
+    <div
+      class="border rounded-md border-border/60 bg-muted/10 p-8 flex items-center justify-center gap-3 text-sm text-muted-foreground"
+      role="status"
+      aria-live="polite"
+    >
+      <Loader2 class="size-4 animate-spin text-emerald-300" />
+      <span>Loading the lab…</span>
+    </div>
   {/if}
 </section>
 
