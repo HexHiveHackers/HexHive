@@ -24,7 +24,7 @@
     parseSmf,
     rewriteProgramChanges,
   } from '$lib/midi-lab/midi-rewrite';
-  import { loadOverrides, saveOverride } from '$lib/midi-lab/overrides';
+  import { clearOverrides, loadOverrides, saveOverride } from '$lib/midi-lab/overrides';
   import { autoMap, listPresets, type MappingChoice, type SfPreset } from '$lib/midi-lab/preset-map';
   import { hashVoicegroup, type ParsedVoicegroup, parseVoicegroup, type VoiceEntry } from '$lib/midi-lab/voicegroup';
   import type { PageData } from './$types';
@@ -504,7 +504,14 @@
       for (const id of others) await synth.soundBankManager.deleteSoundBank(id);
       activeBankId = target.id;
       presets = listPresets(synth);
+      // Stale-override cleanup: per-slot overrides reference SF2 presets
+      // by (bankMSB,bankLSB,program). The moment the bank under them
+      // changes, those coordinates point at a different preset (or none),
+      // so wipe overrides for the active voicegroup before re-loading the
+      // sequencer. Falls back to autoMap against the new bank's presets.
       if (loaded) {
+        clearOverrides(loaded.vgHash);
+        overrides = {};
         const t = seq?.currentTime ?? 0;
         await loadIntoSequencer(t);
       }
@@ -837,6 +844,21 @@
     overrides = loadOverrides(loaded.vgHash);
     const t = seq?.currentTime ?? 0;
     await loadIntoSequencer(t);
+  }
+
+  // Wipe every per-slot preset override for the loaded voicegroup and
+  // re-run autoMap. Used both as a user-triggered "reset all" button and
+  // as the auto-cleanup when the active soundfont changes — overrides
+  // reference SF2 presets by (bankMSB,bankLSB,program) which become stale
+  // the moment the bank under them changes.
+  async function resetAllOverrides(): Promise<void> {
+    if (!loaded) return;
+    clearOverrides(loaded.vgHash);
+    overrides = {};
+    if (engineState === 'ready') {
+      const t = seq?.currentTime ?? 0;
+      await loadIntoSequencer(t);
+    }
   }
 
   $effect(() => {
@@ -1512,18 +1534,37 @@
 
     {#if loaded.kind === 'sappy'}
     <section class="border rounded-lg overflow-hidden">
-      <header class="px-4 py-2 border-b flex items-center justify-between gap-3">
+      <header class="px-4 py-2 border-b flex items-center justify-between gap-3 flex-wrap">
         <div class="text-sm uppercase tracking-wider text-zinc-200 font-medium">
           Voicegroup → SF2 mapping ({rows.length} slots)
         </div>
-        <button
-          type="button"
-          onclick={() => void muteAllSlots(mutedSlots.size < (loaded?.usedSlots.size ?? 0))}
-          disabled={engineState !== 'ready'}
-          class="font-mono text-xs px-2 py-1 rounded border hover:border-foreground/40"
-        >
-          {mutedSlots.size > 0 && loaded && mutedSlots.size >= loaded.usedSlots.size ? 'unmute all' : 'mute all'}
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            onclick={() => void resetAllOverrides()}
+            disabled={engineState !== 'ready' || Object.keys(overrides).length === 0}
+            class="font-mono text-xs px-2 py-1 rounded border hover:border-foreground/40 disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Clear every per-slot preset override and re-autoMap"
+          >
+            reset all
+          </button>
+          <button
+            type="button"
+            onclick={() => void muteAllSlots(true)}
+            disabled={engineState !== 'ready' || mutedSlots.size >= loaded.usedSlots.size}
+            class="font-mono text-xs px-2 py-1 rounded border hover:border-foreground/40 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            mute all
+          </button>
+          <button
+            type="button"
+            onclick={() => void muteAllSlots(false)}
+            disabled={engineState !== 'ready' || mutedSlots.size === 0}
+            class="font-mono text-xs px-2 py-1 rounded border hover:border-foreground/40 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            unmute all
+          </button>
+        </div>
       </header>
       {#if presets.length === 0}
         <div class="p-4 text-sm text-zinc-300">Loading SF2 preset list…</div>
