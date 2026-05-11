@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { ChevronDown } from '@lucide/svelte';
+  import { ChevronDown, Code2, Search, X } from '@lucide/svelte';
   import { untrack } from 'svelte';
   import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
+  import { Input } from '$lib/components/ui/input';
   import FilterBar from '$lib/components/users/FilterBar.svelte';
   import HhqlInput from '$lib/components/users/HhqlInput.svelte';
   import UserCard from '$lib/components/users/UserCard.svelte';
@@ -12,11 +13,12 @@
   let { data } = $props();
 
   let query = $state(untrack(() => data.q));
+  let searchText = $state(untrack(() => data.text));
   let sort = $state(untrack(() => data.sort));
-  let editorOpen = $state(untrack(() => data.q.length > 0));
+  let mode = $state<'text' | 'hhql'>(untrack(() => (data.q.length > 0 ? 'hhql' : 'text')));
 
   const ast = $derived(parseHhql(query));
-  const filtered = $derived(
+  const hhqlFiltered = $derived(
     ast.ok && ast.ast
       ? data.users.filter((u: DirectoryRow) => {
           const a = ast.ast;
@@ -25,6 +27,16 @@
         })
       : data.users,
   );
+  const filtered = $derived.by(() => {
+    const t = searchText.trim().toLowerCase();
+    if (!t) return hhqlFiltered;
+    return hhqlFiltered.filter((u: DirectoryRow) => {
+      if (u.username.toLowerCase().includes(t)) return true;
+      if (u.alias?.toLowerCase().includes(t)) return true;
+      if (u.bio?.toLowerCase().includes(t)) return true;
+      return false;
+    });
+  });
   const sorted = $derived(applySort(filtered, sort));
 
   const byUsername = (a: DirectoryRow, b: DirectoryRow) =>
@@ -46,12 +58,15 @@
   let timer: ReturnType<typeof setTimeout> | undefined;
   $effect(() => {
     const q = query;
+    const t = searchText;
     const s = sort;
     clearTimeout(timer);
     timer = setTimeout(() => {
       const url = new URL(page.url);
       if (q.length > 0) url.searchParams.set('q', q);
       else url.searchParams.delete('q');
+      if (t.length > 0) url.searchParams.set('text', t);
+      else url.searchParams.delete('text');
       if (s !== 'active:desc') url.searchParams.set('sort', s);
       else url.searchParams.delete('sort');
       replaceState(url, {});
@@ -99,33 +114,61 @@
   </header>
 
   <div class="grid gap-2">
-    <div class="flex items-center justify-between gap-2 flex-wrap">
-      <FilterBar bind:query {affiliations} />
-      <div class="flex items-center gap-1">
-        <select class="rounded border bg-card text-xs px-2 py-1" bind:value={sort}>
-          <option value="active:desc">Sort: recent</option>
-          <option value="downloads:desc">Sort: downloads</option>
-          <option value="listings:desc">Sort: listings</option>
-          <option value="joined:desc">Sort: joined</option>
-          <option value="username:asc">Sort: username</option>
-        </select>
-        <button
-          type="button"
-          class="rounded border bg-card text-xs px-2 py-1 font-mono"
-          onclick={() => (editorOpen = !editorOpen)}
-          aria-pressed={editorOpen}
-        >{editorOpen ? '×' : '</>'}</button>
+    <div class="flex items-center gap-2 flex-wrap">
+      <div class="flex-1 min-w-64">
+        {#if mode === 'text'}
+          <div class="relative">
+            <Search aria-hidden="true" class="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              class="pl-9 pr-9"
+              placeholder="Search by username, alias, or bio…"
+              bind:value={searchText}
+            />
+            {#if searchText.length > 0}
+              <button
+                type="button"
+                class="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                title="Clear search"
+                onclick={() => (searchText = '')}
+              >
+                <X aria-hidden="true" class="size-3.5" />
+              </button>
+            {/if}
+          </div>
+        {:else}
+          <HhqlInput bind:value={query} />
+        {/if}
       </div>
+      <button
+        type="button"
+        class="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-input/30 px-2.5 text-xs text-muted-foreground transition-colors hover:border-ring/60 hover:text-foreground"
+        title={mode === 'text' ? 'Switch to HHQL mode' : 'Switch to text search'}
+        aria-pressed={mode === 'hhql'}
+        onclick={() => (mode = mode === 'text' ? 'hhql' : 'text')}
+      >
+        {#if mode === 'text'}
+          <Code2 aria-hidden="true" class="size-4" />
+          <span>HHQL</span>
+        {:else}
+          <Search aria-hidden="true" class="size-4" />
+          <span>Search</span>
+        {/if}
+      </button>
+      <select class="rounded border bg-card text-xs px-2 py-1 shrink-0 h-8" bind:value={sort}>
+        <option value="active:desc">Sort: recent</option>
+        <option value="downloads:desc">Sort: downloads</option>
+        <option value="listings:desc">Sort: listings</option>
+        <option value="joined:desc">Sort: joined</option>
+        <option value="username:asc">Sort: username</option>
+      </select>
     </div>
-    {#if editorOpen}
-      <HhqlInput bind:value={query} />
-    {/if}
+    <FilterBar bind:query {affiliations} />
   </div>
 
   <details open class="group/users grid gap-3">
-    <summary class="flex items-center gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+    <summary class="-mx-2 flex items-center gap-2 cursor-pointer list-none select-none rounded px-2 py-1 transition-colors hover:bg-accent/40 [&::-webkit-details-marker]:hidden">
       <ChevronDown class="size-4 text-muted-foreground transition-transform group-[&:not([open])]/users:-rotate-90" />
-      <h2 class="font-display text-sm uppercase tracking-[0.14em] text-muted-foreground">
+      <h2 class="font-display text-sm uppercase tracking-[0.14em] text-muted-foreground group-hover/users:text-foreground">
         Members <span class="text-foreground/60">· {claimed.length}</span>
       </h2>
     </summary>
@@ -147,7 +190,7 @@
 
   {#if unclaimedContributors.length > 0}
     <details open class="group/contrib grid gap-3">
-      <summary class="flex items-start gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+      <summary class="-mx-2 flex items-start gap-2 cursor-pointer list-none select-none rounded px-2 py-1 transition-colors hover:bg-amber-300/10 [&::-webkit-details-marker]:hidden">
         <ChevronDown class="size-4 mt-0.5 text-amber-300 transition-transform group-[&:not([open])]/contrib:-rotate-90" />
         <div class="grid gap-1">
           <h2 class="font-display text-sm uppercase tracking-[0.14em] text-amber-300">
@@ -166,7 +209,7 @@
 
   {#if unclaimedUsers.length > 0}
     <details open class="group/users2 grid gap-3">
-      <summary class="flex items-start gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+      <summary class="-mx-2 flex items-start gap-2 cursor-pointer list-none select-none rounded px-2 py-1 transition-colors hover:bg-sky-300/10 [&::-webkit-details-marker]:hidden">
         <ChevronDown class="size-4 mt-0.5 text-sky-300 transition-transform group-[&:not([open])]/users2:-rotate-90" />
         <div class="grid gap-1">
           <h2 class="font-display text-sm uppercase tracking-[0.14em] text-sky-300">

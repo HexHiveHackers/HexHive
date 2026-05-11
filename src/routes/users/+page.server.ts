@@ -7,6 +7,7 @@ export const load: PageServerLoad = async ({ url }) => {
   return {
     users,
     q: url.searchParams.get('q') ?? '',
+    text: url.searchParams.get('text') ?? '',
     sort: url.searchParams.get('sort') ?? 'active:desc',
   };
 };
