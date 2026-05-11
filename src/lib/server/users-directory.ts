@@ -103,7 +103,11 @@ export async function enrichDirectoryUsers(db: DB): Promise<DirectoryRow[]> {
 
   return baseRows.map((r): DirectoryRow => {
     const c = countsByUser.get(r.userId) ?? { listingsByType: { ...ZERO_COUNTS }, totalDownloads: 0 };
-    const affs = affsByUser.get(r.userId) ?? [];
+    const dbAffs = affsByUser.get(r.userId) ?? [];
+    // Synthetic HexHive affiliation for admins. Surfaces in the
+    // /users affiliation chip + the HHQL `affiliation` field without
+    // requiring a DB row per admin.
+    const affs = r.isAdmin ? [{ name: 'HexHive', role: 'Admin' as const }, ...dbAffs] : dbAffs;
     const ak = akasByUser.get(r.userId) ?? [];
     const lastActiveMs = r.hideActivity || r.lastActive == null ? null : Number(r.lastActive) * 1000;
     return {

@@ -12,6 +12,16 @@ export interface UserAffiliation {
   role: string | null;
 }
 
+// Synthetic affiliation injected for admins; not a DB row. Detach is a
+// no-op for this id; manual adds with the name "HexHive" are rejected.
+export const HEXHIVE_AFFILIATION_ID = '__hexhive';
+export const HEXHIVE_AFFILIATION: UserAffiliation = {
+  id: HEXHIVE_AFFILIATION_ID,
+  name: 'HexHive',
+  url: 'https://hexhive.app',
+  role: 'Admin',
+};
+
 export async function listAffiliationsForUser(db: DB, userId: string): Promise<UserAffiliation[]> {
   const rows = await db
     .select({
@@ -38,6 +48,9 @@ export async function attachAffiliation(
 ): Promise<UserAffiliation> {
   const name = input.name.trim();
   if (!name) throw new Error('Affiliation name is required');
+  if (name.toLowerCase() === 'hexhive') {
+    throw new Error('HexHive is reserved — it appears automatically for admins.');
+  }
   const role = input.role?.trim() ?? null;
   const url = input.url?.trim() ?? null;
 
@@ -89,6 +102,7 @@ export async function attachAffiliation(
 }
 
 export async function detachAffiliation(db: DB, userId: string, affiliationId: string): Promise<void> {
+  if (affiliationId === HEXHIVE_AFFILIATION_ID) return; // synthetic; nothing to delete
   await db
     .delete(schema.profileAffiliation)
     .where(

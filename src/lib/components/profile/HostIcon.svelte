@@ -55,7 +55,9 @@
   const badge = $derived(host && host in TEXT_BADGES ? TEXT_BADGES[host as keyof typeof TEXT_BADGES] : null);
 </script>
 
-{#if host === 'github'}
+{#if host === 'hexhive'}
+  <img src="/favicon.ico" alt="" width={size} height={size} class="inline-block" style="width: {size}px; height: {size}px;" title="HexHive" />
+{:else if host === 'github'}
   <SiGithub {size} title="GitHub" />
 {:else if host === 'gitlab'}
   <SiGitlab {size} title="GitLab" color="#FC6D26" />

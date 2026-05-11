@@ -4,6 +4,8 @@
 // profiles on other sites). Returns null for URLs we don't have an
 // icon for; the caller falls back to a generic link glyph.
 export type LinkHost =
+  // Self
+  | 'hexhive'
   // Code / collaboration
   | 'github'
   | 'gitlab'
@@ -51,6 +53,7 @@ export type LinkHost =
   | 'beacons';
 
 const HOST_RULES: { match: RegExp; host: LinkHost }[] = [
+  { match: /(^|\.)hexhive\.app$/, host: 'hexhive' },
   { match: /(^|\.)github\.com$/, host: 'github' },
   { match: /(^|\.)gitlab\.com$/, host: 'gitlab' },
 
@@ -118,6 +121,8 @@ export function detectLinkHost(url: string | null | undefined): LinkHost | null 
 // in the UI.
 export function hostLabel(host: LinkHost): string {
   switch (host) {
+    case 'hexhive':
+      return 'HexHive';
     case 'github':
       return 'GitHub';
     case 'gitlab':

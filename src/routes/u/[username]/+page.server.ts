@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/db';
 import * as schema from '$lib/db/schema';
-import { listAffiliationsForUser } from '$lib/server/affiliations';
+import { HEXHIVE_AFFILIATION, listAffiliationsForUser } from '$lib/server/affiliations';
 import { listAliasesForUser } from '$lib/server/alias-entries';
 import { listLinksForUser } from '$lib/server/profile-links';
 import { getProfileByUsername, lastActiveFor, listingsByUser } from '$lib/server/profiles';
@@ -13,13 +13,18 @@ export const load: PageServerLoad = async ({ params }) => {
   if (!profile) throw error(404, 'User not found');
 
   const userRows = await db
-    .select({ name: schema.user.name, isPlaceholder: schema.user.isPlaceholder })
+    .select({
+      name: schema.user.name,
+      isPlaceholder: schema.user.isPlaceholder,
+      isAdmin: schema.user.isAdmin,
+    })
     .from(schema.user)
     .where(eq(schema.user.id, profile.userId))
     .limit(1);
   const listings = await listingsByUser(db, profile.userId, { self: false });
   const lastActive = await lastActiveFor(db, profile.userId, { respectHideFlag: true });
-  const affiliations = await listAffiliationsForUser(db, profile.userId);
+  const dbAffiliations = await listAffiliationsForUser(db, profile.userId);
+  const affiliations = userRows[0]?.isAdmin ? [HEXHIVE_AFFILIATION, ...dbAffiliations] : dbAffiliations;
   const aliases = await listAliasesForUser(db, profile.userId);
   const links = await listLinksForUser(db, profile.userId);
   return {
