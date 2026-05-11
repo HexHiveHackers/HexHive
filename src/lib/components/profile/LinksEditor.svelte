@@ -99,7 +99,7 @@
         <Input
           id="link-url"
           type="url"
-          placeholder="https://www.pokecommunity.com/members/yourname"
+          placeholder="https://github.com/yourname"
           bind:value={url}
           required
           maxlength={300}

@@ -84,11 +84,11 @@
     <div class="grid gap-3 sm:grid-cols-3">
       <div class="grid gap-1.5">
         <Label for="aff-name">Name</Label>
-        <Input id="aff-name" placeholder="Fire Red Omega++" bind:value={name} required maxlength={120} />
+        <Input id="aff-name" placeholder="Team or project name" bind:value={name} required maxlength={120} />
       </div>
       <div class="grid gap-1.5">
         <Label for="aff-role">Role <span class="text-xs text-muted-foreground font-normal">(optional)</span></Label>
-        <Input id="aff-role" placeholder="Lead Developer" bind:value={role} maxlength={120} />
+        <Input id="aff-role" placeholder="Your role" bind:value={role} maxlength={120} />
       </div>
       <div class="grid gap-1.5">
         <Label for="aff-url">URL <span class="text-xs text-muted-foreground font-normal">(optional)</span></Label>

@@ -210,9 +210,9 @@
   </div>
 
   <div>
-    <h2 class="font-display text-xl mb-2">Links</h2>
+    <h2 class="font-display text-xl mb-2">Socials</h2>
     <p class="text-sm text-muted-foreground mb-4">
-      Your other profiles around the web — PokéCommunity, Showdown, Twitch, Patreon, Linktree, whatever.
+      Your other profiles around the web — GitHub, Discord, PokéCommunity, Showdown, Twitch, Patreon, Linktree, whatever.
       We auto-pick an icon based on the URL. No verification.
     </p>
     <LinksEditor initial={data.links} />

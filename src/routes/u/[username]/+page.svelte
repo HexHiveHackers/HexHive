@@ -58,7 +58,7 @@
   <ProfileSummary profile={data.profile} aliases={data.aliases} />
   {#if data.links.length > 0}
     <div>
-      <h2 class="font-display text-xl mb-3">Links</h2>
+      <h2 class="font-display text-xl mb-3">Socials</h2>
       <ul class="flex flex-wrap gap-2">
         {#each data.links as l (l.id)}
           <li>
