@@ -28,8 +28,8 @@
   <!-- Sprites -->
   <div>
     <div class="flex items-end justify-between mb-4">
-      <h2 class="font-display text-xl flex items-center gap-2 text-rose-400">
-        <TypeIcon type="sprite" size={20} /> Sprites
+      <h2 class="font-display text-xl flex items-center gap-2 text-white">
+        <TypeIcon type="sprite" size={20} class="text-rose-400" /> Sprites
       </h2>
       <a href="/sprites" class="text-sm underline">Browse all</a>
     </div>
@@ -47,8 +47,8 @@
   <!-- Sounds -->
   <div>
     <div class="flex items-end justify-between mb-4">
-      <h2 class="font-display text-xl flex items-center gap-2 text-amber-500">
-        <TypeIcon type="sound" size={20} /> Sounds
+      <h2 class="font-display text-xl flex items-center gap-2 text-white">
+        <TypeIcon type="sound" size={20} class="text-amber-500" /> Sounds
       </h2>
       <a href="/sounds" class="text-sm underline">Browse all</a>
     </div>
@@ -66,8 +66,8 @@
   <!-- Scripts -->
   <div>
     <div class="flex items-end justify-between mb-4">
-      <h2 class="font-display text-xl flex items-center gap-2 text-emerald-500">
-        <TypeIcon type="script" size={20} /> Scripts
+      <h2 class="font-display text-xl flex items-center gap-2 text-white">
+        <TypeIcon type="script" size={20} class="text-emerald-500" /> Scripts
       </h2>
       <a href="/scripts" class="text-sm underline">Browse all</a>
     </div>
@@ -85,8 +85,8 @@
   <!-- Tools -->
   <div>
     <div class="flex items-end justify-between mb-4">
-      <h2 class="font-display text-xl flex items-center gap-2 text-sky-400">
-        <TypeIcon type="tool" size={20} /> Tools
+      <h2 class="font-display text-xl flex items-center gap-2 text-white">
+        <TypeIcon type="tool" size={20} class="text-sky-400" /> Tools
       </h2>
       <a href="/tools" class="text-sm underline">Browse all</a>
     </div>
@@ -111,8 +111,8 @@
   <!-- Romhacks -->
   <div>
     <div class="flex items-end justify-between mb-4">
-      <h2 class="font-display text-xl flex items-center gap-2 text-violet-400">
-        <TypeIcon type="romhack" size={20} /> Romhacks
+      <h2 class="font-display text-xl flex items-center gap-2 text-white">
+        <TypeIcon type="romhack" size={20} class="text-violet-400" /> Romhacks
       </h2>
       <a href="/romhacks" class="text-sm underline">Browse all</a>
     </div>
