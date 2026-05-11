@@ -1103,19 +1103,23 @@
       {#each data.fixtures.filter((f) => f.kind === FIXTURE_TABS.find((t) => t.id === activeFixtureTab)?.kind) as f (f.id)}
         {@const isActive = loaded?.songId === f.id}
         {@const refKind = f.refUrl?.endsWith('.ogg') ? 'OGG' : 'MP3'}
+        {@const linkedSf = SOUNDFONTS.find(
+          (s) => s.id === (f.kind === 'sappy' ? f.preferredSoundfont : f.referenceSoundfont),
+        )}
+        {@const tone = linkedSf?.tone ?? 'white'}
         <button
           type="button"
           onclick={() => void loadFixture(f)}
           aria-pressed={isActive}
+          style={isActive && TONE_GRAD_RING_CSS[tone] ? `--grad-ring: ${TONE_GRAD_RING_CSS[tone]}` : ''}
           class="group relative overflow-hidden rounded-md border bg-slate-950/70 p-3 text-left transition-all
-            {isActive
-              ? 'border-zinc-300/70 shadow-[0_0_0_1px_rgba(228,228,231,0.25),0_0_18px_-6px_rgba(228,228,231,0.5)]'
-              : 'border-border/70 hover:border-foreground/40 hover:bg-slate-900/70'}"
+            {isActive ? TONE_RING[tone] : 'border-border/70 hover:border-foreground/40 hover:bg-slate-900/70'}"
         >
-          <div class="flex items-start justify-between gap-2">
+          <span aria-hidden="true" class="absolute inset-x-0 top-0 h-[3px] {TONE_STRIPE[tone]}"></span>
+          <div class="relative flex items-start justify-between gap-2">
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2 text-foreground">
-                <Music class="size-4 shrink-0 text-zinc-300" />
+                <Music class="size-4 shrink-0 {TONE_TEXT[tone]}" />
                 <span class="truncate text-base font-medium">{f.label}</span>
               </div>
               <div class="mt-1 font-mono text-sm tracking-wide text-zinc-300 truncate">
