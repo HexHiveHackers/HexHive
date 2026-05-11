@@ -42,7 +42,7 @@
 <li>
   <a
     href={`/u/${user.username}`}
-    class="group flex items-start gap-3 rounded-lg border bg-card/40 p-4 transition-colors hover:border-primary/50 hover:bg-card"
+    class="group flex items-start gap-3 rounded-lg border bg-card/40 p-4 transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-muted/60 hover:shadow-lg hover:shadow-primary/10"
   >
     <Avatar avatarKey={user.avatarKey ?? null} name={user.name || user.username} size={48} />
     <div class="min-w-0 flex-1">

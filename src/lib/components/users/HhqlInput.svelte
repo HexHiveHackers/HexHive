@@ -45,7 +45,7 @@
 </script>
 
 <div
-  class="relative rounded-md border border-input bg-input/30 font-mono text-sm leading-6 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/40"
+  class="relative rounded-md border border-input bg-input/30 font-mono text-sm leading-6 transition-colors hover:border-ring/60 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/40"
 >
   <pre
     aria-hidden="true"
