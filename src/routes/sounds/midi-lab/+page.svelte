@@ -312,6 +312,11 @@
     // selected — no remap, no mapping table.
     kind: 'sappy' | 'gm';
     referenceSoundfont: string | null; // for gm: which dropdown id was used to render the OGG
+    // Sappy `[` / `]` loop boundaries converted to playback seconds via
+    // the file's tempo map. Null when the song carries no markers.
+    // Surfaced on the synth scrub bar when loopMode === 'builtin'.
+    loopStartSec: number | null;
+    loopEndSec: number | null;
   };
 
   let loaded = $state<Loaded | null>(null);
@@ -325,7 +330,7 @@
   // 'builtin' = honor the song's `[` / `]` loop markers via rewriter rename.
   // Cycle off → full → builtin → off on each click of the synth loop button.
   type LoopMode = 'off' | 'full' | 'builtin';
-  let loopMode = $state<LoopMode>('full');
+  let loopMode = $state<LoopMode>('builtin');
   // MP3 reference player has a binary loop concept (whole file or none).
   // Tracked separately from the synth's loopMode — the two transports are
   // independent A/B references.
@@ -592,6 +597,60 @@
     return used;
   }
 
+  // Walk the SMF once, accumulating per-tick tempo, and convert Sappy
+  // `[` / `]` loop boundary markers to absolute seconds. The tempo map
+  // can change mid-song, so the conversion has to integrate over each
+  // active tempo segment, not just use the first SetTempo. Returns null
+  // for either boundary that isn't present in the file.
+  function extractLoopBoundaries(midi: ArrayBuffer): { startSec: number | null; endSec: number | null } {
+    const smf = parseSmf(midi);
+    const decoder = new TextDecoder();
+    // Collect all events from all tracks into one tick-ordered list so
+    // tempo changes from track 0 are applied to markers anywhere else.
+    type EventAt = { tick: number; kind: 'tempo'; usPerQn: number } | { tick: number; kind: 'marker'; text: string };
+    const events: EventAt[] = [];
+    for (const track of smf.tracks) {
+      let tick = 0;
+      for (const e of track) {
+        tick += e.delta;
+        if (e.kind === 'meta' && e.metaType === 0x51 && e.data.length === 3) {
+          events.push({ tick, kind: 'tempo', usPerQn: (e.data[0] << 16) | (e.data[1] << 8) | e.data[2] });
+        } else if (e.kind === 'meta' && e.metaType === 0x06) {
+          // Match either the Sappy original (`[`, `]`) or the rewriter's
+          // post-rename text (`loopStart`, `loopEnd`) — both equivalent.
+          const text = decoder.decode(e.data).trim().toLowerCase();
+          if (text === '[' || text === 'loopstart' || text === 'start') {
+            events.push({ tick, kind: 'marker', text: 'start' });
+          } else if (text === ']' || text === 'loopend') {
+            events.push({ tick, kind: 'marker', text: 'end' });
+          }
+        }
+      }
+    }
+    events.sort((a, b) => a.tick - b.tick);
+
+    let currentUsPerQn = 500_000; // default 120 BPM
+    let lastTick = 0;
+    let accumSec = 0;
+    let startSec: number | null = null;
+    let endSec: number | null = null;
+    for (const ev of events) {
+      // Advance accumSec to this event's tick using whatever tempo was
+      // in force since the previous event.
+      const dt = ev.tick - lastTick;
+      accumSec += (dt * currentUsPerQn) / smf.division / 1_000_000;
+      lastTick = ev.tick;
+      if (ev.kind === 'tempo') {
+        currentUsPerQn = ev.usPerQn;
+      } else if (ev.text === 'start' && startSec === null) {
+        startSec = accumSec;
+      } else if (ev.text === 'end' && endSec === null) {
+        endSec = accumSec;
+      }
+    }
+    return { startSec, endSec };
+  }
+
   async function loadIntoSequencer(restoreTime = 0): Promise<void> {
     if (!seq || !loaded) return;
     seqLoadedFor = null;
@@ -750,6 +809,7 @@
     const used = args.kind === 'sappy' ? usedSlotsOf(args.midiBytes) : new Set<number>();
     const usedCh = usedChannelsOf(args.midiBytes);
     const refKind = args.refUrl?.endsWith('.ogg') ? 'ogg' : args.refUrl ? 'mp3' : null;
+    const { startSec, endSec } = extractLoopBoundaries(args.midiBytes);
     loaded = {
       songId: args.id,
       label: args.label,
@@ -762,6 +822,8 @@
       usedChannels: usedCh,
       kind: args.kind,
       referenceSoundfont: args.kind === 'gm' ? args.referenceSoundfont : null,
+      loopStartSec: startSec,
+      loopEndSec: endSec,
     };
     // Reset mutes when switching songs and unmute on the synth (the previous
     // song may have left some channels muted on this synth instance).
@@ -1499,24 +1561,42 @@
           >
             {fmtTime(currentTime)}
           </span>
-          <input
-            type="range"
-            class="midilab-scrub flex-1 accent-emerald-400"
-            style="--track-fill: #34d399; --fill: {duration > 0 ? (currentTime / duration) * 100 : 0}"
-            min="0"
-            max={duration || 1}
-            step="0.01"
-            value={currentTime}
-            onpointerdown={synthScrubStart}
-            onkeydown={synthScrubStart}
-            oninput={(e) => synthScrubMove(Number.parseFloat((e.currentTarget as HTMLInputElement).value))}
-            onpointerup={synthScrubEnd}
-            onkeyup={synthScrubEnd}
-            onpointercancel={synthScrubEnd}
-            onblur={synthScrubEnd}
-            disabled={engineState !== 'ready'}
-            aria-label="Synth MIDI scrub"
-          />
+          <div class="relative flex-1">
+            <input
+              type="range"
+              class="midilab-scrub w-full accent-emerald-400"
+              style="--track-fill: #34d399; --fill: {duration > 0 ? (currentTime / duration) * 100 : 0}"
+              min="0"
+              max={duration || 1}
+              step="0.01"
+              value={currentTime}
+              onpointerdown={synthScrubStart}
+              onkeydown={synthScrubStart}
+              oninput={(e) => synthScrubMove(Number.parseFloat((e.currentTarget as HTMLInputElement).value))}
+              onpointerup={synthScrubEnd}
+              onkeyup={synthScrubEnd}
+              onpointercancel={synthScrubEnd}
+              onblur={synthScrubEnd}
+              disabled={engineState !== 'ready'}
+              aria-label="Synth MIDI scrub"
+            />
+            <!-- Loop region overlay. Visible only in 'builtin' mode and only
+                 when the song carries actual loop markers. Renders as a
+                 faint emerald shaded band between the boundaries plus a
+                 small tick at each end. Pointer events disabled so it
+                 doesn't intercept scrub gestures. -->
+            {#if loopMode === 'builtin' && loaded?.loopStartSec !== null && loaded?.loopEndSec !== null && duration > 0}
+              {@const startPct = ((loaded?.loopStartSec ?? 0) / duration) * 100}
+              {@const endPct = ((loaded?.loopEndSec ?? duration) / duration) * 100}
+              <div class="pointer-events-none absolute inset-0">
+                <div
+                  class="absolute top-1/2 -translate-y-1/2 h-2 bg-emerald-400/25 border-x border-emerald-300/70"
+                  style="left: {startPct}%; width: {Math.max(0, endPct - startPct)}%"
+                  title="Loop region · {fmtTime(loaded?.loopStartSec ?? 0)} → {fmtTime(loaded?.loopEndSec ?? duration)}"
+                ></div>
+              </div>
+            {/if}
+          </div>
           <span
             class="font-display text-[0.75rem] tabular-nums tracking-wider text-white/80 rounded bg-emerald-950/70 border border-emerald-500/30 px-2 py-1 shadow-[inset_0_0_6px_rgba(16,185,129,0.2)] min-w-[3.25rem] text-center"
           >
