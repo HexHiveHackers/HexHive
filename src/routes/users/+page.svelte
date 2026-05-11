@@ -1,93 +1,126 @@
 <script lang="ts">
   import { ChevronDown } from '@lucide/svelte';
-  import Avatar from '$lib/components/profile/Avatar.svelte';
+  import { untrack } from 'svelte';
+  import { replaceState } from '$app/navigation';
+  import { page } from '$app/state';
+  import FilterBar from '$lib/components/users/FilterBar.svelte';
+  import HhqlInput from '$lib/components/users/HhqlInput.svelte';
+  import UserCard from '$lib/components/users/UserCard.svelte';
+  import { evaluate, parseHhql } from '$lib/hhql';
+  import { type DirectoryRow, fieldsUsers } from '$lib/hhql/fields-users';
 
   let { data } = $props();
 
-  function relative(ms: number): string {
-    const diff = Date.now() - ms;
-    const s = Math.max(1, Math.round(diff / 1000));
-    if (s < 60) return `${s}s ago`;
-    const m = Math.round(s / 60);
-    if (m < 60) return `${m}m ago`;
-    const h = Math.round(m / 60);
-    if (h < 24) return `${h}h ago`;
-    const d = Math.round(h / 24);
-    if (d < 30) return `${d}d ago`;
-    const mo = Math.round(d / 30);
-    if (mo < 12) return `${mo}mo ago`;
-    return `${Math.round(mo / 12)}y ago`;
-  }
+  let query = $state(untrack(() => data.q));
+  let sort = $state(untrack(() => data.sort));
+  let editorOpen = $state(untrack(() => data.q.length > 0));
 
-  function joinedLabel(ms: number): string {
-    return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
-  }
+  const ast = $derived(parseHhql(query));
+  const filtered = $derived(
+    ast.ok && ast.ast
+      ? data.users.filter((u: DirectoryRow) => {
+          const a = ast.ast;
+          if (!a) return true;
+          return evaluate(a, u, fieldsUsers);
+        })
+      : data.users,
+  );
+  const sorted = $derived(applySort(filtered, sort));
 
-  type Row = (typeof data.users)[number];
-  const claimed = $derived(data.users.filter((u) => !u.isPlaceholder));
-  const byUsername = (a: Row, b: Row) => a.username.localeCompare(b.username, undefined, { sensitivity: 'base' });
+  const byUsername = (a: DirectoryRow, b: DirectoryRow) =>
+    a.username.localeCompare(b.username, undefined, { sensitivity: 'base' });
+
+  const claimed = $derived(sorted.filter((u: DirectoryRow) => !u.isPlaceholder));
   const unclaimedContributors = $derived(
-    data.users.filter((u) => u.isPlaceholder && u.placeholderKind === 'contributor').sort(byUsername),
+    sorted.filter((u: DirectoryRow) => u.isPlaceholder && u.placeholderKind === 'contributor').sort(byUsername),
   );
   const unclaimedUsers = $derived(
-    data.users.filter((u) => u.isPlaceholder && u.placeholderKind === 'user').sort(byUsername),
+    sorted.filter((u: DirectoryRow) => u.isPlaceholder && u.placeholderKind === 'user').sort(byUsername),
   );
-</script>
 
-{#snippet card(u: Row)}
-  <li>
-    <a
-      href={`/u/${u.username}`}
-      class="group flex items-start gap-3 rounded-lg border bg-card/40 p-4 transition-colors hover:border-primary/50 hover:bg-card"
-    >
-      <Avatar avatarKey={u.avatarKey} name={u.name || u.username} size={48} />
-      <div class="min-w-0 flex-1">
-        <div class="flex items-baseline gap-2 flex-wrap">
-          {#if u.alias}
-            <span class="font-display text-sm group-hover:text-primary">{u.alias}</span>
-            <span class="text-xs text-muted-foreground">@{u.username}</span>
-          {:else}
-            <span class="font-display text-sm group-hover:text-primary">@{u.username}</span>
-          {/if}
-          {#if u.pronouns}
-            <span class="text-xs text-muted-foreground">{u.pronouns}</span>
-          {/if}
-        </div>
-        <div class="mt-1 min-h-[2lh] text-xs text-muted-foreground">
-          {#if u.bio}
-            <p class="line-clamp-2">{u.bio}</p>
-          {:else if u.isPlaceholder && u.fromTeamAquaRepo}
-            <p class="line-clamp-2 italic opacity-80">
-              Contributor on Team Aqua's asset repo. Imported as a HexHive seed.
-            </p>
-          {/if}
-        </div>
-        <div class="mt-2 flex items-center gap-3 text-[0.7rem] text-muted-foreground">
-          {#if u.isPlaceholder}
-            <span class="italic opacity-70">
-              Awaiting {u.placeholderKind === 'user' ? 'user' : 'contributor'}
-            </span>
-          {:else if u.lastActive}
-            <span title={new Date(u.lastActive).toLocaleString()}>Active {relative(u.lastActive)}</span>
-          {:else}
-            <span class="italic opacity-70">Activity hidden</span>
-          {/if}
-          <span aria-hidden="true">·</span>
-          <span>{u.isPlaceholder ? 'Indexed' : 'Joined'} {joinedLabel(u.joinedAt)}</span>
-        </div>
-      </div>
-    </a>
-  </li>
-{/snippet}
+  const affiliations = $derived(
+    Array.from(new Set(data.users.flatMap((u: DirectoryRow) => u.affiliations.map((x) => x.name)))).sort(),
+  );
+
+  // URL state sync (debounced)
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  $effect(() => {
+    const q = query;
+    const s = sort;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      const url = new URL(page.url);
+      if (q.length > 0) url.searchParams.set('q', q);
+      else url.searchParams.delete('q');
+      if (s !== 'active:desc') url.searchParams.set('sort', s);
+      else url.searchParams.delete('sort');
+      replaceState(url, {});
+    }, 150);
+  });
+
+  function applySort(rows: DirectoryRow[], sortKey: string): DirectoryRow[] {
+    const [field, dir] = sortKey.split(':');
+    const sign = dir === 'asc' ? 1 : -1;
+    const cmpNum = (a: number | null, b: number | null): number => {
+      const aa = a ?? Number.NEGATIVE_INFINITY;
+      const bb = b ?? Number.NEGATIVE_INFINITY;
+      if (aa === bb) return 0;
+      return aa > bb ? sign : -sign;
+    };
+    const arr = [...rows];
+    arr.sort((a, b) => {
+      switch (field) {
+        case 'joined':
+          return cmpNum(a.joinedAt, b.joinedAt);
+        case 'downloads':
+          return cmpNum(a.totalDownloads, b.totalDownloads);
+        case 'listings':
+          return cmpNum(
+            Object.values(a.listingsByType).reduce((x, y) => x + y, 0),
+            Object.values(b.listingsByType).reduce((x, y) => x + y, 0),
+          );
+        case 'username':
+          return sign * a.username.localeCompare(b.username);
+        default:
+          return cmpNum(a.lastActive, b.lastActive);
+      }
+    });
+    return arr;
+  }
+</script>
 
 <svelte:head><title>Users · HexHive</title></svelte:head>
 
-<section class="mx-auto max-w-5xl px-4 py-10 grid gap-10">
+<section class="mx-auto max-w-5xl px-4 py-10 grid gap-6">
   <header class="grid gap-2">
     <span class="font-display text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">Directory</span>
     <h1 class="font-display text-2xl">Users</h1>
-    <p class="text-sm text-muted-foreground">Everyone with a HexHive account, sorted by most recent activity.</p>
+    <p class="text-sm text-muted-foreground">Everyone with a HexHive account. Filter by what they make and how active they are.</p>
   </header>
+
+  <div class="grid gap-2">
+    <div class="flex items-center justify-between gap-2 flex-wrap">
+      <FilterBar bind:query {affiliations} />
+      <div class="flex items-center gap-1">
+        <select class="rounded border bg-card text-xs px-2 py-1" bind:value={sort}>
+          <option value="active:desc">Sort: recent</option>
+          <option value="downloads:desc">Sort: downloads</option>
+          <option value="listings:desc">Sort: listings</option>
+          <option value="joined:desc">Sort: joined</option>
+          <option value="username:asc">Sort: username</option>
+        </select>
+        <button
+          type="button"
+          class="rounded border bg-card text-xs px-2 py-1 font-mono"
+          onclick={() => (editorOpen = !editorOpen)}
+          aria-pressed={editorOpen}
+        >{editorOpen ? '×' : '</>'}</button>
+      </div>
+    </div>
+    {#if editorOpen}
+      <HhqlInput bind:value={query} />
+    {/if}
+  </div>
 
   <details open class="group/users grid gap-3">
     <summary class="flex items-center gap-2 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
@@ -96,11 +129,18 @@
         Members <span class="text-foreground/60">· {claimed.length}</span>
       </h2>
     </summary>
-    {#if claimed.length === 0}
+    {#if data.users.length === 0}
       <p class="text-sm text-muted-foreground">No members yet.</p>
+    {:else if claimed.length === 0 && unclaimedContributors.length === 0 && unclaimedUsers.length === 0}
+      <p class="text-sm text-muted-foreground">
+        No users match this query —
+        <button type="button" class="underline" onclick={() => (query = '')}>clear</button>
+      </p>
+    {:else if claimed.length === 0}
+      <p class="text-sm text-muted-foreground">No claimed users match this query.</p>
     {:else}
       <ul class="grid gap-2 sm:grid-cols-2">
-        {#each claimed as u (u.username)}{@render card(u)}{/each}
+        {#each claimed as u (u.username)}<UserCard user={u} />{/each}
       </ul>
     {/if}
   </details>
@@ -119,7 +159,7 @@
         </div>
       </summary>
       <ul class="grid gap-2 sm:grid-cols-2">
-        {#each unclaimedContributors as u (u.username)}{@render card(u)}{/each}
+        {#each unclaimedContributors as u (u.username)}<UserCard user={u} />{/each}
       </ul>
     </details>
   {/if}
@@ -138,7 +178,7 @@
         </div>
       </summary>
       <ul class="grid gap-2 sm:grid-cols-2">
-        {#each unclaimedUsers as u (u.username)}{@render card(u)}{/each}
+        {#each unclaimedUsers as u (u.username)}<UserCard user={u} />{/each}
       </ul>
     </details>
   {/if}

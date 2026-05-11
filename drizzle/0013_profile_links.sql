@@ -10,5 +10,7 @@ CREATE TABLE `profile_link` (
   `created_at` integer DEFAULT (unixepoch()) NOT NULL,
   FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 );
+--> statement-breakpoint
 CREATE UNIQUE INDEX `profile_link_user_url_unique` ON `profile_link` (`user_id`, lower(`url`));
+--> statement-breakpoint
 CREATE INDEX `profile_link_user_idx` ON `profile_link` (`user_id`);
