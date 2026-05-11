@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CircleHelp } from '@lucide/svelte';
+  import { CircleHelp, X } from '@lucide/svelte';
   import { parseHhql } from '$lib/hhql';
   import { tokenize } from '$lib/hhql/tokens';
 
@@ -56,12 +56,12 @@
   <pre
     bind:this={preEl}
     aria-hidden="true"
-    class="pointer-events-none absolute inset-0 m-0 overflow-hidden whitespace-nowrap px-2.5 py-1 pr-9 text-muted-foreground/40"
+    class="pointer-events-none absolute inset-0 m-0 overflow-hidden whitespace-nowrap px-2.5 py-1 pr-14 text-muted-foreground/40"
   >{#if value.length === 0}<span class="text-muted-foreground/60">creates IN (sprite, sound) AND hasBio AND active &gt; -30d</span>{:else if tokens.length === 0}{value}{:else}{value.slice(0, tokens[0].start)}{#each tokens as t, i (t.start)}<span class={classFor(t.kind)}>{value.slice(t.start, t.end)}</span>{value.slice(t.end, tokens[i + 1]?.start ?? value.length)}{/each}<span>&#8203;</span>{/if}</pre>
   <input
     bind:this={inputEl}
     type="text"
-    class="relative h-full w-full bg-transparent px-2.5 py-1 pr-9 text-transparent caret-primary outline-none"
+    class="relative h-full w-full bg-transparent px-2.5 py-1 pr-14 text-transparent caret-primary outline-none"
     spellcheck="false"
     autocapitalize="off"
     autocomplete="off"
@@ -71,6 +71,20 @@
     onkeydown={syncScroll}
     onmouseup={syncScroll}
   />
+
+  {#if value.length > 0}
+    <button
+      type="button"
+      class="absolute right-8 top-1/2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+      title="Clear query"
+      onclick={() => {
+        value = '';
+        inputEl?.focus();
+      }}
+    >
+      <X aria-hidden="true" class="size-3.5" />
+    </button>
+  {/if}
 
   <div bind:this={helpRoot} class="absolute right-1 top-1/2 -translate-y-1/2">
     <button
