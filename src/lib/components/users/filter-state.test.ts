@@ -16,7 +16,7 @@ const empty: ChipState = {
 describe('queryFromChipState', () => {
   it('emits canonical clauses in stable order', () => {
     const s: ChipState = { ...empty, types: ['sprite', 'sound'], has: ['hasBio'] };
-    expect(queryFromChipState(s)).toBe('creates IN (sprite, sound) hasBio NOT placeholder');
+    expect(queryFromChipState(s)).toBe('creates IN (sprite, sound) AND hasBio AND NOT placeholder');
   });
 
   it('drops placeholder clause when hidePlaceholder = false (showing all)', () => {

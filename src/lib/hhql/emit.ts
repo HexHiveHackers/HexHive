@@ -1,42 +1,26 @@
 import type { Expr, Literal } from './ast';
 
+// Canonical emit: AND is always explicit. The parser still accepts implicit
+// AND (whitespace between clauses) for human-typed queries, but anything we
+// emit reads unambiguously.
 export function emit(ast: Expr): string {
-  return emitExpr(ast, containsOr(ast));
-}
-
-function containsOr(e: Expr): boolean {
-  switch (e.kind) {
-    case 'or':
-      return true;
+  switch (ast.kind) {
     case 'and':
-      return containsOr(e.left) || containsOr(e.right);
-    case 'not':
-      return containsOr(e.inner);
-    case 'group':
-      return containsOr(e.inner);
-    default:
-      return false;
-  }
-}
-
-function emitExpr(e: Expr, explicitAnd: boolean): string {
-  switch (e.kind) {
-    case 'and':
-      return `${emitExpr(e.left, explicitAnd)}${explicitAnd ? ' AND ' : ' '}${emitExpr(e.right, explicitAnd)}`;
+      return `${emit(ast.left)} AND ${emit(ast.right)}`;
     case 'or':
-      return `${emitExpr(e.left, explicitAnd)} OR ${emitExpr(e.right, explicitAnd)}`;
+      return `${emit(ast.left)} OR ${emit(ast.right)}`;
     case 'not':
-      return `NOT ${emitExpr(e.inner, explicitAnd)}`;
+      return `NOT ${emit(ast.inner)}`;
     case 'group':
-      return `(${emitExpr(e.inner, explicitAnd)})`;
+      return `(${emit(ast.inner)})`;
     case 'bare':
-      return e.negated ? `NOT ${e.field}` : e.field;
+      return ast.negated ? `NOT ${ast.field}` : ast.field;
     case 'empty':
-      return `${e.field} IS ${e.negated ? 'NOT ' : ''}EMPTY`;
+      return `${ast.field} IS ${ast.negated ? 'NOT ' : ''}EMPTY`;
     case 'in':
-      return `${e.field} ${e.negated ? 'NOT IN' : 'IN'} (${e.values.map(emitLiteral).join(', ')})`;
+      return `${ast.field} ${ast.negated ? 'NOT IN' : 'IN'} (${ast.values.map(emitLiteral).join(', ')})`;
     case 'compare':
-      return `${e.field} ${e.op} ${emitLiteral(e.value)}`;
+      return `${ast.field} ${ast.op} ${emitLiteral(ast.value)}`;
   }
 }
 

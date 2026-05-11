@@ -34,7 +34,7 @@ export function queryFromChipState(s: ChipState): string {
   if (s.affiliations.length > 0) parts.push(`affiliation IN (${s.affiliations.map(quoteIfNeeded).join(', ')})`);
   if (s.hidePlaceholder) parts.push('NOT placeholder');
   if (s.adminOnly) parts.push('admin');
-  return parts.join(' ');
+  return parts.join(' AND ');
 }
 
 export function chipStateFromQuery(q: string): ChipState {
@@ -84,7 +84,7 @@ export function applyChip<K extends keyof ChipState>(currentQuery: string, key: 
   const nextState = { ...state, [key]: value };
   const customClauses = extractCustomClauses(currentQuery);
   const base = queryFromChipState(nextState);
-  return [base, ...customClauses].filter(Boolean).join(' ');
+  return [base, ...customClauses].filter(Boolean).join(' AND ');
 }
 
 function walk(e: Expr, visit: (e: Expr) => void): void {

@@ -258,15 +258,21 @@ describe('emit', () => {
     expect(emit(r.ast)).toBe('affiliation IN ("team aqua", magma)');
   });
 
-  it('omits implicit AND when no OR is present', () => {
+  it('emits explicit AND between adjacent clauses', () => {
     const r = parse('hasBio AND active > -7d AND NOT placeholder');
     if (!r.ok || !r.ast) throw new Error('parse failed');
-    expect(emit(r.ast)).toBe('hasBio active > -7d NOT placeholder');
+    expect(emit(r.ast)).toBe('hasBio AND active > -7d AND NOT placeholder');
   });
 
   it('keeps explicit AND when an OR forces precedence', () => {
     const r = parse('a = 1 AND (b = 2 OR c = 3)');
     if (!r.ok || !r.ast) throw new Error('parse failed');
     expect(emit(r.ast)).toBe('a = 1 AND (b = 2 OR c = 3)');
+  });
+
+  it('normalizes implicit AND on parse round-trip to explicit AND', () => {
+    const r = parse('hasBio active > -7d NOT placeholder');
+    if (!r.ok || !r.ast) throw new Error('parse failed');
+    expect(emit(r.ast)).toBe('hasBio AND active > -7d AND NOT placeholder');
   });
 });
