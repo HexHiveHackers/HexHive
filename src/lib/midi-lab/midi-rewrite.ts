@@ -195,6 +195,17 @@ const SAPPY_BENDR_CC = 20;
 const SAPPY_LFOS_CC = 21;
 const SAPPY_XIECV_CC = 29;
 
+export interface RewriteOptions {
+  // When true, rename Sappy/m4a loop boundary markers (`[`, `]`) to the
+  // text spessasynth's BasicMIDI parser recognizes (`loopStart`,
+  // `loopEnd`). spessasynth's marker-text match is case-insensitive +
+  // trimmed, so the new text is honored. Caller flips this to switch
+  // between full-file loop (markers left alone, parser falls back to
+  // firstNoteOn / lastVoiceEventTick) and built-in loop (parser jumps
+  // back to the loopStart marker on each iteration).
+  rewriteLoopMarkers?: boolean;
+}
+
 // `isMuted(slot, channel)`, when provided, silences NoteOn events on a
 // channel while the channel's *current* voicegroup slot is muted. We zero
 // the velocity (the conventional MIDI note-off form) instead of dropping
@@ -203,12 +214,25 @@ export function rewriteProgramChanges(
   midi: ArrayBuffer | Uint8Array,
   resolve: Resolver,
   isMuted?: (slot: number, channel: number) => boolean,
+  options: RewriteOptions = {},
 ): Uint8Array {
+  const { rewriteLoopMarkers = false } = options;
   const smf = parseSmf(midi);
   const channelProgram = new Array<number>(16).fill(0);
+  const encoder = new TextEncoder();
   for (let t = 0; t < smf.tracks.length; t++) {
     const out: MidiEvent[] = [];
     for (const e of smf.tracks[t]) {
+      if (rewriteLoopMarkers && e.kind === 'meta' && e.metaType === 0x06) {
+        const text = new TextDecoder().decode(e.data).trim();
+        let renamed: string | null = null;
+        if (text === '[') renamed = 'loopStart';
+        else if (text === ']') renamed = 'loopEnd';
+        if (renamed !== null) {
+          out.push({ ...e, data: encoder.encode(renamed) });
+          continue;
+        }
+      }
       if (e.kind === 'midi' && (e.status & 0xf0) === 0xb0 && e.data[0] === SAPPY_BENDR_CC) {
         // Sappy BENDR → RPN 0,0 pitch-bend range. Four events total; first
         // carries the original delta, the rest fire delta-0 so the whole

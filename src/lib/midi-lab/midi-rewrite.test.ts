@@ -328,6 +328,80 @@ describe('rewriteProgramChanges — Sappy BENDR (CC20) → RPN 0,0', () => {
   });
 });
 
+describe('rewriteProgramChanges — loop marker rename ([ → loopStart, ] → loopEnd)', () => {
+  const noopResolver = (slot: number) => ({
+    bankMSB: 0,
+    bankLSB: 0,
+    program: slot,
+    isDrum: false,
+    label: '',
+    reason: '',
+  });
+
+  it('leaves [ and ] markers alone when rewriteLoopMarkers is false (default)', () => {
+    for (const f of fixtures) {
+      const orig = readMidi(f);
+      const rewritten = rewriteProgramChanges(orig, noopResolver);
+      expect(countMarker(rewritten, '[')).toBe(countMarker(orig, '['));
+      expect(countMarker(rewritten, ']')).toBe(countMarker(orig, ']'));
+      expect(countMarker(rewritten, 'loopStart')).toBe(0);
+      expect(countMarker(rewritten, 'loopEnd')).toBe(0);
+    }
+  });
+
+  it('renames [ → loopStart and ] → loopEnd when rewriteLoopMarkers is true', () => {
+    for (const f of fixtures) {
+      const orig = readMidi(f);
+      const startCount = countMarker(orig, '[');
+      const endCount = countMarker(orig, ']');
+      if (startCount === 0 && endCount === 0) continue;
+
+      const rewritten = rewriteProgramChanges(orig, noopResolver, undefined, { rewriteLoopMarkers: true });
+      expect(countMarker(rewritten, '[')).toBe(0);
+      expect(countMarker(rewritten, ']')).toBe(0);
+      expect(countMarker(rewritten, 'loopStart')).toBe(startCount);
+      expect(countMarker(rewritten, 'loopEnd')).toBe(endCount);
+    }
+  });
+
+  it('preserves marker tick positions across the rename', () => {
+    const orig = readMidi('b_dome_lobby/mus_b_dome_lobby.mid');
+    const origStartTicks = markerTicks(orig, '[');
+    const origEndTicks = markerTicks(orig, ']');
+    expect(origStartTicks.length).toBeGreaterThan(0);
+
+    const rewritten = rewriteProgramChanges(orig, noopResolver, undefined, { rewriteLoopMarkers: true });
+    expect(markerTicks(rewritten, 'loopStart')).toEqual(origStartTicks);
+    expect(markerTicks(rewritten, 'loopEnd')).toEqual(origEndTicks);
+  });
+});
+
+function countMarker(midi: Uint8Array, text: string): number {
+  const smf = parseSmf(midi);
+  const decoder = new TextDecoder();
+  let n = 0;
+  for (const track of smf.tracks) {
+    for (const e of track) {
+      if (e.kind === 'meta' && e.metaType === 0x06 && decoder.decode(e.data).trim() === text) n++;
+    }
+  }
+  return n;
+}
+
+function markerTicks(midi: Uint8Array, text: string): number[] {
+  const smf = parseSmf(midi);
+  const decoder = new TextDecoder();
+  const out: number[] = [];
+  for (const track of smf.tracks) {
+    let tick = 0;
+    for (const e of track) {
+      tick += e.delta;
+      if (e.kind === 'meta' && e.metaType === 0x06 && decoder.decode(e.data).trim() === text) out.push(tick);
+    }
+  }
+  return out.sort((a, b) => a - b);
+}
+
 function countCC(midi: Uint8Array, controller: number): number {
   const smf = parseSmf(midi);
   let n = 0;

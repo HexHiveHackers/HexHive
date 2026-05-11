@@ -20,11 +20,13 @@ The .s → .mid converter preserves Sappy state by emitting it as **non-standard
 | **29** | `XCMD xIECV` | Echo / initial channel volume | CC91 (reverb send) — best-effort, spessasynth reverb character ≠ GBA echo | ✅ shipped |
 | **30** | (unknown XCMD subcommand, constant value 8) | TBD — likely Sappy-specific | — | ⚠️ unhandled; low impact |
 
-### B. Loop boundaries present but not consumed
+### B. Loop boundaries (`[` / `]`) — user-selectable mode
 
-All three fixtures carry SMF Marker events with text `[` (loop start) and `]` (loop end) — the canonical Sappy/m4a loop-point convention. **Our playback ignores them**: `seq.loopCount = ∞` simply restarts the whole SMF from frame 0, so any pre-loop intro repeats every time.
+All three fixtures carry SMF Marker events with text `[` (loop start) and `]` (loop end) — the canonical Sappy/m4a loop-point convention. The lab's loop button now cycles through three states:
 
-**Fix sketch:** before passing the SMF to spessasynth's Sequencer, rewrite `[`/`]` markers into the `loopStart`/`loopEnd` text spessasynth's built-in marker loop handler recognizes — or call spessasynth's loop-point API directly with the tick values.
+- **off** — no loop.
+- **full** — `seq.loopCount = ∞`, spessasynth falls back to firstNoteOn → lastVoiceEventTick (loops the whole file from frame 0).
+- **built-in** — rewriter renames `[`/`]` to `loopStart`/`loopEnd` before handoff; spessasynth's BasicMIDI parser picks them up and loops only the marked region.
 
 ### C. Inherent limits (no fix without a custom synth)
 
@@ -347,7 +349,7 @@ Source: `src/lib/midi-lab/midi-rewrite.ts` (rewriter) + `spessasynth_lib` Sequen
 | Tempo / time sig / key sig (meta) | pass-through | ✅ |
 | Channel aftertouch (0xD0) | pass-through | ✅ unused by Sappy |
 | Poly aftertouch (0xA0) | pass-through | ✅ unused by Sappy |
-| SMF Marker (0x06) — `[` / `]` (Sappy loop boundaries) | **not consumed**; `seq.loopCount=∞` loops the whole file | ⚠️ |
+| SMF Marker (0x06) — `[` / `]` (Sappy loop boundaries) | rewriter renames to `loopStart`/`loopEnd` when loop mode is "built-in"; spessasynth's BasicMIDI parser then honors them | ✅ user-selectable (full vs built-in) |
 | Drum channel mode (MSB ≥ 128) | rewriter detects bank≥128 slots, sets channel drum mode, locks against MIDI flips | ✅ |
 | Drum-bank lock against allControllerReset | re-applies setDrums on every controller reset / songChange / timeChange | ✅ |
 | PSG / DMG square + noise voices | mapped to nearest SF2 melodic preset by autoMap | ❌ inherent SF2 limit |

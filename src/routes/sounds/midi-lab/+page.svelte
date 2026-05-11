@@ -320,7 +320,16 @@
   let warnings = $state<string[]>([]);
   let mutedChannels = $state<Set<number>>(new Set());
   let mutedSlots = $state<Set<number>>(new Set());
-  let loopOn = $state(true);
+  // Three-state MIDI loop control: 'off' = no loop, 'full' = loop the
+  // entire SMF (spessasynth falls back to firstNoteOn → lastVoiceEventTick),
+  // 'builtin' = honor the song's `[` / `]` loop markers via rewriter rename.
+  // Cycle off → full → builtin → off on each click of the synth loop button.
+  type LoopMode = 'off' | 'full' | 'builtin';
+  let loopMode = $state<LoopMode>('full');
+  // MP3 reference player has a binary loop concept (whole file or none).
+  // Tracked separately from the synth's loopMode — the two transports are
+  // independent A/B references.
+  let mp3Loop = $state(true);
   let soundfont = $state<Soundfont>(SOUNDFONTS[0]);
   let activeBankId = $state('');
   // The id of the bank the worklet is currently parsing (or null when
@@ -594,7 +603,9 @@
       const merged = buildMappings(loaded.voicegroup, overrides, ps);
       const muted = mutedSlots;
       const resolver = (slot: number, _ch: number) => merged[slot];
-      bytes = rewriteProgramChanges(loaded.midiBytes, resolver, muted.size > 0 ? (slot) => muted.has(slot) : undefined);
+      bytes = rewriteProgramChanges(loaded.midiBytes, resolver, muted.size > 0 ? (slot) => muted.has(slot) : undefined, {
+        rewriteLoopMarkers: loopMode === 'builtin',
+      });
       drumChannels = detectDrumChannels(loaded.midiBytes, resolver);
       firstDrumProgram = firstDrumProgramPerChannel(loaded.midiBytes, resolver);
     } else {
@@ -621,7 +632,7 @@
     new Uint8Array(buf).set(bytes);
     seq.loadNewSongList([{ binary: buf, fileName: id }]);
     await loadedP;
-    seq.loopCount = loopOn ? Number.POSITIVE_INFINITY : 0;
+    seq.loopCount = loopMode !== 'off' ? Number.POSITIVE_INFINITY : 0;
     duration = seq.duration;
     if (restoreTime > 0) seq.currentTime = Math.min(restoreTime, seq.duration);
     // Apply drum-mode flags LAST — after both loadNewSongList AND any
@@ -663,10 +674,25 @@
     }
   }
 
-  function toggleLoop(): void {
-    loopOn = !loopOn;
-    if (seq) seq.loopCount = loopOn ? Number.POSITIVE_INFINITY : 0;
-    if (mp3El) mp3El.loop = loopOn;
+  // Synth loop button: cycle off → full → builtin → off. Switching into
+  // or out of 'builtin' requires a re-rewrite of the MIDI through the
+  // rewriter (rewriteLoopMarkers flips), so trigger loadIntoSequencer
+  // when the boundary is crossed.
+  async function cycleMidiLoop(): Promise<void> {
+    const next: LoopMode = loopMode === 'off' ? 'full' : loopMode === 'full' ? 'builtin' : 'off';
+    const needsReload = (loopMode === 'builtin') !== (next === 'builtin');
+    loopMode = next;
+    if (seq) seq.loopCount = loopMode !== 'off' ? Number.POSITIVE_INFINITY : 0;
+    if (needsReload && loaded && engineState === 'ready') {
+      const t = seq?.currentTime ?? 0;
+      await loadIntoSequencer(t);
+    }
+  }
+
+  // MP3 reference player has a binary loop. Independent of the synth.
+  function toggleMp3Loop(): void {
+    mp3Loop = !mp3Loop;
+    if (mp3El) mp3El.loop = mp3Loop;
   }
 
   async function loadFixture(f: (typeof data.fixtures)[number]): Promise<void> {
@@ -1364,7 +1390,7 @@
             <audio
               bind:this={mp3El}
               preload="metadata"
-              loop={loopOn}
+              loop={mp3Loop}
               class="hidden"
               onplay={() => (mp3IsPlaying = true)}
               onpause={() => (mp3IsPlaying = false)}
@@ -1421,12 +1447,12 @@
             </span>
             <button
               type="button"
-              onclick={toggleLoop}
-              class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] flex items-center gap-1 transition-colors {loopOn
+              onclick={toggleMp3Loop}
+              class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] flex items-center gap-1 transition-colors {mp3Loop
                 ? 'bg-amber-500/15 border-amber-500/60 text-amber-300 hover:bg-amber-500/25 hover:border-amber-400 hover:text-amber-200'
                 : 'border-border text-muted-foreground hover:bg-amber-500/10 hover:border-amber-500/50 hover:text-amber-300'}"
-              aria-pressed={loopOn}
-              title="Loop"
+              aria-pressed={mp3Loop}
+              title="Loop reference recording"
             >
               <Repeat class="size-3" /> loop
             </button>
@@ -1498,14 +1524,14 @@
           </span>
           <button
             type="button"
-            onclick={toggleLoop}
-            class="font-mono text-xs px-2 py-1 rounded border min-w-[2.5rem] flex items-center gap-1 transition-colors {loopOn
+            onclick={() => void cycleMidiLoop()}
+            class="font-mono text-xs px-2 py-1 rounded border min-w-[5.5rem] flex items-center gap-1 transition-colors {loopMode !== 'off'
               ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-400 hover:text-emerald-300'
               : 'border-border text-muted-foreground hover:bg-emerald-500/10 hover:border-emerald-500/50 hover:text-emerald-300'}"
-            aria-pressed={loopOn}
-            title="Loop"
+            aria-pressed={loopMode !== 'off'}
+            title="Loop · off → full → built-in"
           >
-            <Repeat class="size-3" /> loop
+            <Repeat class="size-3" /> {loopMode === 'off' ? 'loop off' : loopMode === 'full' ? 'loop full' : 'loop built-in'}
           </button>
         </div>
       </div>

@@ -358,14 +358,18 @@ function audit(): void {
     '| **30** | (unknown XCMD subcommand, constant value 8) | TBD — likely Sappy-specific | — | ⚠️ unhandled; low impact |',
   );
   out('');
-  out('### B. Loop boundaries present but not consumed');
+  out('### B. Loop boundaries (`[` / `]`) — user-selectable mode');
   out('');
   out(
-    'All three fixtures carry SMF Marker events with text `[` (loop start) and `]` (loop end) — the canonical Sappy/m4a loop-point convention. **Our playback ignores them**: `seq.loopCount = ∞` simply restarts the whole SMF from frame 0, so any pre-loop intro repeats every time.',
+    "All three fixtures carry SMF Marker events with text `[` (loop start) and `]` (loop end) — the canonical Sappy/m4a loop-point convention. The lab's loop button now cycles through three states:",
   );
   out('');
+  out('- **off** — no loop.');
   out(
-    "**Fix sketch:** before passing the SMF to spessasynth's Sequencer, rewrite `[`/`]` markers into the `loopStart`/`loopEnd` text spessasynth's built-in marker loop handler recognizes — or call spessasynth's loop-point API directly with the tick values.",
+    '- **full** — `seq.loopCount = ∞`, spessasynth falls back to firstNoteOn → lastVoiceEventTick (loops the whole file from frame 0).',
+  );
+  out(
+    "- **built-in** — rewriter renames `[`/`]` to `loopStart`/`loopEnd` before handoff; spessasynth's BasicMIDI parser picks them up and loops only the marked region.",
   );
   out('');
   out('### C. Inherent limits (no fix without a custom synth)');
@@ -703,7 +707,7 @@ function audit(): void {
   out(`| Channel aftertouch (0xD0) | pass-through | ✅ unused by Sappy |`);
   out(`| Poly aftertouch (0xA0) | pass-through | ✅ unused by Sappy |`);
   out(
-    `| SMF Marker (0x06) — \`[\` / \`]\` (Sappy loop boundaries) | **not consumed**; \`seq.loopCount=∞\` loops the whole file | ⚠️ |`,
+    `| SMF Marker (0x06) — \`[\` / \`]\` (Sappy loop boundaries) | rewriter renames to \`loopStart\`/\`loopEnd\` when loop mode is "built-in"; spessasynth's BasicMIDI parser then honors them | ✅ user-selectable (full vs built-in) |`,
   );
   out(
     `| Drum channel mode (MSB ≥ 128) | rewriter detects bank≥128 slots, sets channel drum mode, locks against MIDI flips | ✅ |`,
