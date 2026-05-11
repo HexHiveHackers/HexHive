@@ -3,6 +3,7 @@ import type { drizzle } from 'drizzle-orm/libsql';
 import type { ListingType } from '$lib/db/schema';
 import * as schema from '$lib/db/schema';
 import type { DirectoryRow } from '$lib/hhql/fields-users';
+import { hexhiveAffiliationFor } from './affiliations';
 
 type DB = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -106,8 +107,17 @@ export async function enrichDirectoryUsers(db: DB): Promise<DirectoryRow[]> {
     const dbAffs = affsByUser.get(r.userId) ?? [];
     // Synthetic HexHive affiliation for admins. Surfaces in the
     // /users affiliation chip + the HHQL `affiliation` field without
-    // requiring a DB row per admin.
-    const affs = r.isAdmin ? [{ name: 'HexHive', role: 'Admin' as const }, ...dbAffs] : dbAffs;
+    // requiring a DB row per admin. Role is per-username overridable
+    // via hexhiveAffiliationFor().
+    const affs = r.isAdmin
+      ? [
+          {
+            name: hexhiveAffiliationFor(r.username).name,
+            role: hexhiveAffiliationFor(r.username).role,
+          },
+          ...dbAffs,
+        ]
+      : dbAffs;
     const ak = akasByUser.get(r.userId) ?? [];
     const lastActiveMs = r.hideActivity || r.lastActive == null ? null : Number(r.lastActive) * 1000;
     return {

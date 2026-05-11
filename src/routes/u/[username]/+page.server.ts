@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/db';
 import * as schema from '$lib/db/schema';
-import { HEXHIVE_AFFILIATION, listAffiliationsForUser } from '$lib/server/affiliations';
+import { hexhiveAffiliationFor, listAffiliationsForUser } from '$lib/server/affiliations';
 import { listAliasesForUser } from '$lib/server/alias-entries';
 import { listLinksForUser } from '$lib/server/profile-links';
 import { getProfileByUsername, lastActiveFor, listingsByUser } from '$lib/server/profiles';
@@ -24,7 +24,9 @@ export const load: PageServerLoad = async ({ params }) => {
   const listings = await listingsByUser(db, profile.userId, { self: false });
   const lastActive = await lastActiveFor(db, profile.userId, { respectHideFlag: true });
   const dbAffiliations = await listAffiliationsForUser(db, profile.userId);
-  const affiliations = userRows[0]?.isAdmin ? [HEXHIVE_AFFILIATION, ...dbAffiliations] : dbAffiliations;
+  const affiliations = userRows[0]?.isAdmin
+    ? [hexhiveAffiliationFor(profile.username), ...dbAffiliations]
+    : dbAffiliations;
   const aliases = await listAliasesForUser(db, profile.userId);
   const links = await listLinksForUser(db, profile.userId);
   return {

@@ -15,12 +15,21 @@ export interface UserAffiliation {
 // Synthetic affiliation injected for admins; not a DB row. Detach is a
 // no-op for this id; manual adds with the name "HexHive" are rejected.
 export const HEXHIVE_AFFILIATION_ID = '__hexhive';
-export const HEXHIVE_AFFILIATION: UserAffiliation = {
-  id: HEXHIVE_AFFILIATION_ID,
-  name: 'HexHive',
-  url: 'https://hexhive.app',
-  role: 'Admin',
+
+// Per-username role overrides on the synthetic HexHive affiliation.
+// Defaults to "Admin" for anyone not listed here.
+const ADMIN_ROLE_OVERRIDES: Record<string, string> = {
+  jordank: 'Lead Developer & Site Admin',
 };
+
+export function hexhiveAffiliationFor(username: string): UserAffiliation {
+  return {
+    id: HEXHIVE_AFFILIATION_ID,
+    name: 'HexHive',
+    url: 'https://hexhive.app',
+    role: ADMIN_ROLE_OVERRIDES[username.toLowerCase()] ?? 'Admin',
+  };
+}
 
 export async function listAffiliationsForUser(db: DB, userId: string): Promise<UserAffiliation[]> {
   const rows = await db
