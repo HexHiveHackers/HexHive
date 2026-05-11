@@ -62,7 +62,7 @@
           {#each aliases as a (a.id)}
             <li>
               <span
-                class="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-xs text-foreground/80 transition-colors hover:border-primary/40 hover:bg-primary/10"
+                class="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-foreground transition-colors hover:border-primary/60 hover:bg-primary/15"
                 title="Also known as {a.value}"
               >
                 {a.value.replace(/^@/, '')}
