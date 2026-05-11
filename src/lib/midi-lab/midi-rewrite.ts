@@ -196,13 +196,15 @@ const SAPPY_LFOS_CC = 21;
 const SAPPY_XIECV_CC = 29;
 
 export interface RewriteOptions {
-  // When true, rename Sappy/m4a loop boundary markers (`[`, `]`) to the
-  // text spessasynth's BasicMIDI parser recognizes (`loopStart`,
-  // `loopEnd`). spessasynth's marker-text match is case-insensitive +
-  // trimmed, so the new text is honored. Caller flips this to switch
-  // between full-file loop (markers left alone, parser falls back to
-  // firstNoteOn / lastVoiceEventTick) and built-in loop (parser jumps
-  // back to the loopStart marker on each iteration).
+  // When true, translate Sappy/m4a loop boundary markers (`[`, `]`) into
+  // CC111 (loop start) + CC117 (loop end) on channel 0. The original
+  // marker meta events are stripped. spessasynth's BasicMIDI parser
+  // recognizes both marker text AND those CCs as loop boundaries, but
+  // only the CC pair sets the loop type to "soft" — which is the form
+  // we want. "Soft" jumps cleanly to loop.start via `jumpToTick`; "hard"
+  // (what marker-text rename would give) re-replays every event from
+  // tick 0 to loop.start to rebuild synth state, which audibly retriggers
+  // every note in the intro and sounds like the song restarting from 0.
   rewriteLoopMarkers?: boolean;
 }
 
@@ -219,17 +221,32 @@ export function rewriteProgramChanges(
   const { rewriteLoopMarkers = false } = options;
   const smf = parseSmf(midi);
   const channelProgram = new Array<number>(16).fill(0);
-  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
   for (let t = 0; t < smf.tracks.length; t++) {
     const out: MidiEvent[] = [];
     for (const e of smf.tracks[t]) {
       if (rewriteLoopMarkers && e.kind === 'meta' && e.metaType === 0x06) {
-        const text = new TextDecoder().decode(e.data).trim();
-        let renamed: string | null = null;
-        if (text === '[') renamed = 'loopStart';
-        else if (text === ']') renamed = 'loopEnd';
-        if (renamed !== null) {
-          out.push({ ...e, data: encoder.encode(renamed) });
+        const text = decoder.decode(e.data).trim();
+        // RPG Maker / spessasynth recognized CCs:
+        //   CC111 (or CC2/CC116) on any channel → loop start (sets loop.start)
+        //   CC117 (or CC4)        on any channel → loop end (sets loop.end + loop.type="soft")
+        // Channel 0 is the conventional carrier. Value 0 since these are
+        // position markers, not actual controller data.
+        let loopCC: number | null = null;
+        if (text === '[') loopCC = 111;
+        else if (text === ']') loopCC = 117;
+        if (loopCC !== null) {
+          // Strip the marker and replace with a CC on channel 0 at the
+          // same tick. spessasynth's parser doesn't recognize `[`/`]` as
+          // loop boundary text, so leaving the marker in would just be
+          // dead weight; better to remove it.
+          out.push({
+            delta: e.delta,
+            kind: 'midi',
+            status: 0xb0,
+            channel: 0,
+            data: Uint8Array.from([loopCC, 0]),
+          });
           continue;
         }
       }

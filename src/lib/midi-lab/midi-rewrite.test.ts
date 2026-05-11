@@ -328,7 +328,7 @@ describe('rewriteProgramChanges — Sappy BENDR (CC20) → RPN 0,0', () => {
   });
 });
 
-describe('rewriteProgramChanges — loop marker rename ([ → loopStart, ] → loopEnd)', () => {
+describe('rewriteProgramChanges — loop boundary translation ([ → CC111, ] → CC117)', () => {
   const noopResolver = (slot: number) => ({
     bankMSB: 0,
     bankLSB: 0,
@@ -344,12 +344,12 @@ describe('rewriteProgramChanges — loop marker rename ([ → loopStart, ] → l
       const rewritten = rewriteProgramChanges(orig, noopResolver);
       expect(countMarker(rewritten, '[')).toBe(countMarker(orig, '['));
       expect(countMarker(rewritten, ']')).toBe(countMarker(orig, ']'));
-      expect(countMarker(rewritten, 'loopStart')).toBe(0);
-      expect(countMarker(rewritten, 'loopEnd')).toBe(0);
+      expect(countCC(rewritten, 111)).toBe(0);
+      expect(countCC(rewritten, 117)).toBe(0);
     }
   });
 
-  it('renames [ → loopStart and ] → loopEnd when rewriteLoopMarkers is true', () => {
+  it('strips [ / ] markers and emits CC111 / CC117 on channel 0 when rewriteLoopMarkers is true', () => {
     for (const f of fixtures) {
       const orig = readMidi(f);
       const startCount = countMarker(orig, '[');
@@ -359,20 +359,33 @@ describe('rewriteProgramChanges — loop marker rename ([ → loopStart, ] → l
       const rewritten = rewriteProgramChanges(orig, noopResolver, undefined, { rewriteLoopMarkers: true });
       expect(countMarker(rewritten, '[')).toBe(0);
       expect(countMarker(rewritten, ']')).toBe(0);
-      expect(countMarker(rewritten, 'loopStart')).toBe(startCount);
-      expect(countMarker(rewritten, 'loopEnd')).toBe(endCount);
+      expect(countCC(rewritten, 111)).toBe(startCount);
+      expect(countCC(rewritten, 117)).toBe(endCount);
     }
   });
 
-  it('preserves marker tick positions across the rename', () => {
+  it('emits CC111 / CC117 on channel 0 (not the channel of any preceding event)', () => {
+    const orig = readMidi('b_dome_lobby/mus_b_dome_lobby.mid');
+    const rewritten = rewriteProgramChanges(orig, noopResolver, undefined, { rewriteLoopMarkers: true });
+    const smf = parseSmf(rewritten);
+    for (const track of smf.tracks) {
+      for (const e of track) {
+        if (e.kind === 'midi' && (e.status & 0xf0) === 0xb0 && (e.data[0] === 111 || e.data[0] === 117)) {
+          expect(e.status & 0x0f).toBe(0);
+        }
+      }
+    }
+  });
+
+  it('preserves marker tick positions across the CC translation', () => {
     const orig = readMidi('b_dome_lobby/mus_b_dome_lobby.mid');
     const origStartTicks = markerTicks(orig, '[');
     const origEndTicks = markerTicks(orig, ']');
     expect(origStartTicks.length).toBeGreaterThan(0);
 
     const rewritten = rewriteProgramChanges(orig, noopResolver, undefined, { rewriteLoopMarkers: true });
-    expect(markerTicks(rewritten, 'loopStart')).toEqual(origStartTicks);
-    expect(markerTicks(rewritten, 'loopEnd')).toEqual(origEndTicks);
+    expect(ccTicks(rewritten, 111)).toEqual(origStartTicks);
+    expect(ccTicks(rewritten, 117)).toEqual(origEndTicks);
   });
 });
 
@@ -397,6 +410,19 @@ function markerTicks(midi: Uint8Array, text: string): number[] {
     for (const e of track) {
       tick += e.delta;
       if (e.kind === 'meta' && e.metaType === 0x06 && decoder.decode(e.data).trim() === text) out.push(tick);
+    }
+  }
+  return out.sort((a, b) => a - b);
+}
+
+function ccTicks(midi: Uint8Array, controller: number): number[] {
+  const smf = parseSmf(midi);
+  const out: number[] = [];
+  for (const track of smf.tracks) {
+    let tick = 0;
+    for (const e of track) {
+      tick += e.delta;
+      if (e.kind === 'midi' && (e.status & 0xf0) === 0xb0 && e.data[0] === controller) out.push(tick);
     }
   }
   return out.sort((a, b) => a - b);
