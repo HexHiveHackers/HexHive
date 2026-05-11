@@ -130,6 +130,14 @@
   </div>
 
   <div>
+    <h2 class="font-display text-xl mb-2">Also known as</h2>
+    <p class="text-sm text-muted-foreground mb-4">
+      Other handles or names you go by — shown as chips on your public profile, separate from your display name.
+    </p>
+    <AliasEditor initial={data.aliases} />
+  </div>
+
+  <div>
     <h2 class="font-display text-xl mb-4">Connections</h2>
     <p class="text-sm text-muted-foreground mb-4">
       Sign-in providers attached to this HexHive account. Add another so you can sign in either way,
@@ -199,14 +207,6 @@
     {#if connectionError}
       <p class="mt-3 text-sm text-destructive">{connectionError}</p>
     {/if}
-  </div>
-
-  <div>
-    <h2 class="font-display text-xl mb-2">Also known as</h2>
-    <p class="text-sm text-muted-foreground mb-4">
-      Other handles or names you go by — shown as chips on your public profile, separate from your display name.
-    </p>
-    <AliasEditor initial={data.aliases} />
   </div>
 
   <div>
