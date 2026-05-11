@@ -56,13 +56,21 @@
       <p class="text-sm text-muted-foreground mt-1">{profile.name}</p>
     {/if}
     {#if aliases.length > 0}
-      <ul class="mt-2 flex flex-wrap gap-1.5">
-        {#each aliases as a (a.id)}
-          <li>
-            <span class="rounded-full border bg-card/40 px-2.5 py-0.5 text-xs text-muted-foreground">{a.value}</span>
-          </li>
-        {/each}
-      </ul>
+      <div class="mt-2 flex flex-wrap items-center gap-1.5">
+        <span class="font-display text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground/70" aria-label="Also known as">aka</span>
+        <ul class="flex flex-wrap gap-1.5">
+          {#each aliases as a (a.id)}
+            <li>
+              <span
+                class="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-xs text-foreground/80 transition-colors hover:border-primary/40 hover:bg-primary/10"
+                title="Also known as {a.value}"
+              >
+                <span class="opacity-50">@</span>{a.value.replace(/^@/, '')}
+              </span>
+            </li>
+          {/each}
+        </ul>
+      </div>
     {/if}
     {#if profile.bio}<p class="mt-3 whitespace-pre-line">{profile.bio}</p>{/if}
     {#if profile.contactEmail}
