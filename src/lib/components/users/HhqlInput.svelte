@@ -14,6 +14,12 @@
 
   let showHelp = $state(false);
   let helpRoot: HTMLDivElement | undefined = $state();
+  let inputEl: HTMLInputElement | undefined = $state();
+  let preEl: HTMLPreElement | undefined = $state();
+
+  function syncScroll(): void {
+    if (inputEl && preEl) preEl.scrollLeft = inputEl.scrollLeft;
+  }
 
   $effect(() => {
     if (!showHelp) return;
@@ -45,25 +51,31 @@
 </script>
 
 <div
-  class="relative rounded-md border border-input bg-input/30 font-mono text-sm leading-6 transition-colors hover:border-ring/60 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/40"
+  class="relative h-8 overflow-hidden rounded-md border border-input bg-input/30 font-mono text-sm leading-6 transition-colors hover:border-ring/60 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/40"
 >
   <pre
+    bind:this={preEl}
     aria-hidden="true"
-    class="pointer-events-none absolute inset-0 m-0 whitespace-pre-wrap break-words p-2 pr-9 text-muted-foreground/40"
+    class="pointer-events-none absolute inset-0 m-0 overflow-hidden whitespace-nowrap px-2.5 py-1 pr-9 text-muted-foreground/40"
   >{#if value.length === 0}<span class="text-muted-foreground/60">creates IN (sprite, sound) AND hasBio AND active &gt; -30d</span>{:else if tokens.length === 0}{value}{:else}{value.slice(0, tokens[0].start)}{#each tokens as t, i (t.start)}<span class={classFor(t.kind)}>{value.slice(t.start, t.end)}</span>{value.slice(t.end, tokens[i + 1]?.start ?? value.length)}{/each}<span>&#8203;</span>{/if}</pre>
-  <textarea
-    class="relative w-full bg-transparent p-2 pr-9 text-transparent caret-primary outline-none resize-none"
-    rows="2"
+  <input
+    bind:this={inputEl}
+    type="text"
+    class="relative h-full w-full bg-transparent px-2.5 py-1 pr-9 text-transparent caret-primary outline-none"
     spellcheck="false"
     autocapitalize="off"
     autocomplete="off"
     bind:value
-  ></textarea>
+    oninput={syncScroll}
+    onscroll={syncScroll}
+    onkeydown={syncScroll}
+    onmouseup={syncScroll}
+  />
 
-  <div bind:this={helpRoot} class="absolute right-1 top-1">
+  <div bind:this={helpRoot} class="absolute right-1 top-1/2 -translate-y-1/2">
     <button
       type="button"
-      class="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
+      class="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
       aria-haspopup="dialog"
       aria-expanded={showHelp}
       title="HHQL syntax reference"
