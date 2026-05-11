@@ -22,13 +22,14 @@ const ADMIN_ROLE_OVERRIDES: Record<string, string> = {
   jordank: 'Lead Developer & Site Admin',
 };
 
+// Canonical "HexHive account" — the synthetic affiliation card links here.
+const HEXHIVE_OWNER_USERNAME = 'jordank';
+
 export function hexhiveAffiliationFor(username: string): UserAffiliation {
   return {
     id: HEXHIVE_AFFILIATION_ID,
     name: 'HexHive',
-    // Links to the users directory filtered to admins — so clicking
-    // "HexHive" on an admin's profile surfaces the whole admin set.
-    url: '/users?q=admin',
+    url: `/u/${HEXHIVE_OWNER_USERNAME}`,
     role: ADMIN_ROLE_OVERRIDES[username.toLowerCase()] ?? 'Admin',
   };
 }
