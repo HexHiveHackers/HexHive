@@ -279,9 +279,8 @@
     activeTab = groupOf(soundfont.era);
   });
 
-  // Fixture rack tabs — same pattern as banks. Sappy GBA rips and the
-  // Pokémon Essentials GM bundle are conceptually different sources so
-  // they get their own tabs; otherwise the bar would be a long scroll.
+  // Fixture rack tabs — same pattern as banks. Only sappy GBA rips for now;
+  // tab strip is left in place so a future GM-mode corpus can drop in.
   type FixtureTabId = 'sappy' | 'gm';
   const FIXTURE_TABS: {
     id: FixtureTabId;
@@ -289,10 +288,7 @@
     sub: string;
     kind: 'sappy' | 'gm';
     icon: IconCmp;
-  }[] = [
-    { id: 'sappy', label: 'GBA rips', sub: 'Sappy engine · .mid + voicegroup', kind: 'sappy', icon: IconGba },
-    { id: 'gm', label: 'Pokémon Essentials', sub: 'GM render · zeak6464/Fire-Red', kind: 'gm', icon: Cpu },
-  ];
+  }[] = [{ id: 'sappy', label: 'GBA rips', sub: 'Sappy engine · .mid + voicegroup', kind: 'sappy', icon: IconGba }];
   let activeFixtureTab = $state<FixtureTabId>('sappy');
   $effect(() => {
     if (loaded) activeFixtureTab = loaded.kind === 'sappy' ? 'sappy' : 'gm';
@@ -1063,7 +1059,11 @@
        source family, cards inside to pick a specific song. Active fixture
        gets a subtle ring; the tab containing it shows a small white pip. -->
   <div class="space-y-3">
-    <div role="tablist" aria-label="Fixture sources" class="flex flex-wrap gap-1 border-b border-border/60">
+    <div
+      role="tablist"
+      aria-label="Fixture sources"
+      class="flex-wrap gap-1 border-b border-border/60 {FIXTURE_TABS.length > 1 ? 'flex' : 'hidden'}"
+    >
       {#each FIXTURE_TABS as t (t.id)}
         {@const count = data.fixtures.filter((f) => f.kind === t.kind).length}
         {@const containsActive = loaded?.kind === t.kind}

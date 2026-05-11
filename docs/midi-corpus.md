@@ -63,9 +63,9 @@ That means the NMM-released MIDIs are **not** Sappy-engine voicegroup-driven —
 
 `SE/` (sound effects) and `BGS/` (background sounds) are short one-shots with no MIDI counterpart — not interesting for our A/B fixture purposes. The interesting bucket is `BGM/`.
 
-### Mid + OGG pairs in `BGM/` (rendered by mkxp+fluidsynth+GMGSx)
+### Mid + OGG pairs in `BGM/` — **NOT** aligned A/B (removed from the lab)
 
-Six tracks have both a `.mid` and a `.ogg` of the same basename — clean A/B demo candidates: the OGG is the GMGSx-rendered reference for the MIDI.
+Six tracks have a `.mid` and a `.ogg` of the same basename:
 
 | Basename | mid bytes | ogg bytes | mid sha256 |
 |---|---|---|---|
@@ -76,13 +76,18 @@ Six tracks have both a `.mid` and a `.ogg` of the same basename — clean A/B de
 | `Surfing` | 77,038 | 1,465,916 | `ffa1ac40…` |
 | `Title` | 8,141 | 1,446,665 | `a8ffcb0d…` |
 
-These are **GM MIDIs**, not Sappy-engine voicegroup MIDIs — they don't pair with a `.inc`. So they need a different fixture-shape than the Pallet/Littleroot/Battle Dome Lobby trio (which carry `.inc` voicegroups).
+These were originally wired into the lab as `gm` fixtures under the assumption that the OGG was a GMGSx render of the matching `.mid`. **That assumption was wrong.** Spot-checking the embedded text events / RIFF comments revealed:
 
-### Resolution: option (1) — GM-mode fixtures shipped
+- `bicycle.mid` and `surfing.mid` are stock **RPG Maker XP built-in BGM** (`RPG Tsukuru BGM 042_Airship01` / `041_Ship01`, © 2007 ENTERBRAIN / Y. KITAGAMI) — nothing to do with Pokémon.
+- `title.mid` is a hand-sequenced **Pokémon Gold/Silver** title screen by Joao "Johnnyz" Buaes (Gen 2, not FRLG).
+- `battle-wild.mid` carries a `POKEMON LEAF -` marker (FRLG-derived).
+- `battle-trainer.mid` and `hall-of-fame.mid` had no readable source markers.
 
-The lab now distinguishes two fixture kinds (`sappy` and `gm`); the six zeak/Fire-Red mid+ogg pairs above are wired in as `gm` fixtures, with `gmgsx-zeak` as their `referenceSoundfont`. The fixture rack uses tabs ("GBA rips" / "Pokémon Essentials") to keep the two families separate.
+The OGGs are pre-existing **Pokémon Essentials loop-marked audio** (Vorbis `LOOPSTART` / `LOOPLENGTH` sample positions — the Essentials/RPG Maker convention) of unknown origin, not byproducts of rendering the local `.mid` files. Durations diverge wildly (e.g. `bicycle` mid=89 s / ogg=49 s; `hall-of-fame` mid=28 s / ogg=60 s), confirming they're different arrangements that just happen to share basenames because Essentials looks up BGM by filename.
 
-GMGSx itself is uploaded to R2 as `soundfonts/GMGSx-zeak-Fire-Red.sf2` and exposed in the bank rack under the `engine` era / fuchsia tone.
+So these six pairs were dropped from the lab. The `static/midi-lab/fixtures/zeak-fire-red/` tree and the corresponding fixture entries in `+page.server.ts` are gone. The lab keeps the `gm` fixture-kind plumbing in place so a future aligned GM corpus can drop in.
+
+GMGSx itself stays — it's uploaded to R2 as `soundfonts/GMGSx-zeak-Fire-Red.sf2` and remains in the bank rack under the `engine` era / fuchsia tone. It's a useful Public-Domain GM bank regardless of the Pokémon-Essentials origin story.
 
 ## Open questions / followups
 

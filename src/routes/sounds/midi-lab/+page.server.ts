@@ -76,64 +76,12 @@ const FIXTURES: Fixture[] = [
     asmUrl: '/midi-lab/fixtures/b_dome_lobby/mus_b_dome_lobby.s',
     preferredSoundfont: 'vgk-frlg',
   },
-  // GM-mode fixtures from zeak6464/Fire-Red (Pokémon Essentials project).
-  // The .ogg files were rendered by mkxp+fluidsynth through GMGSx — the
-  // bundled "Pokémon Essentials / GMGSx" soundfont — so the reference is
-  // only faithful when that soundfont is the active selection.
-  {
-    id: 'zeak-title',
-    label: 'Title (zeak6464/Fire-Red)',
-    game: 'Pokémon Essentials',
-    kind: 'gm',
-    midiUrl: '/midi-lab/fixtures/zeak-fire-red/title/title.mid',
-    refUrl: '/midi-lab/fixtures/zeak-fire-red/title/title.ogg',
-    referenceSoundfont: 'gmgsx-zeak',
-  },
-  {
-    id: 'zeak-battle-trainer',
-    label: 'Battle (Trainer) — zeak',
-    game: 'Pokémon Essentials',
-    kind: 'gm',
-    midiUrl: '/midi-lab/fixtures/zeak-fire-red/battle-trainer/battle-trainer.mid',
-    refUrl: '/midi-lab/fixtures/zeak-fire-red/battle-trainer/battle-trainer.ogg',
-    referenceSoundfont: 'gmgsx-zeak',
-  },
-  {
-    id: 'zeak-battle-wild',
-    label: 'Battle (Wild) — zeak',
-    game: 'Pokémon Essentials',
-    kind: 'gm',
-    midiUrl: '/midi-lab/fixtures/zeak-fire-red/battle-wild/battle-wild.mid',
-    refUrl: '/midi-lab/fixtures/zeak-fire-red/battle-wild/battle-wild.ogg',
-    referenceSoundfont: 'gmgsx-zeak',
-  },
-  {
-    id: 'zeak-bicycle',
-    label: 'Bicycle — zeak',
-    game: 'Pokémon Essentials',
-    kind: 'gm',
-    midiUrl: '/midi-lab/fixtures/zeak-fire-red/bicycle/bicycle.mid',
-    refUrl: '/midi-lab/fixtures/zeak-fire-red/bicycle/bicycle.ogg',
-    referenceSoundfont: 'gmgsx-zeak',
-  },
-  {
-    id: 'zeak-surfing',
-    label: 'Surfing — zeak',
-    game: 'Pokémon Essentials',
-    kind: 'gm',
-    midiUrl: '/midi-lab/fixtures/zeak-fire-red/surfing/surfing.mid',
-    refUrl: '/midi-lab/fixtures/zeak-fire-red/surfing/surfing.ogg',
-    referenceSoundfont: 'gmgsx-zeak',
-  },
-  {
-    id: 'zeak-hall-of-fame',
-    label: 'Hall of Fame — zeak',
-    game: 'Pokémon Essentials',
-    kind: 'gm',
-    midiUrl: '/midi-lab/fixtures/zeak-fire-red/hall-of-fame/hall-of-fame.mid',
-    refUrl: '/midi-lab/fixtures/zeak-fire-red/hall-of-fame/hall-of-fame.ogg',
-    referenceSoundfont: 'gmgsx-zeak',
-  },
+  // GM-mode fixtures previously sourced from zeak6464/Fire-Red were removed:
+  // the .mid + .ogg pairs in that repo's Audio/BGM were unrelated songs
+  // sharing basenames (RPG Maker XP stock tracks, Gen 2 hand-sequences, etc.),
+  // not aligned A/B references. The GMGSx soundfont sourced from the same
+  // repo stays in the bank rack as a useful GM bank. The `gm` fixture kind
+  // is retained in case an aligned GM corpus appears later.
 ];
 
 export const load: PageServerLoad = () => ({ fixtures: FIXTURES });
