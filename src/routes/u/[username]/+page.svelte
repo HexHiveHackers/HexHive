@@ -81,11 +81,21 @@
       <h2 class="font-display text-xl mb-4">Affiliations</h2>
       <ul class="grid gap-2 sm:grid-cols-2">
         {#each data.affiliations as a (a.id)}
+          {@const internal = !!a.url && a.url.startsWith('/')}
           <li class="rounded-md border bg-card/40 px-3 py-2 text-sm">
             <div class="flex items-center gap-2 flex-wrap">
-              {#if a.url}
+              {#if a.id === '__hexhive'}
+                <span class="shrink-0 inline-flex"><img src="/favicon.ico" alt="" width="14" height="14" /></span>
+              {:else if a.url}
                 <span class="shrink-0 text-muted-foreground"><HostIcon url={a.url} /></span>
-                <a href={a.url} target="_blank" rel="noopener noreferrer" class="font-medium hover:text-primary hover:underline">{a.name}</a>
+              {/if}
+              {#if a.url}
+                <a
+                  href={a.url}
+                  target={internal ? undefined : '_blank'}
+                  rel={internal ? undefined : 'noopener noreferrer'}
+                  class="font-medium hover:text-primary hover:underline"
+                >{a.name}</a>
               {:else}
                 <span class="font-medium">{a.name}</span>
               {/if}

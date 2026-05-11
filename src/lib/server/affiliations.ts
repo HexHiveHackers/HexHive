@@ -26,7 +26,9 @@ export function hexhiveAffiliationFor(username: string): UserAffiliation {
   return {
     id: HEXHIVE_AFFILIATION_ID,
     name: 'HexHive',
-    url: 'https://hexhive.app',
+    // Links to the users directory filtered to admins — so clicking
+    // "HexHive" on an admin's profile surfaces the whole admin set.
+    url: '/users?q=admin',
     role: ADMIN_ROLE_OVERRIDES[username.toLowerCase()] ?? 'Admin',
   };
 }
