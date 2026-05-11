@@ -190,4 +190,12 @@ html { font-family: var(--font-sans); }
 	html {
 		@apply font-sans;
   }
+	button:not(:disabled),
+	[role='button']:not([aria-disabled='true']),
+	summary {
+		cursor: pointer;
+  }
+	select:not(:disabled) {
+		cursor: pointer;
+  }
 }
