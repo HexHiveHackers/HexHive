@@ -228,22 +228,6 @@
   </div>
 
   <div>
-    <h2 class="font-display text-xl mb-4">Drafts</h2>
-    {#if data.drafts.length === 0}
-      <p class="text-sm text-muted-foreground">No drafts.</p>
-    {:else}
-      <ul class="grid gap-2">
-        {#each data.drafts as l}
-          <li class="border rounded p-3 flex items-center justify-between text-sm">
-            <span>{l.title}</span>
-            <Badge variant="outline">{l.type}</Badge>
-          </li>
-        {/each}
-      </ul>
-    {/if}
-  </div>
-
-  <div>
     <h2 class="font-display text-xl mb-4">Published</h2>
     {#if data.published.length === 0}
       <p class="text-sm text-muted-foreground">Nothing published yet.</p>
@@ -256,6 +240,22 @@
               <Badge variant="outline">{l.type}</Badge>
               <span class="text-muted-foreground">{l.downloads} ↓</span>
             </span>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </div>
+
+  <div>
+    <h2 class="font-display text-xl mb-4">Drafts</h2>
+    {#if data.drafts.length === 0}
+      <p class="text-sm text-muted-foreground">No drafts.</p>
+    {:else}
+      <ul class="grid gap-2">
+        {#each data.drafts as l}
+          <li class="border rounded p-3 flex items-center justify-between text-sm">
+            <span>{l.title}</span>
+            <Badge variant="outline">{l.type}</Badge>
           </li>
         {/each}
       </ul>
