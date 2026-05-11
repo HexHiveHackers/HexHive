@@ -178,6 +178,19 @@ export function serializeSmf(smf: ParsedSmf): Uint8Array {
   return Uint8Array.from(bytes);
 }
 
+// CC20 in our Sappy-converted MIDIs encodes Sappy's `BENDR` (pitch-bend
+// range, semitones) per-channel. spessasynth doesn't interpret CC20, so
+// the bend range stays at the synth default (±2 semitones) and bends
+// meant to span ±12 sound shallow. Translate each CC20 into the standard
+// MIDI RPN 0,0 + Data Entry sequence the synth honors:
+//   CC101 = 0    (RPN MSB)
+//   CC100 = 0    (RPN LSB  → selects RPN 0,0 = pitch-bend range)
+//   CC6   = N    (Data Entry MSB = semitones)
+//   CC38  = 0    (Data Entry LSB = cents)
+// Mapping is empirically confirmed by .s ↔ .mid count + value match
+// across all three Gen-3 fixtures (see docs/midi-feature-audit.md).
+const SAPPY_BENDR_CC = 20;
+
 // `isMuted(slot, channel)`, when provided, silences NoteOn events on a
 // channel while the channel's *current* voicegroup slot is muted. We zero
 // the velocity (the conventional MIDI note-off form) instead of dropping
@@ -192,7 +205,42 @@ export function rewriteProgramChanges(
   for (let t = 0; t < smf.tracks.length; t++) {
     const out: MidiEvent[] = [];
     for (const e of smf.tracks[t]) {
-      if (e.kind === 'midi' && (e.status & 0xf0) === 0xc0) {
+      if (e.kind === 'midi' && (e.status & 0xf0) === 0xb0 && e.data[0] === SAPPY_BENDR_CC) {
+        // Sappy BENDR → RPN 0,0 pitch-bend range. Four events total; first
+        // carries the original delta, the rest fire delta-0 so the whole
+        // RPN sequence lands on the same tick as the source CC20.
+        const channel = e.channel ?? e.status & 0x0f;
+        const semitones = e.data[1] & 0x7f;
+        const ccStatus = 0xb0 | channel;
+        out.push({
+          delta: e.delta,
+          kind: 'midi',
+          status: ccStatus,
+          channel,
+          data: Uint8Array.from([101, 0]),
+        });
+        out.push({
+          delta: 0,
+          kind: 'midi',
+          status: ccStatus,
+          channel,
+          data: Uint8Array.from([100, 0]),
+        });
+        out.push({
+          delta: 0,
+          kind: 'midi',
+          status: ccStatus,
+          channel,
+          data: Uint8Array.from([6, semitones]),
+        });
+        out.push({
+          delta: 0,
+          kind: 'midi',
+          status: ccStatus,
+          channel,
+          data: Uint8Array.from([38, 0]),
+        });
+      } else if (e.kind === 'midi' && (e.status & 0xf0) === 0xc0) {
         const channel = e.channel ?? e.status & 0x0f;
         const program = e.data[0];
         channelProgram[channel] = program;

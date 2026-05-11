@@ -122,12 +122,13 @@ describe('rewriteProgramChanges', () => {
     expect(nonZeroNoteOns).toBeGreaterThan(0);
   });
 
-  it('preserves total event count + 1 CC0 per original PC across all fixtures', () => {
+  it('preserves total event count across all fixtures', () => {
     for (const f of fixtures) {
       const orig = readMidi(f);
       const origSmf = parseSmf(orig);
       const origEventCount = origSmf.tracks.reduce((acc, t) => acc + t.length, 0);
       const origPcCount = countProgramChanges(orig);
+      const origCc20Count = countCC(orig, 20);
 
       const rewritten = rewriteProgramChanges(orig, (slot) => ({
         bankMSB: 0,
@@ -139,9 +140,115 @@ describe('rewriteProgramChanges', () => {
       }));
       const newSmf = parseSmf(rewritten);
       const newEventCount = newSmf.tracks.reduce((acc, t) => acc + t.length, 0);
-      // Every original PC now expands to (CC0 + CC32 + PC) — two extra
-      // bank-select CCs per program-change after the rewrite.
-      expect(newEventCount).toBe(origEventCount + 2 * origPcCount);
+      // Each original PC expands to (CC0 + CC32 + PC) → +2 per PC.
+      // Each CC20 (Sappy BENDR) expands to (CC101 + CC100 + CC6 + CC38) → +3 per CC20.
+      expect(newEventCount).toBe(origEventCount + 2 * origPcCount + 3 * origCc20Count);
     }
   });
 });
+
+describe('rewriteProgramChanges — Sappy BENDR (CC20) → RPN 0,0', () => {
+  const noopResolver = (slot: number) => ({
+    bankMSB: 0,
+    bankLSB: 0,
+    program: slot,
+    isDrum: false,
+    label: '',
+    reason: '',
+  });
+
+  it('expands each CC20 into a CC101/CC100/CC6/CC38 quadruple on the same channel and tick', () => {
+    for (const f of fixtures) {
+      const orig = readMidi(f);
+      const origCc20 = countCC(orig, 20);
+      if (origCc20 === 0) continue;
+
+      const rewritten = rewriteProgramChanges(orig, noopResolver);
+      const smf = parseSmf(rewritten);
+
+      let quadruples = 0;
+      for (const track of smf.tracks) {
+        for (let i = 0; i <= track.length - 4; i++) {
+          const a = track[i];
+          const b = track[i + 1];
+          const c = track[i + 2];
+          const d = track[i + 3];
+          if (
+            a.kind === 'midi' &&
+            (a.status & 0xf0) === 0xb0 &&
+            a.data[0] === 101 &&
+            a.data[1] === 0 &&
+            b.kind === 'midi' &&
+            (b.status & 0xf0) === 0xb0 &&
+            b.data[0] === 100 &&
+            b.data[1] === 0 &&
+            b.delta === 0 &&
+            c.kind === 'midi' &&
+            (c.status & 0xf0) === 0xb0 &&
+            c.data[0] === 6 &&
+            c.delta === 0 &&
+            d.kind === 'midi' &&
+            (d.status & 0xf0) === 0xb0 &&
+            d.data[0] === 38 &&
+            d.data[1] === 0 &&
+            d.delta === 0 &&
+            // all four CCs target the same channel
+            (a.status & 0x0f) === (b.status & 0x0f) &&
+            (b.status & 0x0f) === (c.status & 0x0f) &&
+            (c.status & 0x0f) === (d.status & 0x0f)
+          ) {
+            quadruples++;
+          }
+        }
+      }
+      expect(quadruples).toBe(origCc20);
+    }
+  });
+
+  it('emits the original semitone value as the Data Entry MSB (CC6) — Pallet uses BENDR=12', () => {
+    const orig = readMidi('pallet/mus_pallet.mid');
+    const rewritten = rewriteProgramChanges(orig, noopResolver);
+    const smf = parseSmf(rewritten);
+    const bendRangeValues: number[] = [];
+    for (const track of smf.tracks) {
+      for (let i = 0; i <= track.length - 4; i++) {
+        const a = track[i];
+        const c = track[i + 2];
+        if (
+          a.kind === 'midi' &&
+          (a.status & 0xf0) === 0xb0 &&
+          a.data[0] === 101 &&
+          a.data[1] === 0 &&
+          c.kind === 'midi' &&
+          (c.status & 0xf0) === 0xb0 &&
+          c.data[0] === 6
+        ) {
+          bendRangeValues.push(c.data[1]);
+        }
+      }
+    }
+    // All Pallet BENDR values are 12 (±1 octave).
+    expect(bendRangeValues.length).toBeGreaterThan(0);
+    for (const v of bendRangeValues) expect(v).toBe(12);
+  });
+
+  it('drops the original CC20 from output (no Sappy-specific CC remains)', () => {
+    const orig = readMidi('pallet/mus_pallet.mid');
+    const origCc20 = countCC(orig, 20);
+    expect(origCc20).toBeGreaterThan(0);
+
+    const rewritten = rewriteProgramChanges(orig, noopResolver);
+    expect(countCC(rewritten, 20)).toBe(0);
+  });
+});
+
+function countCC(midi: Uint8Array, controller: number): number {
+  const smf = parseSmf(midi);
+  let n = 0;
+  for (const track of smf.tracks) {
+    for (const e of track) {
+      if (e.kind === 'midi' && (e.status & 0xf0) === 0xb0 && e.data[0] === controller) n++;
+    }
+  }
+  return n;
+}
