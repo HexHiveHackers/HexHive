@@ -32,12 +32,33 @@ const isPublic = (pathname: string) =>
   pathname.startsWith('/api/preview/') ||
   PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
-export const handle: Handle = async ({ event, resolve }) => {
-  const session = await auth.api.getSession({ headers: event.request.headers });
-  event.locals.user = session?.user ?? null;
-  event.locals.session = session?.session ?? null;
+// Asset-style endpoints that issue R2 redirects and never consult the
+// session. Skipping the auth call here avoids paying the cost (and
+// dodges a Better Auth request-state crash under heavy concurrent load
+// on Bun) for the bursty thumbnail / avatar fetches a single page load
+// can produce.
+const SESSION_SKIP_PREFIXES = [
+  '/api/preview/',
+  '/api/avatars/',
+  '/api/banners/',
+  '/api/downloads/',
+  '/api/_dev_storage/',
+];
 
-  if (event.locals.user && !isPublic(event.url.pathname)) {
+export const handle: Handle = async ({ event, resolve }) => {
+  const path = event.url.pathname;
+  const skipSession = SESSION_SKIP_PREFIXES.some((p) => path.startsWith(p));
+
+  if (!skipSession) {
+    const session = await auth.api.getSession({ headers: event.request.headers });
+    event.locals.user = session?.user ?? null;
+    event.locals.session = session?.session ?? null;
+  } else {
+    event.locals.user = null;
+    event.locals.session = null;
+  }
+
+  if (event.locals.user && !isPublic(path)) {
     const profile = await getOrCreateProfile(db, event.locals.user.id);
     if (!profile.username) throw redirect(303, '/me/setup');
   }
