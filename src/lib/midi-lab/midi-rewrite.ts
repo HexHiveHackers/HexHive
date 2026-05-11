@@ -178,18 +178,22 @@ export function serializeSmf(smf: ParsedSmf): Uint8Array {
   return Uint8Array.from(bytes);
 }
 
-// CC20 in our Sappy-converted MIDIs encodes Sappy's `BENDR` (pitch-bend
-// range, semitones) per-channel. spessasynth doesn't interpret CC20, so
-// the bend range stays at the synth default (±2 semitones) and bends
-// meant to span ±12 sound shallow. Translate each CC20 into the standard
-// MIDI RPN 0,0 + Data Entry sequence the synth honors:
-//   CC101 = 0    (RPN MSB)
-//   CC100 = 0    (RPN LSB  → selects RPN 0,0 = pitch-bend range)
-//   CC6   = N    (Data Entry MSB = semitones)
-//   CC38  = 0    (Data Entry LSB = cents)
-// Mapping is empirically confirmed by .s ↔ .mid count + value match
-// across all three Gen-3 fixtures (see docs/midi-feature-audit.md).
+// Our .s → .mid converter encodes Sappy bytecode commands that have no
+// standard MIDI equivalent as non-standard CCs in the 20-30 range.
+// spessasynth doesn't interpret them, so they're silently ignored at
+// playback. The rewriter translates each into the nearest standard MIDI
+// concept the synth honors. Mappings empirically confirmed by .s ↔ .mid
+// count + value match across all three Gen-3 fixtures (see
+// docs/midi-feature-audit.md).
+//
+//   CC20 (BENDR)  → RPN 0,0 + CC6 (pitch-bend range, semitones)
+//   CC21 (LFOS)   → CC76 (XG vibrato rate)
+//   CC29 (xIECV)  → CC91 (reverb send) as a best-effort approximation of
+//                   Sappy's echo unit; reverb character ≠ GBA echo but
+//                   the per-channel send level is the right shape.
 const SAPPY_BENDR_CC = 20;
+const SAPPY_LFOS_CC = 21;
+const SAPPY_XIECV_CC = 29;
 
 // `isMuted(slot, channel)`, when provided, silences NoteOn events on a
 // channel while the channel's *current* voicegroup slot is muted. We zero
@@ -239,6 +243,36 @@ export function rewriteProgramChanges(
           status: ccStatus,
           channel,
           data: Uint8Array.from([38, 0]),
+        });
+      } else if (e.kind === 'midi' && (e.status & 0xf0) === 0xb0 && e.data[0] === SAPPY_LFOS_CC) {
+        // Sappy LFOS → CC76 (XG vibrato rate). 1:1 swap; the raw byte
+        // value isn't a direct unit match (Sappy LFOS is a free-running
+        // rate constant, CC76 is centered at 64 = "normal"), but
+        // passthrough is still better than leaving the synth at its
+        // default LFO speed. Typical .s values land in 40-60 which read
+        // as "slightly slower than normal" through XG — close enough for
+        // an approximation.
+        const channel = e.channel ?? e.status & 0x0f;
+        out.push({
+          delta: e.delta,
+          kind: 'midi',
+          status: 0xb0 | channel,
+          channel,
+          data: Uint8Array.from([76, e.data[1] & 0x7f]),
+        });
+      } else if (e.kind === 'midi' && (e.status & 0xf0) === 0xb0 && e.data[0] === SAPPY_XIECV_CC) {
+        // Sappy xIECV (echo channel volume) → CC91 (reverb send). Same
+        // best-effort caveat: the reverb character of spessasynth's
+        // built-in IIR ≠ GBA echo unit, but the per-channel send level
+        // is the right shape — channels that the song wanted "wet" will
+        // sound wetter than channels it wanted "dry".
+        const channel = e.channel ?? e.status & 0x0f;
+        out.push({
+          delta: e.delta,
+          kind: 'midi',
+          status: 0xb0 | channel,
+          channel,
+          data: Uint8Array.from([91, e.data[1] & 0x7f]),
         });
       } else if (e.kind === 'midi' && (e.status & 0xf0) === 0xc0) {
         const channel = e.channel ?? e.status & 0x0f;

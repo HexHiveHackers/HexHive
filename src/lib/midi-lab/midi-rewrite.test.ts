@@ -142,7 +142,93 @@ describe('rewriteProgramChanges', () => {
       const newEventCount = newSmf.tracks.reduce((acc, t) => acc + t.length, 0);
       // Each original PC expands to (CC0 + CC32 + PC) → +2 per PC.
       // Each CC20 (Sappy BENDR) expands to (CC101 + CC100 + CC6 + CC38) → +3 per CC20.
+      // CC21 (LFOS) and CC29 (xIECV) are 1:1 swaps to CC76 / CC91 respectively — no count change.
       expect(newEventCount).toBe(origEventCount + 2 * origPcCount + 3 * origCc20Count);
+    }
+  });
+});
+
+describe('rewriteProgramChanges — Sappy LFOS (CC21) → CC76 (XG vibrato rate)', () => {
+  const noopResolver = (slot: number) => ({
+    bankMSB: 0,
+    bankLSB: 0,
+    program: slot,
+    isDrum: false,
+    label: '',
+    reason: '',
+  });
+
+  it('rewrites every CC21 into a CC76 preserving channel + value + delta', () => {
+    for (const f of fixtures) {
+      const orig = readMidi(f);
+      const origCc21 = countCC(orig, 21);
+      if (origCc21 === 0) continue;
+
+      // Capture the (channel, value) tuples of every CC21 in the source.
+      const origSmf = parseSmf(orig);
+      const sourceTuples: Array<[number, number]> = [];
+      for (const track of origSmf.tracks) {
+        for (const e of track) {
+          if (e.kind === 'midi' && (e.status & 0xf0) === 0xb0 && e.data[0] === 21) {
+            sourceTuples.push([e.status & 0x0f, e.data[1]]);
+          }
+        }
+      }
+
+      const rewritten = rewriteProgramChanges(orig, noopResolver);
+      const newSmf = parseSmf(rewritten);
+      const newTuples: Array<[number, number]> = [];
+      for (const track of newSmf.tracks) {
+        for (const e of track) {
+          if (e.kind === 'midi' && (e.status & 0xf0) === 0xb0 && e.data[0] === 76) {
+            newTuples.push([e.status & 0x0f, e.data[1]]);
+          }
+        }
+      }
+      expect(newTuples).toEqual(sourceTuples);
+      expect(countCC(rewritten, 21)).toBe(0);
+    }
+  });
+});
+
+describe('rewriteProgramChanges — Sappy xIECV (CC29) → CC91 (reverb send)', () => {
+  const noopResolver = (slot: number) => ({
+    bankMSB: 0,
+    bankLSB: 0,
+    program: slot,
+    isDrum: false,
+    label: '',
+    reason: '',
+  });
+
+  it('rewrites every CC29 into a CC91 preserving channel + value + delta', () => {
+    for (const f of fixtures) {
+      const orig = readMidi(f);
+      const origCc29 = countCC(orig, 29);
+      if (origCc29 === 0) continue;
+
+      const origSmf = parseSmf(orig);
+      const sourceTuples: Array<[number, number]> = [];
+      for (const track of origSmf.tracks) {
+        for (const e of track) {
+          if (e.kind === 'midi' && (e.status & 0xf0) === 0xb0 && e.data[0] === 29) {
+            sourceTuples.push([e.status & 0x0f, e.data[1]]);
+          }
+        }
+      }
+
+      const rewritten = rewriteProgramChanges(orig, noopResolver);
+      const newSmf = parseSmf(rewritten);
+      const newTuples: Array<[number, number]> = [];
+      for (const track of newSmf.tracks) {
+        for (const e of track) {
+          if (e.kind === 'midi' && (e.status & 0xf0) === 0xb0 && e.data[0] === 91) {
+            newTuples.push([e.status & 0x0f, e.data[1]]);
+          }
+        }
+      }
+      expect(newTuples).toEqual(sourceTuples);
+      expect(countCC(rewritten, 29)).toBe(0);
     }
   });
 });

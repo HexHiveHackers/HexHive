@@ -314,6 +314,14 @@ const SAPPY_CC_MAP: Record<number, string> = {
   29: 'xIECV (echo)',
 };
 
+// Sappy CCs that the rewriter translates into standard MIDI before
+// playback. Order: source CC → destination CC(s) + a short description.
+const REWRITER_TRANSLATIONS: Record<number, { dest: string; via: string }> = {
+  20: { dest: 'RPN 0,0 + CC6', via: 'BENDR → pitch-bend range (semitones)' },
+  21: { dest: 'CC76', via: 'LFOS → XG vibrato rate' },
+  29: { dest: 'CC91', via: 'xIECV → reverb send (best-effort)' },
+};
+
 function out(s: string): void {
   process.stdout.write(`${s}\n`);
 }
@@ -331,28 +339,24 @@ function audit(): void {
   out('');
   out('Three categories of finding, in order of audible impact:');
   out('');
-  out('### A. Confirmed silently-dropped Sappy state (encoded in non-standard CCs)');
+  out('### A. Sappy state encoded in non-standard CCs (rewriter handles)');
   out('');
   out(
-    "The .s → .mid converter preserves Sappy state by emitting it as **non-standard MIDI controllers (CC20-CC30 range)**. spessasynth doesn't interpret these, so the state is silently dropped at playback. Empirically confirmed by exact count + value match against the .s sources across all three fixtures:",
+    "The .s → .mid converter preserves Sappy state by emitting it as **non-standard MIDI controllers (CC20-CC30 range)**. spessasynth doesn't interpret them directly, so the rewriter (`src/lib/midi-lab/midi-rewrite.ts`) translates each into the standard MIDI equivalent the synth honors. Mappings empirically confirmed by exact count + value match against the .s sources across all three fixtures:",
   );
   out('');
-  out('| CC | Sappy command | What it controls | Audible effect of dropping |');
-  out('|---|---|---|---|');
+  out('| CC | Sappy command | What it controls | Rewriter target | Status |');
+  out('|---|---|---|---|---|');
   out(
-    '| **20** | `BENDR` | Pitch-bend range in semitones (most fixtures use 12 = ±1 octave) | Pitch bends play at synth default ±2 semitones — **6× too shallow**. Most consequential. |',
+    '| **20** | `BENDR` | Pitch-bend range in semitones (most fixtures use 12 = ±1 octave) | RPN 0,0 + CC6 (pitch-bend range) | ✅ shipped |',
   );
-  out("| **21** | `LFOS` | LFO speed (vibrato rate) | Vibrato runs at synth default rate, not the song's. |");
-  out('| **29** | `XCMD xIECV` | Echo / initial channel volume | Echo level missing on songs that use it. |');
-  out('| **30** | (unknown XCMD subcommand, constant value 8) | TBD | Likely Sappy-specific; low impact. |');
-  out('');
+  out('| **21** | `LFOS` | LFO speed (vibrato rate) | CC76 (XG vibrato rate) | ✅ shipped |');
   out(
-    '**Fix sketch:** the rewriter (`src/lib/midi-lab/midi-rewrite.ts`) already intercepts program-change events. Extend it to also translate these Sappy CCs into the MIDI equivalents spessasynth honors:',
+    '| **29** | `XCMD xIECV` | Echo / initial channel volume | CC91 (reverb send) — best-effort, spessasynth reverb character ≠ GBA echo | ✅ shipped |',
   );
-  out('');
-  out('- CC20 (BENDR=N) → emit RPN MSB/LSB 0,0 then CC6=N + CC38=0 on the same channel');
-  out('- CC21 (LFOS=N) → emit CC76=N (XG vibrato rate)');
-  out('- CC29 (xIECV=N) → emit CC91=N (reverb send) as a best-effort approximation');
+  out(
+    '| **30** | (unknown XCMD subcommand, constant value 8) | TBD — likely Sappy-specific | — | ⚠️ unhandled; low impact |',
+  );
   out('');
   out('### B. Loop boundaries present but not consumed');
   out('');
@@ -620,7 +624,7 @@ function audit(): void {
         const cc20Count = ccHist.get(20)?.count ?? 0;
         if (cc20Count === sappy.BENDR) {
           droppedRisks.push(
-            `🔁 **${sappy.BENDR}× BENDR in source matches ${cc20Count}× CC20 in .mid** — the converter preserved bend range as CC20 (non-standard), but spessasynth doesn't interpret CC20. Translate CC20→RPN 0,0+CC6 in the rewriter to recover ±${ccHist.get(20)?.range[0] ?? '?'} semitone bends. **High audible impact.**`,
+            `✅ **${sappy.BENDR}× BENDR in source matches ${cc20Count}× CC20 in .mid** — rewriter translates each to RPN 0,0 + CC6=${ccHist.get(20)?.range[0] ?? '?'} so pitch bends play at the source-intended range.`,
           );
         } else if (cc20Count === 0 && rpnBend.size === 0) {
           droppedRisks.push(
@@ -632,7 +636,7 @@ function audit(): void {
         const cc21Count = ccHist.get(21)?.count ?? 0;
         if (cc21Count === sappy.LFOS) {
           droppedRisks.push(
-            `🔁 **${sappy.LFOS}× LFOS in source matches ${cc21Count}× CC21 in .mid** — preserved as non-standard CC21. Translate CC21→CC76 in the rewriter to give spessasynth the right vibrato rate.`,
+            `✅ **${sappy.LFOS}× LFOS in source matches ${cc21Count}× CC21 in .mid** — rewriter translates each to CC76 (XG vibrato rate).`,
           );
         } else if (cc21Count === 0 && !ccHist.has(76)) {
           droppedRisks.push(`⚠️ **${sappy.LFOS}× LFOS in source, 0 CC21 and 0 CC76 in .mid.** LFO speed dropped.`);
@@ -688,13 +692,18 @@ function audit(): void {
   out(`| Volume / Pan / Expression (CC7/10/11) | pass-through | ✅ |`);
   out(`| Sustain / sostenuto (CC64/66) | pass-through | ✅ |`);
   out(`| Reverb / chorus send (CC91/93) | pass-through | ✅ effect character ≠ GBA |`);
-  out(`| RPN 0,0 (pitch-bend range) | pass-through if present; **not injected by rewriter** | ⚠️ depends on source |`);
-  out(`| Vibrato rate/depth/delay (CC76/77/78, XG) | pass-through | ✅ if present |`);
+  out(
+    `| RPN 0,0 (pitch-bend range) | rewriter injects via CC20 translation; pass-through if source already sets it | ✅ |`,
+  );
+  out(`| Vibrato rate (CC76, XG) | rewriter injects via CC21 translation; pass-through otherwise | ✅ |`);
+  out(
+    `| Reverb send (CC91) | rewriter injects via CC29 translation; pass-through otherwise | ✅ best-effort vs GBA echo |`,
+  );
   out(`| Tempo / time sig / key sig (meta) | pass-through | ✅ |`);
   out(`| Channel aftertouch (0xD0) | pass-through | ✅ unused by Sappy |`);
   out(`| Poly aftertouch (0xA0) | pass-through | ✅ unused by Sappy |`);
   out(
-    `| SMF Marker (0x06) — \`loopStart\`/\`loopEnd\` | **not consumed**; \`seq.loopCount=∞\` loops the whole file | ⚠️ |`,
+    `| SMF Marker (0x06) — \`[\` / \`]\` (Sappy loop boundaries) | **not consumed**; \`seq.loopCount=∞\` loops the whole file | ⚠️ |`,
   );
   out(
     `| Drum channel mode (MSB ≥ 128) | rewriter detects bank≥128 slots, sets channel drum mode, locks against MIDI flips | ✅ |`,
@@ -708,19 +717,23 @@ function audit(): void {
   out(`| Sappy TIE | flattened to long NoteOn/Off — works | ✅ |`);
   out(`| Voice stealing / hard polyphony cap | spessasynth has unbounded polyphony | ❌ over-renders busy passages |`);
   out('');
-  out(`### Concrete fixes worth queueing`);
+  out(`### Concrete fixes`);
+  out('');
+  out('Done:');
+  out('');
+  out(`- ✅ **Sappy CC20 (BENDR) → RPN 0,0 + CC6** — rewriter restores intended pitch-bend range. (Shipped.)`);
+  out('- ✅ **Sappy CC21 (LFOS) → CC76** — rewriter restores intended vibrato rate. (Shipped.)');
+  out(
+    `- ✅ **Sappy CC29 (xIECV) → CC91** — rewriter best-effort approximation of echo. Note that spessasynth's reverb character is not GBA hardware echo. (Shipped.)`,
+  );
+  out('');
+  out('Queued:');
   out('');
   out(
-    `1. **Loop point honor.** If any fixture .mid carries \`loopStart\` / \`loopEnd\` markers, switch Sequencer to use them (spessasynth's \`loop\` option) instead of full-file loop. Cheap win if applicable. (See per-fixture sections above for marker presence.)`,
+    `1. **Loop point honor.** Rewriter could rename \`[\` → \`loopStart\` and \`]\` → \`loopEnd\` so spessasynth's built-in marker handler picks up the loop region. Battle Dome benefits the most — its loop starts at tick 384 of 1152, meaning ~33% of the file is intro that currently replays every loop.`,
   );
   out(
-    `2. **Pitch-bend range injection.** For fixtures whose Sappy \`.s\` declares per-voice \`BENDR\` but whose \`.mid\` has no RPN 0,0, the rewriter could inject RPN 0,0 + CC6=\`<range>\` at the start of the song. Needs voicegroup-parse extension to surface bend range per slot.`,
-  );
-  out(
-    `3. **LFO speed/delay injection.** Similar story: if \`.s\` declares \`LFOS\` / \`LFODL\` and \`.mid\` is missing CC76/CC78, inject them at song start. XG-only so vanilla GM banks ignore; SF2 banks with modulators may honor.`,
-  );
-  out(
-    `4. **Mark inherent SF2 limits in UI.** PSG/duty-cycle limitations can't be fixed without a custom synth. A user-facing note on the lab page ("PSG voices are sample approximations") would manage expectations.`,
+    `2. **Mark inherent SF2 limits in UI.** PSG/duty-cycle limitations can't be fixed without a custom synth. A user-facing note on the lab page ("PSG voices are sample approximations") would manage expectations.`,
   );
   out('');
 }
@@ -733,6 +746,10 @@ function ccVerdict(cc: number): string {
     0, 1, 5, 6, 7, 10, 11, 32, 38, 64, 65, 66, 71, 74, 76, 77, 78, 84, 91, 93, 100, 101, 120, 121, 123,
   ]);
   if (safe.has(cc)) return '✅ pass-through (spessasynth honors)';
+  const translation = REWRITER_TRANSLATIONS[cc];
+  if (translation) {
+    return `✅ rewriter translates → ${translation.dest} (${translation.via})`;
+  }
   if (cc in SAPPY_CC_MAP) {
     return `❌ Sappy ${SAPPY_CC_MAP[cc]} encoded as non-standard CC — synth silently ignores`;
   }

@@ -9,22 +9,16 @@ sees in each fixture .mid, plus a scan of the paired `.s` for Sappy bytecode com
 
 Three categories of finding, in order of audible impact:
 
-### A. Confirmed silently-dropped Sappy state (encoded in non-standard CCs)
+### A. Sappy state encoded in non-standard CCs (rewriter handles)
 
-The .s → .mid converter preserves Sappy state by emitting it as **non-standard MIDI controllers (CC20-CC30 range)**. spessasynth doesn't interpret these, so the state is silently dropped at playback. Empirically confirmed by exact count + value match against the .s sources across all three fixtures:
+The .s → .mid converter preserves Sappy state by emitting it as **non-standard MIDI controllers (CC20-CC30 range)**. spessasynth doesn't interpret them directly, so the rewriter (`src/lib/midi-lab/midi-rewrite.ts`) translates each into the standard MIDI equivalent the synth honors. Mappings empirically confirmed by exact count + value match against the .s sources across all three fixtures:
 
-| CC | Sappy command | What it controls | Audible effect of dropping |
-|---|---|---|---|
-| **20** | `BENDR` | Pitch-bend range in semitones (most fixtures use 12 = ±1 octave) | Pitch bends play at synth default ±2 semitones — **6× too shallow**. Most consequential. |
-| **21** | `LFOS` | LFO speed (vibrato rate) | Vibrato runs at synth default rate, not the song's. |
-| **29** | `XCMD xIECV` | Echo / initial channel volume | Echo level missing on songs that use it. |
-| **30** | (unknown XCMD subcommand, constant value 8) | TBD | Likely Sappy-specific; low impact. |
-
-**Fix sketch:** the rewriter (`src/lib/midi-lab/midi-rewrite.ts`) already intercepts program-change events. Extend it to also translate these Sappy CCs into the MIDI equivalents spessasynth honors:
-
-- CC20 (BENDR=N) → emit RPN MSB/LSB 0,0 then CC6=N + CC38=0 on the same channel
-- CC21 (LFOS=N) → emit CC76=N (XG vibrato rate)
-- CC29 (xIECV=N) → emit CC91=N (reverb send) as a best-effort approximation
+| CC | Sappy command | What it controls | Rewriter target | Status |
+|---|---|---|---|---|
+| **20** | `BENDR` | Pitch-bend range in semitones (most fixtures use 12 = ±1 octave) | RPN 0,0 + CC6 (pitch-bend range) | ✅ shipped |
+| **21** | `LFOS` | LFO speed (vibrato rate) | CC76 (XG vibrato rate) | ✅ shipped |
+| **29** | `XCMD xIECV` | Echo / initial channel volume | CC91 (reverb send) — best-effort, spessasynth reverb character ≠ GBA echo | ✅ shipped |
+| **30** | (unknown XCMD subcommand, constant value 8) | TBD — likely Sappy-specific | — | ⚠️ unhandled; low impact |
 
 ### B. Loop boundaries present but not consumed
 
@@ -60,9 +54,9 @@ These would need a dedicated GBA-engine synth (e.g. agbplay's WebAssembly port) 
 | 1 | Modulation Wheel (vibrato depth) | 127 | 0,1,2,6 | 0–8 | ✅ pass-through (spessasynth honors) |
 | 7 | Volume | 354 | 0,1,2,3,4,5,6,7,8 | 16–127 | ✅ pass-through (spessasynth honors) |
 | 10 | Pan | 13 | 0,1,2,3,4,5,6,7,8 | 3–127 | ✅ pass-through (spessasynth honors) |
-| 20 | Sappy BENDR (pitch-bend range, semitones) | 8 | 0,1,2,3,5,6,7 | 12–12 | ❌ Sappy BENDR encoded as non-standard CC — synth silently ignores |
-| 21 | Sappy LFOS (LFO speed) | 17 | 0,1,2,3,4,5,6,7 | 44–44 | ❌ Sappy LFOS encoded as non-standard CC — synth silently ignores |
-| 29 | Sappy XCMD xIECV (echo / initial channel volume) | 8 | 6,7 | 8–18 | ❌ Sappy xIECV (echo) encoded as non-standard CC — synth silently ignores |
+| 20 | Sappy BENDR (pitch-bend range, semitones) | 8 | 0,1,2,3,5,6,7 | 12–12 | ✅ rewriter translates → RPN 0,0 + CC6 (BENDR → pitch-bend range (semitones)) |
+| 21 | Sappy LFOS (LFO speed) | 17 | 0,1,2,3,4,5,6,7 | 44–44 | ✅ rewriter translates → CC76 (LFOS → XG vibrato rate) |
+| 29 | Sappy XCMD xIECV (echo / initial channel volume) | 8 | 6,7 | 8–18 | ✅ rewriter translates → CC91 (xIECV → reverb send (best-effort)) |
 | 30 | Sappy XCMD (unknown subcommand) | 8 | 6,7 | 8–8 | ⚠️ uncommon — verify synth interprets it |
 
 ### Pitch-bend range (RPN 0,0)
@@ -142,8 +136,8 @@ No aftertouch events. (Sappy doesn't generate these.)
 
 #### Likely-dropped features (.s → .mid)
 
-- 🔁 **8× BENDR in source matches 8× CC20 in .mid** — the converter preserved bend range as CC20 (non-standard), but spessasynth doesn't interpret CC20. Translate CC20→RPN 0,0+CC6 in the rewriter to recover ±12 semitone bends. **High audible impact.**
-- 🔁 **17× LFOS in source matches 17× CC21 in .mid** — preserved as non-standard CC21. Translate CC21→CC76 in the rewriter to give spessasynth the right vibrato rate.
+- ✅ **8× BENDR in source matches 8× CC20 in .mid** — rewriter translates each to RPN 0,0 + CC6=12 so pitch bends play at the source-intended range.
+- ✅ **17× LFOS in source matches 17× CC21 in .mid** — rewriter translates each to CC76 (XG vibrato rate).
 - 🔁 **9× GOTO in source matches 2× loop marker(s) (`[` / `]`) in .mid** — preserved, but our Sequencer config doesn't consume them. Loop region: tick 36–2340.
 - ℹ️ **4× XCMD in source.** Extended Sappy commands; presumed dropped.
 
@@ -162,8 +156,8 @@ No aftertouch events. (Sappy doesn't generate these.)
 | 1 | Modulation Wheel (vibrato depth) | 148 | 0,1,3,5 | 0–11 | ✅ pass-through (spessasynth honors) |
 | 7 | Volume | 122 | 0,1,2,3,4,5 | 9–127 | ✅ pass-through (spessasynth honors) |
 | 10 | Pan | 6 | 0,1,2,3,4,5 | 24–96 | ✅ pass-through (spessasynth honors) |
-| 20 | Sappy BENDR (pitch-bend range, semitones) | 6 | 0,1,2,3,4,5 | 12–12 | ❌ Sappy BENDR encoded as non-standard CC — synth silently ignores |
-| 21 | Sappy LFOS (LFO speed) | 7 | 0,1,2,3,4,5 | 44–50 | ❌ Sappy LFOS encoded as non-standard CC — synth silently ignores |
+| 20 | Sappy BENDR (pitch-bend range, semitones) | 6 | 0,1,2,3,4,5 | 12–12 | ✅ rewriter translates → RPN 0,0 + CC6 (BENDR → pitch-bend range (semitones)) |
+| 21 | Sappy LFOS (LFO speed) | 7 | 0,1,2,3,4,5 | 44–50 | ✅ rewriter translates → CC76 (LFOS → XG vibrato rate) |
 
 ### Pitch-bend range (RPN 0,0)
 
@@ -236,8 +230,8 @@ No aftertouch events. (Sappy doesn't generate these.)
 
 #### Likely-dropped features (.s → .mid)
 
-- 🔁 **6× BENDR in source matches 6× CC20 in .mid** — the converter preserved bend range as CC20 (non-standard), but spessasynth doesn't interpret CC20. Translate CC20→RPN 0,0+CC6 in the rewriter to recover ±12 semitone bends. **High audible impact.**
-- 🔁 **7× LFOS in source matches 7× CC21 in .mid** — preserved as non-standard CC21. Translate CC21→CC76 in the rewriter to give spessasynth the right vibrato rate.
+- ✅ **6× BENDR in source matches 6× CC20 in .mid** — rewriter translates each to RPN 0,0 + CC6=12 so pitch bends play at the source-intended range.
+- ✅ **7× LFOS in source matches 7× CC21 in .mid** — rewriter translates each to CC76 (XG vibrato rate).
 - 🔁 **6× GOTO in source matches 2× loop marker(s) (`[` / `]`) in .mid** — preserved, but our Sequencer config doesn't consume them. Loop region: tick 0–1536.
 
 ---
@@ -254,9 +248,9 @@ No aftertouch events. (Sappy doesn't generate these.)
 |---|---|---|---|---|---|
 | 7 | Volume | 3 | 0,1,2 | 87–127 | ✅ pass-through (spessasynth honors) |
 | 10 | Pan | 3 | 0,1,2 | 64–127 | ✅ pass-through (spessasynth honors) |
-| 20 | Sappy BENDR (pitch-bend range, semitones) | 2 | 1,2 | 12–12 | ❌ Sappy BENDR encoded as non-standard CC — synth silently ignores |
-| 21 | Sappy LFOS (LFO speed) | 2 | 1,2 | 44–44 | ❌ Sappy LFOS encoded as non-standard CC — synth silently ignores |
-| 29 | Sappy XCMD xIECV (echo / initial channel volume) | 2 | 1 | 16–18 | ❌ Sappy xIECV (echo) encoded as non-standard CC — synth silently ignores |
+| 20 | Sappy BENDR (pitch-bend range, semitones) | 2 | 1,2 | 12–12 | ✅ rewriter translates → RPN 0,0 + CC6 (BENDR → pitch-bend range (semitones)) |
+| 21 | Sappy LFOS (LFO speed) | 2 | 1,2 | 44–44 | ✅ rewriter translates → CC76 (LFOS → XG vibrato rate) |
+| 29 | Sappy XCMD xIECV (echo / initial channel volume) | 2 | 1 | 16–18 | ✅ rewriter translates → CC91 (xIECV → reverb send (best-effort)) |
 | 30 | Sappy XCMD (unknown subcommand) | 2 | 1 | 8–8 | ⚠️ uncommon — verify synth interprets it |
 
 ### Pitch-bend range (RPN 0,0)
@@ -326,8 +320,8 @@ No aftertouch events. (Sappy doesn't generate these.)
 
 #### Likely-dropped features (.s → .mid)
 
-- 🔁 **2× BENDR in source matches 2× CC20 in .mid** — the converter preserved bend range as CC20 (non-standard), but spessasynth doesn't interpret CC20. Translate CC20→RPN 0,0+CC6 in the rewriter to recover ±12 semitone bends. **High audible impact.**
-- 🔁 **2× LFOS in source matches 2× CC21 in .mid** — preserved as non-standard CC21. Translate CC21→CC76 in the rewriter to give spessasynth the right vibrato rate.
+- ✅ **2× BENDR in source matches 2× CC20 in .mid** — rewriter translates each to RPN 0,0 + CC6=12 so pitch bends play at the source-intended range.
+- ✅ **2× LFOS in source matches 2× CC21 in .mid** — rewriter translates each to CC76 (XG vibrato rate).
 - 🔁 **3× GOTO in source matches 2× loop marker(s) (`[` / `]`) in .mid** — preserved, but our Sequencer config doesn't consume them. Loop region: tick 384–1152.
 - ℹ️ **1× XCMD in source.** Extended Sappy commands; presumed dropped.
 
@@ -347,12 +341,13 @@ Source: `src/lib/midi-lab/midi-rewrite.ts` (rewriter) + `spessasynth_lib` Sequen
 | Volume / Pan / Expression (CC7/10/11) | pass-through | ✅ |
 | Sustain / sostenuto (CC64/66) | pass-through | ✅ |
 | Reverb / chorus send (CC91/93) | pass-through | ✅ effect character ≠ GBA |
-| RPN 0,0 (pitch-bend range) | pass-through if present; **not injected by rewriter** | ⚠️ depends on source |
-| Vibrato rate/depth/delay (CC76/77/78, XG) | pass-through | ✅ if present |
+| RPN 0,0 (pitch-bend range) | rewriter injects via CC20 translation; pass-through if source already sets it | ✅ |
+| Vibrato rate (CC76, XG) | rewriter injects via CC21 translation; pass-through otherwise | ✅ |
+| Reverb send (CC91) | rewriter injects via CC29 translation; pass-through otherwise | ✅ best-effort vs GBA echo |
 | Tempo / time sig / key sig (meta) | pass-through | ✅ |
 | Channel aftertouch (0xD0) | pass-through | ✅ unused by Sappy |
 | Poly aftertouch (0xA0) | pass-through | ✅ unused by Sappy |
-| SMF Marker (0x06) — `loopStart`/`loopEnd` | **not consumed**; `seq.loopCount=∞` loops the whole file | ⚠️ |
+| SMF Marker (0x06) — `[` / `]` (Sappy loop boundaries) | **not consumed**; `seq.loopCount=∞` loops the whole file | ⚠️ |
 | Drum channel mode (MSB ≥ 128) | rewriter detects bank≥128 slots, sets channel drum mode, locks against MIDI flips | ✅ |
 | Drum-bank lock against allControllerReset | re-applies setDrums on every controller reset / songChange / timeChange | ✅ |
 | PSG / DMG square + noise voices | mapped to nearest SF2 melodic preset by autoMap | ❌ inherent SF2 limit |
@@ -361,10 +356,16 @@ Source: `src/lib/midi-lab/midi-rewrite.ts` (rewriter) + `spessasynth_lib` Sequen
 | Sappy TIE | flattened to long NoteOn/Off — works | ✅ |
 | Voice stealing / hard polyphony cap | spessasynth has unbounded polyphony | ❌ over-renders busy passages |
 
-### Concrete fixes worth queueing
+### Concrete fixes
 
-1. **Loop point honor.** If any fixture .mid carries `loopStart` / `loopEnd` markers, switch Sequencer to use them (spessasynth's `loop` option) instead of full-file loop. Cheap win if applicable. (See per-fixture sections above for marker presence.)
-2. **Pitch-bend range injection.** For fixtures whose Sappy `.s` declares per-voice `BENDR` but whose `.mid` has no RPN 0,0, the rewriter could inject RPN 0,0 + CC6=`<range>` at the start of the song. Needs voicegroup-parse extension to surface bend range per slot.
-3. **LFO speed/delay injection.** Similar story: if `.s` declares `LFOS` / `LFODL` and `.mid` is missing CC76/CC78, inject them at song start. XG-only so vanilla GM banks ignore; SF2 banks with modulators may honor.
-4. **Mark inherent SF2 limits in UI.** PSG/duty-cycle limitations can't be fixed without a custom synth. A user-facing note on the lab page ("PSG voices are sample approximations") would manage expectations.
+Done:
+
+- ✅ **Sappy CC20 (BENDR) → RPN 0,0 + CC6** — rewriter restores intended pitch-bend range. (Shipped.)
+- ✅ **Sappy CC21 (LFOS) → CC76** — rewriter restores intended vibrato rate. (Shipped.)
+- ✅ **Sappy CC29 (xIECV) → CC91** — rewriter best-effort approximation of echo. Note that spessasynth's reverb character is not GBA hardware echo. (Shipped.)
+
+Queued:
+
+1. **Loop point honor.** Rewriter could rename `[` → `loopStart` and `]` → `loopEnd` so spessasynth's built-in marker handler picks up the loop region. Battle Dome benefits the most — its loop starts at tick 384 of 1152, meaning ~33% of the file is intro that currently replays every loop.
+2. **Mark inherent SF2 limits in UI.** PSG/duty-cycle limitations can't be fixed without a custom synth. A user-facing note on the lab page ("PSG voices are sample approximations") would manage expectations.
 
