@@ -137,11 +137,10 @@
             class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
             onclick={() => toggleType(t.id)}
           >
-            <span class="inline-flex items-center gap-2" style="color: {t.accent}">
-              <TypeIcon type={t.id} size={14} class="shrink-0" />
-              <span>{t.label}</span>
+            <span style="color: {t.accent}" class="inline-flex shrink-0">
+              <TypeIcon type={t.id} size={14} />
             </span>
-            <span class="flex-1"></span>
+            <span class="flex-1 text-left">{t.label}</span>
             {#if chips.types.includes(t.id)}<span aria-hidden="true">&#10003;</span>{/if}
           </button>
         {/each}
