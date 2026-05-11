@@ -65,7 +65,7 @@
                 class="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-xs text-foreground/80 transition-colors hover:border-primary/40 hover:bg-primary/10"
                 title="Also known as {a.value}"
               >
-                <span class="opacity-50">@</span>{a.value.replace(/^@/, '')}
+                {a.value.replace(/^@/, '')}
               </span>
             </li>
           {/each}
