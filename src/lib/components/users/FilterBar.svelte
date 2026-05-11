@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ChevronDown } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
   import {
     type ActivePreset,
@@ -111,8 +112,14 @@
 <div bind:this={rootEl} class="flex flex-wrap items-center gap-2">
   <!-- Type -->
   <div class="relative">
-    <Button variant="outline" size="sm" onclick={() => toggle('type')}>
-      Type{chips.types.length ? ` (${chips.types.length})` : ''}
+    <Button
+      variant="outline"
+      size="sm"
+      aria-haspopup="listbox"
+      aria-expanded={openChip === 'type'}
+      onclick={() => toggle('type')}
+    >
+      Type{chips.types.length ? ` (${chips.types.length})` : ''}<ChevronDown aria-hidden="true" class="ml-0.5 size-3.5 opacity-60 transition-transform group-aria-expanded/button:rotate-180" />
     </Button>
     {#if openChip === 'type'}
       <div class="absolute left-0 top-full z-10 mt-1 w-44 rounded-md border bg-popover p-1 shadow-md">
@@ -132,8 +139,14 @@
 
   <!-- Active -->
   <div class="relative">
-    <Button variant="outline" size="sm" onclick={() => toggle('active')}>
-      Active{chips.active !== 'any' ? `: ${activeLabel(chips.active)}` : ''}
+    <Button
+      variant="outline"
+      size="sm"
+      aria-haspopup="listbox"
+      aria-expanded={openChip === 'active'}
+      onclick={() => toggle('active')}
+    >
+      Active{chips.active !== 'any' ? `: ${activeLabel(chips.active)}` : ''}<ChevronDown aria-hidden="true" class="ml-0.5 size-3.5 opacity-60 transition-transform group-aria-expanded/button:rotate-180" />
     </Button>
     {#if openChip === 'active'}
       <div class="absolute left-0 top-full z-10 mt-1 w-44 rounded-md border bg-popover p-1 shadow-md">
@@ -153,8 +166,14 @@
 
   <!-- Joined -->
   <div class="relative">
-    <Button variant="outline" size="sm" onclick={() => toggle('joined')}>
-      Joined{chips.joined !== 'any' ? `: ${joinedLabel(chips.joined)}` : ''}
+    <Button
+      variant="outline"
+      size="sm"
+      aria-haspopup="listbox"
+      aria-expanded={openChip === 'joined'}
+      onclick={() => toggle('joined')}
+    >
+      Joined{chips.joined !== 'any' ? `: ${joinedLabel(chips.joined)}` : ''}<ChevronDown aria-hidden="true" class="ml-0.5 size-3.5 opacity-60 transition-transform group-aria-expanded/button:rotate-180" />
     </Button>
     {#if openChip === 'joined'}
       <div class="absolute left-0 top-full z-10 mt-1 w-44 rounded-md border bg-popover p-1 shadow-md">
@@ -174,8 +193,14 @@
 
   <!-- Downloads -->
   <div class="relative">
-    <Button variant="outline" size="sm" onclick={() => toggle('downloads')}>
-      Downloads{chips.downloads !== 'any' ? `: ${numLabel(DOWNLOAD_PRESETS, chips.downloads)}` : ''}
+    <Button
+      variant="outline"
+      size="sm"
+      aria-haspopup="listbox"
+      aria-expanded={openChip === 'downloads'}
+      onclick={() => toggle('downloads')}
+    >
+      Downloads{chips.downloads !== 'any' ? `: ${numLabel(DOWNLOAD_PRESETS, chips.downloads)}` : ''}<ChevronDown aria-hidden="true" class="ml-0.5 size-3.5 opacity-60 transition-transform group-aria-expanded/button:rotate-180" />
     </Button>
     {#if openChip === 'downloads'}
       <div class="absolute left-0 top-full z-10 mt-1 w-44 rounded-md border bg-popover p-1 shadow-md">
@@ -195,8 +220,14 @@
 
   <!-- Listings -->
   <div class="relative">
-    <Button variant="outline" size="sm" onclick={() => toggle('listings')}>
-      Listings{chips.listings !== 'any' ? `: ${numLabel(LISTING_PRESETS, chips.listings)}` : ''}
+    <Button
+      variant="outline"
+      size="sm"
+      aria-haspopup="listbox"
+      aria-expanded={openChip === 'listings'}
+      onclick={() => toggle('listings')}
+    >
+      Listings{chips.listings !== 'any' ? `: ${numLabel(LISTING_PRESETS, chips.listings)}` : ''}<ChevronDown aria-hidden="true" class="ml-0.5 size-3.5 opacity-60 transition-transform group-aria-expanded/button:rotate-180" />
     </Button>
     {#if openChip === 'listings'}
       <div class="absolute left-0 top-full z-10 mt-1 w-44 rounded-md border bg-popover p-1 shadow-md">
@@ -216,8 +247,14 @@
 
   <!-- Has -->
   <div class="relative">
-    <Button variant="outline" size="sm" onclick={() => toggle('has')}>
-      Has&hellip;{chips.has.length ? ` (${chips.has.length})` : ''}
+    <Button
+      variant="outline"
+      size="sm"
+      aria-haspopup="listbox"
+      aria-expanded={openChip === 'has'}
+      onclick={() => toggle('has')}
+    >
+      Has&hellip;{chips.has.length ? ` (${chips.has.length})` : ''}<ChevronDown aria-hidden="true" class="ml-0.5 size-3.5 opacity-60 transition-transform group-aria-expanded/button:rotate-180" />
     </Button>
     {#if openChip === 'has'}
       <div class="absolute left-0 top-full z-10 mt-1 w-52 rounded-md border bg-popover p-1 shadow-md">
@@ -238,8 +275,14 @@
   <!-- Affiliation -->
   {#if affiliations.length > 0}
     <div class="relative">
-      <Button variant="outline" size="sm" onclick={() => toggle('affiliation')}>
-        Affiliation{chips.affiliations.length ? ` (${chips.affiliations.length})` : ''}
+      <Button
+        variant="outline"
+        size="sm"
+        aria-haspopup="listbox"
+        aria-expanded={openChip === 'affiliation'}
+        onclick={() => toggle('affiliation')}
+      >
+        Affiliation{chips.affiliations.length ? ` (${chips.affiliations.length})` : ''}<ChevronDown aria-hidden="true" class="ml-0.5 size-3.5 opacity-60 transition-transform group-aria-expanded/button:rotate-180" />
       </Button>
       {#if openChip === 'affiliation'}
         <div
