@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ShieldUser } from '@lucide/svelte';
   import Avatar from '$lib/components/profile/Avatar.svelte';
 
   interface Props {
@@ -12,6 +13,7 @@
       lastActive: number | null;
       joinedAt: number;
       isPlaceholder: boolean;
+      isAdmin?: boolean;
       placeholderKind?: 'contributor' | 'user';
       fromTeamAquaRepo?: boolean;
     };
@@ -52,6 +54,15 @@
           <span class="text-xs text-muted-foreground">@{user.username}</span>
         {:else}
           <span class="font-display text-sm group-hover:text-primary">@{user.username}</span>
+        {/if}
+        {#if user.isAdmin}
+          <span
+            class="inline-flex items-center gap-1 self-center rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-1.5 py-0.5 text-[0.6rem] font-display uppercase tracking-[0.1em] text-fuchsia-300"
+            title="HexHive admin"
+          >
+            <ShieldUser aria-hidden="true" class="size-3" />
+            Admin
+          </span>
         {/if}
         {#if user.pronouns}
           <span class="text-xs text-muted-foreground">{user.pronouns}</span>
