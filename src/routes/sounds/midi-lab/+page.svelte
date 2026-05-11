@@ -879,6 +879,21 @@
   }
   function seek(t: number): void {
     if (!seq) return;
+    // Built-in loop mode: spessasynth's auto-loop only fires on natural
+    // forward crossing of the loop-end marker during playback. A manual
+    // seek past loopEnd bypasses that and the worklet falls through to a
+    // full restart from frame 0 on the next loopCount tick — which looks
+    // like "scrub to end and the song plays from 0 instead of the loop
+    // point." Wrap manually: any seek at-or-past loopEnd snaps to
+    // loopStart so the user lands inside the loop region instead.
+    if (
+      loopMode === 'builtin' &&
+      loaded?.loopEndSec !== null &&
+      loaded?.loopStartSec !== null &&
+      t >= (loaded?.loopEndSec ?? Number.POSITIVE_INFINITY)
+    ) {
+      t = loaded?.loopStartSec ?? 0;
+    }
     seq.currentTime = t;
     currentTime = t;
     // Drum-mode is restored by the seq's timeChange listener registered
