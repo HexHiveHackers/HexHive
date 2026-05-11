@@ -4,13 +4,13 @@ Companion to [`soundfonts.md`](./soundfonts.md) and [`soundfont-sources.md`](./s
 
 ## fireglow03 (Discord DMs) — the Sappy fixture trio
 
-The `pallet`, `littleroot`, and `b_dome_lobby` fixtures wired into `/sounds/midi-lab` (Pallet Town, Littleroot Town, Battle Dome Lobby) — each a `.mid` + `.s` + voicegroup `.inc` + reference `.mp3` set — came from **fireglow03** via Discord DM. **All three were ripped from Pokémon FireRed**, not Emerald.
-
-This matters because Emerald carries the FRLG soundtrack inside its ROM data (the audio engine indexes into both song tables), so the same songs exist in both games but the rip used here is the FireRed version. Per fireglow:
+The `pallet`, `littleroot`, and `b_dome_lobby` fixtures wired into `/sounds/midi-lab` (Pallet Town, Littleroot Town, Battle Dome Lobby) — each a `.mid` + `.s` + voicegroup `.inc` + reference `.mp3` set — came from **fireglow03** via Discord DM. Per fireglow:
 
 > _"I should note that all the Pallet Town files I sent are from FireRed, not Emerald. I felt I should specify since Emerald has all the FRLG songs in its data."_
 
-So the lab's preferred soundfont for all three is **`vgk-frlg`** (musical-artifacts #8297, the dedicated FRLG bank), not the Emerald banks. The `game:` field in the fixture manifest is `FireRed` for all three.
+That blanket statement is correct for **Pallet Town** and **Littleroot Town** (both songs exist in FRLG's ROM data — Emerald just carries the same FRLG soundtrack tables), so they're labelled `game: FireRed` with `preferredSoundfont: vgk-frlg` (musical-artifacts #8297).
+
+It does **not** apply to **Battle Dome Lobby**: the Battle Dome is an Emerald-exclusive Battle Frontier facility and the song does not exist in FireRed's ROM. The fixture is therefore necessarily an Emerald rip — `game: Emerald`, `preferredSoundfont: emerald-updated` (MezmerKaiser's 2025-08-29 revision, R2 `Pokemon-Emerald-Updated-2025-08-29.sf2`).
 
 ## Nintendo MIDI Music (lequietriot) — `audio-pack-nmm-lequietriot`
 

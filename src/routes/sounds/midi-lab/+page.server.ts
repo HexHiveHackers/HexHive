@@ -68,13 +68,16 @@ const FIXTURES: Fixture[] = [
   {
     id: 'b_dome_lobby',
     label: 'Battle Dome Lobby',
-    game: 'FireRed',
+    // The Battle Dome is an Emerald-exclusive Battle Frontier facility — it
+    // doesn't exist in FireRed, so this fixture is necessarily an Emerald rip
+    // (fireglow03's blanket "all three are FRLG" doesn't apply here).
+    game: 'Emerald',
     kind: 'sappy',
     midiUrl: '/midi-lab/fixtures/b_dome_lobby/mus_b_dome_lobby.mid',
     voicegroupUrl: '/midi-lab/fixtures/b_dome_lobby/b_dome.inc',
     refUrl: '/midi-lab/fixtures/b_dome_lobby/mus_b_dome_lobby.mp3',
     asmUrl: '/midi-lab/fixtures/b_dome_lobby/mus_b_dome_lobby.s',
-    preferredSoundfont: 'vgk-frlg',
+    preferredSoundfont: 'emerald-updated',
   },
   // GM-mode fixtures previously sourced from zeak6464/Fire-Red were removed:
   // the .mid + .ogg pairs in that repo's Audio/BGM were unrelated songs
