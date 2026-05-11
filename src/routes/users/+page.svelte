@@ -139,21 +139,36 @@
           <HhqlInput bind:value={query} />
         {/if}
       </div>
-      <button
-        type="button"
-        class="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-input/30 px-2.5 text-xs text-muted-foreground transition-colors hover:border-ring/60 hover:text-foreground"
-        title={mode === 'text' ? 'Switch to HHQL mode' : 'Switch to text search'}
-        aria-pressed={mode === 'hhql'}
-        onclick={() => (mode = mode === 'text' ? 'hhql' : 'text')}
+      <div
+        role="radiogroup"
+        aria-label="Query mode"
+        class="inline-flex h-8 items-center rounded-md border border-input bg-input/30 p-0.5 text-xs"
       >
-        {#if mode === 'text'}
-          <Code2 aria-hidden="true" class="size-4" />
-          <span>HHQL</span>
-        {:else}
-          <Search aria-hidden="true" class="size-4" />
+        <button
+          type="button"
+          role="radio"
+          aria-checked={mode === 'text'}
+          class="inline-flex h-full items-center gap-1 rounded px-2 transition-colors {mode === 'text'
+            ? 'bg-background text-foreground shadow-sm'
+            : 'text-muted-foreground hover:text-foreground'}"
+          onclick={() => (mode = 'text')}
+        >
+          <Search aria-hidden="true" class="size-3.5" />
           <span>Search</span>
-        {/if}
-      </button>
+        </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={mode === 'hhql'}
+          class="inline-flex h-full items-center gap-1 rounded px-2 transition-colors {mode === 'hhql'
+            ? 'bg-background text-foreground shadow-sm'
+            : 'text-muted-foreground hover:text-foreground'}"
+          onclick={() => (mode = 'hhql')}
+        >
+          <Code2 aria-hidden="true" class="size-3.5" />
+          <span>HHQL</span>
+        </button>
+      </div>
       <select class="rounded border bg-card text-xs px-2 py-1 shrink-0 h-8" bind:value={sort}>
         <option value="active:desc">Sort: recent</option>
         <option value="downloads:desc">Sort: downloads</option>
