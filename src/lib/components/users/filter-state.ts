@@ -1,7 +1,7 @@
 import type { Expr, Literal } from '$lib/hhql';
 import { emit, parseHhql } from '$lib/hhql';
 
-export type ActivePreset = 'any' | 'last7' | 'last30' | 'thisYear' | 'ever' | 'never';
+export type ActivePreset = 'any' | 'last7' | 'last30' | 'thisYear' | 'never';
 export type JoinedPreset = 'any' | 'last30d' | 'lastYear' | 'thisYear';
 export type NumPreset = 'any' | 'gte1' | 'gte5' | 'gte20' | 'gte100' | 'gte1000';
 
@@ -59,8 +59,8 @@ export function chipStateFromQuery(q: string): ChipState {
       s.affiliations = e.values.map(litStr);
     } else if (e.kind === 'compare' && e.field === 'active' && e.op === '>') {
       s.active = matchActive(e.value) ?? 'any';
-    } else if (e.kind === 'empty' && e.field === 'active') {
-      s.active = e.negated ? 'ever' : 'never';
+    } else if (e.kind === 'empty' && e.field === 'active' && !e.negated) {
+      s.active = 'never';
     } else if (e.kind === 'compare' && e.field === 'joined' && e.op === '>') {
       s.joined = matchJoined(e.value) ?? 'any';
     } else if (e.kind === 'compare' && e.field === 'downloads' && e.op === '>=' && e.value.kind === 'number') {
@@ -106,7 +106,7 @@ function isMappedClause(e: Expr): boolean {
     (e.field === 'active' || e.field === 'joined' || e.field === 'downloads' || e.field === 'listings')
   )
     return true;
-  if (e.kind === 'empty' && e.field === 'active') return true;
+  if (e.kind === 'empty' && e.field === 'active' && !e.negated) return true;
   if (e.kind === 'bare' && (HAS_FIELDS.some((h) => h === e.field) || e.field === 'admin' || e.field === 'placeholder'))
     return true;
   if (e.kind === 'not' && e.inner.kind === 'bare' && e.inner.field === 'placeholder') return true;
@@ -134,8 +134,6 @@ function activeClause(p: ActivePreset): string {
       return 'active > -30d';
     case 'thisYear':
       return `active > ${THIS_YEAR_START}`;
-    case 'ever':
-      return 'active IS NOT EMPTY';
     case 'never':
       return 'active IS EMPTY';
     default:

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { ChevronDown } from '@lucide/svelte';
+  import TypeIcon from '$lib/components/listings/TypeIcon.svelte';
   import { Button } from '$lib/components/ui/button';
+  import type { ListingType } from '$lib/db/schema';
   import {
     type ActivePreset,
     applyChip,
@@ -64,7 +66,14 @@
     return () => window.removeEventListener('mousedown', onDown);
   });
 
-  const ASSET_TYPES = ['romhack', 'sprite', 'sound', 'script'] as const;
+  // Order + colors mirror the site nav (Header.svelte). `tool` is not yet a
+  // ListingType so it's excluded here — see the tool-as-listing-type plan.
+  const ASSET_TYPES: { id: ListingType; label: string; accent: string }[] = [
+    { id: 'sprite', label: 'Sprites', accent: '#fb7185' },
+    { id: 'sound', label: 'Sounds', accent: '#f59e0b' },
+    { id: 'script', label: 'Scripts', accent: '#10b981' },
+    { id: 'romhack', label: 'Romhacks', accent: '#a78bfa' },
+  ];
   const HAS_OPTIONS: { id: string; label: string }[] = [
     { id: 'hasBio', label: 'Has bio' },
     { id: 'hasAlias', label: 'Has alias' },
@@ -76,7 +85,6 @@
     { id: 'last7', label: 'Last 7 days' },
     { id: 'last30', label: 'Last 30 days' },
     { id: 'thisYear', label: 'This year' },
-    { id: 'ever', label: 'Ever active' },
     { id: 'never', label: 'Never' },
   ];
   const JOINED_PRESETS: { id: JoinedPreset; label: string }[] = [
@@ -123,14 +131,18 @@
     </Button>
     {#if openChip === 'type'}
       <div class="absolute left-0 top-full z-10 mt-1 w-44 rounded-md border bg-popover p-1 shadow-md">
-        {#each ASSET_TYPES as t (t)}
+        {#each ASSET_TYPES as t (t.id)}
           <button
             type="button"
-            class="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm capitalize hover:bg-accent"
-            onclick={() => toggleType(t)}
+            class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+            onclick={() => toggleType(t.id)}
           >
-            <span>{t}</span>
-            {#if chips.types.includes(t)}<span aria-hidden="true">&#10003;</span>{/if}
+            <span class="inline-flex items-center gap-2" style="color: {t.accent}">
+              <TypeIcon type={t.id} size={14} class="shrink-0" />
+              <span>{t.label}</span>
+            </span>
+            <span class="flex-1"></span>
+            {#if chips.types.includes(t.id)}<span aria-hidden="true">&#10003;</span>{/if}
           </button>
         {/each}
       </div>
