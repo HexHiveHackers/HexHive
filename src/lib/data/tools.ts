@@ -230,8 +230,8 @@ export const TOOLS: Tool[] = [
     ],
     inspiredBy: [
       {
-        label: 'Hex Maniac Advance by huderlem',
-        href: 'https://github.com/huderlem/hex-maniac-advance',
+        label: 'HexManiacAdvance by haven1433',
+        href: 'https://github.com/haven1433/HexManiacAdvance',
       },
       {
         label: 'Tilemap Studio by Rangi42',
@@ -270,7 +270,7 @@ export const TOOLS: Tool[] = [
       'Active development with a Discord community for support and contributors.',
     ],
     description: [
-      'HexManiacAdvance (HMA) is the modern successor to huderlem’s original Hex Maniac Advance. It is a specialised hex editor for Generation 3 Pokémon ROMs that exposes the underlying data as named tables, structured rows, and follow-pointer references rather than raw bytes.',
+      'HexManiacAdvance (HMA) is a specialised hex editor for Generation 3 Pokémon ROMs that exposes the underlying data as named tables, structured rows, and follow-pointer references rather than raw bytes.',
       'It bundles sprite, palette, tilemap, script, and table tooling into one application so most romhacking workflows can stay inside HMA without bouncing between disparate single-purpose utilities.',
     ],
     extraLinks: [{ label: 'Discord (development + support)', href: 'https://discord.gg/x9eQuBg' }],
