@@ -282,6 +282,9 @@
   .nav-link {
     transition: color 0.18s ease, text-shadow 0.18s ease;
   }
+  .nav-link :global(svg) {
+    transition: color 0.18s ease;
+  }
   .nav-link::after {
     content: '';
     position: absolute;
