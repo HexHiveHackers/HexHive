@@ -273,13 +273,26 @@
 
 <style>
   /* Per-type tinted nav. Hover lifts the muted text to white with a soft
-     accent glow; active draws a flat 2px underline in the type's accent
-     color, label stays white. No pill, no rounded background.
+     accent glow and sweeps a 2px underline in from the left (retracting
+     to the right on leave); active keeps the underline drawn, label stays
+     white. No pill, no rounded background.
 
      Selectors are ordered low→high specificity to keep biome's
      noDescendingSpecificity happy. */
   .nav-link {
     transition: color 0.18s ease, text-shadow 0.18s ease;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 0;
+    height: 2px;
+    background: var(--nav-accent);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.25s ease;
   }
   .nav-link--active {
     color: var(--foreground);
@@ -288,17 +301,15 @@
     color: var(--nav-accent);
   }
   .nav-link--active::after {
-    content: '';
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 0;
-    height: 2px;
-    background: var(--nav-accent);
+    transform: scaleX(1);
   }
   .nav-link:hover {
     color: var(--foreground);
     text-shadow: 0 0 12px color-mix(in oklch, var(--nav-accent) 55%, transparent);
+  }
+  .nav-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
   }
   .nav-link:hover :global(svg) {
     color: var(--nav-accent);
